@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.amazon.corretto.benchmark</groupId>
+    <artifactId>Heapothesys</artifactId>
+    <version>1.0</version>
+
+    <name>Heapothesys</name>
+    <description>
+        Heapothesys is an allocation based JVM heap benchmark tool developed by the Amazon Corretto team.
+        It can be used to create various load to exercising heap memory allocation and Garbage Collection. 
+        The benchmark is a culmination of effort by the team to better characterize workload allocation rates and 
+        their impact on garbage collection.
+    </description>
+    <url>https://github.com/corretto/Heapothesys</url>
+
+    <licenses>
+        <license>
+            <name>GPL v2</name>
+            <url>http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/corretto/Heapothesys</url>
+        <connection>scm:git:git://github.com/kcorretto/Heapothesys.git</connection>
+        <developerConnection>scm:git:git@github.com:corretto/Heapothesys.git</developerConnection>
+    </scm>
+
+    <developers>
+        <developer>
+            <email>letuyang@amazon.com</email>
+            <name>Letu Yang</name>
+            <url>https://github.com/yoroto</url>
+            <id>yoroto</id>
+        </developer>
+    </developers>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <version>1.19.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <version>2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>2.28.2</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>false</addClasspath>
+                            <mainClass>com.amazon.corretto.benchmark.heapothesys.Heapothesys</mainClass>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                        <manifestEntries>
+                            <Premain-Class>com.amazon.corretto.benchmark.heapothesys.Heapothesys</Premain-Class>
+                            <Agent-Class>com.amazon.corretto.benchmark.heapothesys.Heapothesys</Agent-Class>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

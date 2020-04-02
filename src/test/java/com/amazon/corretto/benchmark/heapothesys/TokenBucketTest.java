@@ -20,7 +20,7 @@ public class TokenBucketTest {
 
     @Test
     public void deductLessThanLimitThroughputShouldNotBeThrottled() {
-        TokenBucket rate = new TokenBucket(3000L);
+        TokenBucket rate = new TokenBucket(3000L, TimeUnit.SECONDS.toNanos(1));
         rate.deduct(1000L);
         assertFalse("Should not be throttled when the throughput usage is less than the limit.", rate.isThrottled());
         assertThat("Should return correct current remaining.", rate.getCurrent(), is(2000L));
@@ -28,7 +28,7 @@ public class TokenBucketTest {
 
     @Test
     public void deductMoreThanLimitThroughputShouldBeThrottled() {
-        TokenBucket rate = new TokenBucket(3000L);
+        TokenBucket rate = new TokenBucket(3000L, TimeUnit.SECONDS.toNanos(1));
         rate.deduct(2500L);
         assertFalse("Should not be throttled when the throughput usage is less than the limit.", rate.isThrottled());
 

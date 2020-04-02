@@ -54,8 +54,8 @@ class AllocObject {
 
     long getSum() {
         long sum = 0;
-        for (int i = 0; i < data.length; i++) {
-            sum += data[i];
+        for (byte b : data) {
+            sum += b;
         }
         return sum;
     }

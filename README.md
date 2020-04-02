@@ -2,16 +2,16 @@
 
 ## Introduction
 
-Heapothesys /hɪˈpɒθɪsɪs/ is a heap allocation JVM benchmark developed by the Amazon Corretto team. It can be used to create various loads to exercise heap memory allocation and Garbage Collection. The benchmark is the result of our effort to better characterize workload allocation rates and their impact on garbage collection.
+Heapothesys /hɪˈpɒθɪsɪs/ is a heap allocation JVM benchmark developed by the Amazon Corretto team. 
 
-Amazon runs numerous Java services whose workload behaviors can be very different. Understanding how Garbage Collectors behave under different scenarios is essential to Amazon’s operational excellence. Two metrics we use to evaluate GC behavior are:
+Heapothesys is a synthetic workload which simulates fundamental application characteristics that affect Garbage Collector latency. The benchmark creates and tests GC load scenarios defined by object allocation rates, heap occupancy, JVM flags, and hardware types. OpenJDK developers can use it to investigate relevant capability boundaries of the technologies they are implementing. It also helps narrow down initial garbage collector choices and tuning options for applications with various load projections and latency expectations.
 
 * A Java heap object allocation rate target.
 * A heap occupancy after major Garbage Collection target.
 
-Heapothesys allows us to create load scenarios defined by these two parameters and quickly test them, changing JVM flags, object allocation rates, and heap sizes. We run it on different hardware types to help teams choose between different GC approaches. JVM developers can use it to assess the strengths and weaknesses of the technologies they are implementing.
+Heapothesys allows us to create load scenarios defined by these two parameters and quickly test them, changing JVM flags, object allocation rates, and heap sizes. JVM developers can use it to assess the strengths and weaknesses of the technologies they are implementing.
 
-We would like to credit to Gil Tene for his [HeapFragger](http://[https://github.com/giltene/HeapFragger), which was the inspiration for Heapothesys, and for [jHiccup](https://www.azul.com/jhiccup/), which we use to monitor pauses. Heapothesys currently supports only a steady allocation rate, but we are working on more complex scenarios. If you have new ideas or would like to contribute to the project, please file a GitHub issue.
+Heapothesys, while written from scratch, inherits its basic ideas from Gil Tene’s [HeapFragger](https://github.com/giltene/HeapFragger) workload. HeapFragger has additional features (e.g., inducing fragmentation and detecting generational promotion), whereas Heapothesys concentrates on accurately predicting the resulting allocation rate. Additionally, we thank to Gil for his [jHiccup](https://www.azul.com/jhiccup/) agent, which we utilize to measure JVM pauses.
 
 ## Usage
 

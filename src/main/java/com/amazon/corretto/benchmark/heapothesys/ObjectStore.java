@@ -3,7 +3,7 @@ package com.amazon.corretto.benchmark.heapothesys;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -29,7 +29,7 @@ public class ObjectStore implements Runnable {
     private static final int IN_QUEUE_RATIO = 100;
 
     private ArrayList<List<AllocObject>> store;
-    final LinkedBlockingQueue<AllocObject> queue;
+    final ArrayBlockingQueue<AllocObject> queue;
     final long sizeLimit;
     final TokenBucket pruneRate;
     final int reshuffleRatio;
@@ -68,11 +68,11 @@ public class ObjectStore implements Runnable {
         this.maxItemInGroup = maxItemInGroup;
 
         currentSize = new AtomicLong(0L);
-        queue = new LinkedBlockingQueue<>(maxItemInGroup);
+        queue = new ArrayBlockingQueue<>(maxItemInGroup);
         running = true;
     }
 
-    public synchronized boolean tryAdd(final AllocObject obj) {
+    public boolean tryAdd(final AllocObject obj) {
         try {
             if (currentSize.get() >= sizeLimit) {
                 return false;

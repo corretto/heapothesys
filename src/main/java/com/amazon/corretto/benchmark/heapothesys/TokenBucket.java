@@ -10,7 +10,7 @@ import java.util.function.Supplier;
  * used up within the current time slice, <i>isThrottled</i> would return <i>true</i>.
  */
 public class TokenBucket {
-    private static final long DEFAULT_TIME_SLICE = TimeUnit.SECONDS.toNanos(1);
+    private static final long DEFAULT_TIME_SLICE = TimeUnit.MILLISECONDS.toNanos(10);
     private static final int DEFAULT_OVERDRAFT_RATIO = 10;
     private final long timeSlice;
     private final long limit;
@@ -52,7 +52,7 @@ public class TokenBucket {
      * @param limit The token limit within a second.
      */
     public TokenBucket(final long limit) {
-        this(limit, DEFAULT_TIME_SLICE);
+        this(limit/100, DEFAULT_TIME_SLICE);
     }
 
     /**

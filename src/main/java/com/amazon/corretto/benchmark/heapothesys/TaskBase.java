@@ -1,7 +1,6 @@
 package com.amazon.corretto.benchmark.heapothesys;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.ArrayDeque;
 import java.util.concurrent.Callable;
 
 public abstract class TaskBase {
@@ -53,7 +52,7 @@ public abstract class TaskBase {
                                        final int minObjectSize, final int maxObjectSize, final int queueLength) {
         return () -> {
             final long rate = rateInMb * 1024 * 1024;
-            final List<AllocObject> survivorQueue = new LinkedList<>();
+            final ArrayDeque<AllocObject> survivorQueue = new ArrayDeque<>();
 
             final long end = System.currentTimeMillis() + durationInMs;
             final TokenBucket throughput = new TokenBucket(rate);
@@ -67,10 +66,10 @@ public abstract class TaskBase {
                         final AllocObject obj = AllocObject.create(minObjectSize, maxObjectSize, null);
                         throughput.deduct(obj.getRealSize());
                         wave += obj.getRealSize();
-                        survivorQueue.add(obj);
+                        survivorQueue.push(obj);
 
                         if (survivorQueue.size() > queueLength) {
-                            final AllocObject removed = survivorQueue.remove(0);
+                            final AllocObject removed = survivorQueue.poll();
                             if (--longLivedCounter == 0) {
                                 if (store.tryAdd(removed)) {
                                     if (longLivedRate > MAX_LONG_LIVED_RATIO) {

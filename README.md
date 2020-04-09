@@ -13,6 +13,14 @@ Heapothesys allows us to create load scenarios defined by these two parameters a
 
 Heapothesys, while written from scratch, inherits its basic ideas from Gil Tene’s [HeapFragger](https://github.com/giltene/HeapFragger) workload. HeapFragger has additional features (e.g., inducing fragmentation and detecting generational promotion), whereas Heapothesys concentrates on accurately predicting the resulting allocation rate. Additionally, we thank to Gil for his [jHiccup](https://www.azul.com/jhiccup/) agent, which we utilize to measure JVM pauses.
 
+## Disclaimer
+
+Heapothesys should not be run in production systems, and the user takes full responsbility when running Heapothesys.
+
+## Security
+
+If you would like to report a potential security issue in this project, please do not create a GitHub issue. Instead, please follow the instructions here(https://aws.amazon.com/security/vulnerability-reporting/ ) or email AWS security directly.
+
 ## Usage
 
 Heapothesys currently supports a steady allocation rate throughout the run. Its arguments are used to create and characterize such a load.

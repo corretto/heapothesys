@@ -15,7 +15,9 @@ Heapothesys, while written from scratch, inherits its basic ideas from Gil Teneâ
 
 ## Disclaimer
 
-Heapothesys should not be run in production systems, and the user takes full responsbility when running Heapothesys.
+The benchmark can be used to create load scenarios, test allocation rates in a JVM which the JVM developers(end-users) can use to assess the strengths and weaknesses of the technologies they are implementing.
+
+This open source is not intended to be run on any form of production workload and will not run any customer code.
 
 ## Security
 

@@ -17,7 +17,7 @@ Heapothesys, while written from scratch, inherits its basic ideas from Gil Teneâ
 
 ## Disclaimer
 
-This open source code is not intended to be run on any form of production system ot to run any customer code.
+This open source code is not intended to be run on any form of production system or to run any customer code.
 
 ## Security
 

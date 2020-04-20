@@ -19,6 +19,13 @@ Heapothesys, while written from scratch, inherits its basic ideas from Gil Teneâ
 
 This open source code is not intended to be run on any form of production system or to run any customer code.
 
+The implementation can still be improved in many ways and updates are planned. In particular we aim to address:
+- The shape of the object graph seems specialized, although it is meant to have little effect. We need to evaluate it for unwanted performance artefacts, compare with alternatives, and if necessary modify this shape.
+- In cases where the desired maximum allocation rate is not met, we should check where if is a bottleneck in the benchmark.
+- Stylistic issues in the code. In particular, we could remove certain unused setup complexities.
+- Thread naming.
+- Better instructions to use the benchmark and to analyze its output.
+
 ## Security
 
 If you would like to report a potential security issue in this project, please do not create a GitHub issue. Instead, please follow the instructions here(https://aws.amazon.com/security/vulnerability-reporting/ ) or email AWS security directly.

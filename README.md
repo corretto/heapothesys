@@ -77,10 +77,10 @@ At end of the run, Heapothesys writes the actual achieved allocation rate and th
 
 ### Example
 
-We normally use [JHiccup](https://www.azul.com/jhiccup/) to measure JVM pauses. You can also use GC logs to measure safepoint times, allocation stalls, and Garbage Collection pauses. In the exmaple below, we run Heapothesys for the Shenandoah collector for 40 minutes using a 16Gb/s allocation rate and with 32Gb of a 64Gb heap occupied by long-lived objects.
+We normally use [JHiccup](https://www.azul.com/jhiccup/) to measure JVM pauses. You can either download it from its [website](https://www.azul.com/jhiccup-2/), or build it from the source code in its [GitHub repo](https://github.com/giltene/jHiccup). You can also use GC logs to measure safepoint times, allocation stalls, and Garbage Collection pauses. In the exmaple below, we run Heapothesys for the Shenandoah collector for 40 minutes using a 16Gb/s allocation rate and with 32Gb of a 64Gb heap occupied by long-lived objects.
 
 ```
-jdk/jdk-13.0.2+8/bin/java -Xmx65536m -Xms65536m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=traversal -XX:+UseLargePages -XX:+AlwaysPreTouch -XX:-UseBiasedLocking -Xloggc:./results/16384_65536_32768/gc.log -javaagent:./buildRoot/jar/jHiccup.jar='-a -d 0 -i 1000 -l ./results/16384_65536_32768/heapothesis.hlog' -jar ./buildRoot/jar/Heapothesys-1.0.jar -a 16384 -h 65536 -d 2400 -m 128 -s 32640 -c false -t 16 -n 64 -x 32768 -l ./results/16384_65536_32768/output.csv
+jdk/jdk-13.0.2+8/bin/java -Xmx65536m -Xms65536m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=traversal -XX:+UseLargePages -XX:+AlwaysPreTouch -XX:-UseBiasedLocking -Xloggc:./results/16384_65536_32768/gc.log -javaagent:<path to jHiccup>/jHiccup.jar='-a -d 0 -i 1000 -l ./results/16384_65536_32768/heapothesis.hlog' -jar ./buildRoot/jar/Heapothesys-1.0.jar -a 16384 -h 65536 -d 2400 -m 128 -s 32640 -c false -t 16 -n 64 -x 32768 -l ./results/16384_65536_32768/output.csv
 ```
 
 This command sets JHiccup as a Java agent and use it to create the hiccup log. The *output.csv* file contains the following information:

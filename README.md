@@ -53,44 +53,44 @@ The JAR file can be found in the *target* folder.
 
 The two primary arguments are allocation rate and heap occupancy:
 
-* *-a < target allocation rate in Mb per second >, default: 1024 *
-* *-s < target heap occupancy in Mb >, default: 64 *
+* -a < target allocation rate in Mb per second >, default: 1024
+* -s < target heap occupancy in Mb >, default: 64 
 
 Currently, the benchmark program needs to be told the heap size in use.
-* *-h < heap size in Mb >
+* -h < heap size in Mb >
 
 The benchmark cannot always achieve the specified values. In particular, the run duration must be long enough for Heapothesys to meet the heap occupancy target, especially for those low allocation rate cases. You can set the benchmark run duration using:
 
-* *-d < run duration in seconds >, default: 60 *
+* -d < run duration in seconds >, default: 60
 
 At end of the run, Heapothesys writes the actual achieved allocation rate and the configuration into a file.
 
-* *-l < result file name >, default: output.csv *
+* -l < result file name >, default: output.csv
 
 If you run with a 32G or larger heap or with a collector that does not support 32-bit object pointers, aka "compressedOops", you must set this paramteter to "false". Otherwise all object size calculations are off by nearly 50%. Currently, Heapothesys does not automatically detect this.
 
-* *-c < compressedOops support >, default: true *
+* -c < compressedOops support >, default: true
 
 In order to achieve high allocation rates, Heapothesys uses multiple worker threads. If the hardware has enough CPU cores, you can increase the number of worker threads to ensure achieving the target allocation rate.
 
-* *-t < number of worker threads >, default: 4*
+* -t < number of worker threads >, default: 4
 
 At run time, Heapothesys worker threads randomly create objects within a size range defined by the mimimum and maximum object size arguments:
 
 The bigger the average object size, the easier to generate a high allocation rate. However, larger object sizes also mean a lower object count when the allocation rate is fixed. This makes the reference graph less complex, which in turn reduces the tracing and marking load on the Garbage Collector. Some experimentation may be neccessary to determine a better representative default setting here.
 
-* *-n < minimum object size in byte >, inclusive, default: 128 bytes *
-* *-x < maximum object size in byte >, exclusive, default: 1Kb *
+* -n < minimum object size in byte >, inclusive, default: 128 bytes
+* -x < maximum object size in byte >, exclusive, default: 1Kb
 
 The following options are all experimental features that we don't touch or set to minimal values when we want to observe collector behavior that is not influenced by any specific application behavior.
 
 The next pair of arguments are used to control refreshing the long-lived object store, which is explained in the [Implementation](#object-store) section. The first defines the ratio at which objects get replaced in the object store.
 
-* *-r < ratio of objects get replaced per minute >, default: 50 *
+* -r < ratio of objects get replaced per minute >, default: 50
 
 The default value 50 means that 1/50 of the objects in the store are replaced with new objects every minute. For Generational Garbage Collectors, this ensures that major collections happen at some point. The second one is to exercise objects within the Object Store. It selects a portion of objects and reshuffles their values and references.
 
-* *-f < ratio of objects get reshuffled >, default: 100 *
+* -f < ratio of objects get reshuffled >, default: 100
 
 The default value 100 means that when the Object Store replaces the objects, it will also pick 1/100 of the objects in the store and reshuffle their references.
 

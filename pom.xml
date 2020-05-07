@@ -11,8 +11,8 @@
     <name>Heapothesys</name>
     <description>
         Heapothesys is an allocation based JVM heap benchmark tool developed by the Amazon Corretto team.
-        It can be used to create various load to exercising heap memory allocation and Garbage Collection. 
-        The benchmark is a culmination of effort by the team to better characterize workload allocation rates and
+        It can be used to create various load to exercising heap memory allocation and Garbage Collection.
+        The benchmark is a culmination of effort by the team to better characterize workload allocation rates and 
         their impact on garbage collection.
     </description>
     <url>https://github.com/corretto/Heapothesys</url>

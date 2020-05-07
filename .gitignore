@@ -2,3 +2,7 @@
 output.csv
 .DS_Store
 target
+
+# IntelliJ IDE
+.idea/
+Heapothesys.iml

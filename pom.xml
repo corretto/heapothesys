@@ -35,7 +35,7 @@
       <repository>
         <id>github</id>
         <name>GitHub Packages</name>
-        <url>https://maven.pkg.github.com/corretto/heapothesys</url>
+        <url>https://maven.pkg.github.com/OWNER/REPOSITORY</url>
       </repository>
    </distributionManagement>
 

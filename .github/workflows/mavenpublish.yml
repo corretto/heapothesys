@@ -26,4 +26,5 @@ jobs:
     - name: Publish to GitHub Packages 
       run: mvn -B deploy -DskipTests --file pom.xml
       env:
+        GITHUB_USERNAME: x-access-token
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.amazon.corretto.benchmark</groupId>
-    <artifactId>Heapothesys</artifactId>
+    <artifactId>heapothesys</artifactId>
     <version>1.0</version>
 
     <name>Heapothesys</name>
@@ -15,7 +15,7 @@
         The benchmark is a culmination of effort by the team to better characterize workload allocation rates and 
         their impact on garbage collection.
     </description>
-    <url>https://github.com/corretto/Heapothesys</url>
+    <url>https://github.com/corretto/heapothesys</url>
 
     <licenses>
         <license>

@@ -24,6 +24,11 @@ jobs:
       run: mvn -B package --file pom.xml
 
     - name: Publish to GitHub Packages 
-      run: mvn deploy -DskipTests
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        mkdir -p ~/.m2
+        echo "<settings><servers><server><id>gh</id><username>$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $1}')</username><password>\${env.GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
+        REPO="gh::default::https://maven.pkg.github.com/${GITHUB_REPOSITORY}"
+        mvn deploy -DaltReleaseDeploymentRepository="${REPO}" -DaltSnapshotDeploymentRepository="${REPO}"
+

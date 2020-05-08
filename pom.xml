@@ -34,8 +34,8 @@
    <distributionManagement>
       <repository>
         <id>github</id>
-        <name>GitHub AzeemJiva Apache Maven Packages</name>
-        <url>https://maven.pkg.github.com/AzeemJiva/heapothesys</url>
+        <name>GitHub corretto Apache Maven Packages</name>
+        <url>https://maven.pkg.github.com/corretto/heapothesys</url>
       </repository>
    </distributionManagement>
 

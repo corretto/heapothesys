@@ -15,7 +15,7 @@
         The benchmark is a culmination of effort by the team to better characterize workload allocation rates and 
         their impact on garbage collection.
     </description>
-    <url>https://github.com/corretto/Heapothesys</url>
+    <url>https://github.com/corretto/heapothesys</url>
 
     <licenses>
         <license>
@@ -26,9 +26,9 @@
     </licenses>
 
     <scm>
-        <url>https://github.com/corretto/Heapothesys</url>
-        <connection>scm:git:git://github.com/kcorretto/Heapothesys.git</connection>
-        <developerConnection>scm:git:git@github.com:corretto/Heapothesys.git</developerConnection>
+        <url>https://github.com/corretto/heapothesys</url>
+        <connection>scm:git:git://github.com/corretto/heapothesys.git</connection>
+        <developerConnection>scm:git:git@github.com:corretto/heapothesys.git</developerConnection>
     </scm>
 
     <developers>

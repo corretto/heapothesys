@@ -30,7 +30,7 @@ public class SimpleRunner extends TaskBase {
             final ObjectStore store = new ObjectStore(config.getLongLivedInMb(), config.getPruneRatio(),
                     config.getReshuffleRatio());
             new Thread(store).start();
-            final ExecutorService executor = Executors.newCachedThreadPool();
+            final ExecutorService executor = Executors.newFixedThreadPool(config.getNumOfThreads());
             final List<Future<Long>> results = executor.invokeAll(createTasks(store));
 
             long sum = 0;

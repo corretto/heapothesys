@@ -54,12 +54,12 @@ public abstract class TaskBase {
             final long rate = rateInMb * 1024 * 1024;
             final ArrayDeque<AllocObject> survivorQueue = new ArrayDeque<>();
 
-            final long end = System.currentTimeMillis() + durationInMs;
+            final long end = System.nanoTime() + durationInMs * 1000000;
             final TokenBucket throughput = new TokenBucket(rate);
             int longLivedRate = MAX_LONG_LIVED_RATIO;
             int longLivedCounter = longLivedRate;
 
-            while (System.currentTimeMillis() < end) {
+            while (System.nanoTime() < end) {
                 long wave = 0L;
                 while (wave < rate / 10) {
                     if (!throughput.isThrottled()) {

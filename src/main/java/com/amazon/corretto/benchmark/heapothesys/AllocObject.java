@@ -1,6 +1,6 @@
 package com.amazon.corretto.benchmark.heapothesys;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * The representation of an allocated object with fixed size in heap. It can also have a reference
@@ -49,7 +49,7 @@ class AllocObject {
      * This method is used to exercise barriers.
      */
     void touch() {
-        data[rand.nextInt(data.length)] += 1;
+        data[ThreadLocalRandom.current().nextInt(data.length)] += 1;
     }
 
     long getSum() {
@@ -68,8 +68,6 @@ class AllocObject {
         return objectOverhead.getOverhead() + (data.length % 8 == 0 ? data.length : (data.length / 8 + 1) * 8);
     }
 
-    private static Random rand = new Random();
-
     /**
      * Create an AllocObject instance with a random size
      *
@@ -80,7 +78,7 @@ class AllocObject {
      */
     static AllocObject create(final int min, final int max, final AllocObject ref) {
         assert max >= min : "The max value must be greater than min";
-        return new AllocObject(min == max ? min : rand.nextInt(max - min) + min, ref);
+        return new AllocObject(min == max ? min : ThreadLocalRandom.current().nextInt(max - min) + min, ref);
     }
 
     /**

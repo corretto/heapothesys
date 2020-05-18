@@ -2,8 +2,8 @@ package com.amazon.corretto.benchmark.heapothesys;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -34,7 +34,6 @@ public class ObjectStore implements Runnable {
     final TokenBucket pruneRate;
     final int reshuffleRatio;
     final int maxItemInGroup;
-    private final Random rand = new Random();
 
     private AtomicLong currentSize;
     private boolean running;
@@ -114,7 +113,7 @@ public class ObjectStore implements Runnable {
                     if (obj != null) {
                         replaceInStore(obj);
                         pruneRate.deduct(obj.getRealSize());
-                        if (rand.nextBoolean()) {
+                        if (ThreadLocalRandom.current().nextBoolean()) {
                             reshuffle(reshuffleRatio);
                         }
                         continue;
@@ -150,10 +149,10 @@ public class ObjectStore implements Runnable {
     }
 
     private int randomRemove() {
-        final int groupIndex = rand.nextInt(store.size());
+        final int groupIndex = ThreadLocalRandom.current().nextInt(store.size());
         final List<AllocObject> group = store.get(groupIndex);
         if (group.size() > 0) {
-            final AllocObject toRemove = group.get(rand.nextInt(group.size()));
+            final AllocObject toRemove = group.get(ThreadLocalRandom.current().nextInt(group.size()));
             group.remove(toRemove);
 
             if (groupIndex != 0) {
@@ -174,8 +173,8 @@ public class ObjectStore implements Runnable {
             return;
         }
 
-        if (rand.nextBoolean()) {
-            store.get(groupIndex - 1).get(rand.nextInt(maxItemInGroup)).setNext(obj);
+        if (ThreadLocalRandom.current().nextBoolean()) {
+            store.get(groupIndex - 1).get(ThreadLocalRandom.current().nextInt(maxItemInGroup)).setNext(obj);
         }
     }
 
@@ -184,9 +183,9 @@ public class ObjectStore implements Runnable {
             return;
         }
 
-        if (rand.nextBoolean()) {
+        if (ThreadLocalRandom.current().nextBoolean()) {
             final List<AllocObject> nextLayer = store.get(groupIndex + 1);
-            obj.setNext(nextLayer.get(rand.nextInt(nextLayer.size())));
+            obj.setNext(nextLayer.get(ThreadLocalRandom.current().nextInt(nextLayer.size())));
         } else {
             obj.setNext(null);
         }
@@ -198,7 +197,7 @@ public class ObjectStore implements Runnable {
         }
 
         for (int i = 0; i < ((double) store.size() / shuffleRatio) && store.size() > 1; i++) {
-            final int currentIndex = rand.nextInt(store.size() - 1);
+            final int currentIndex = ThreadLocalRandom.current().nextInt(store.size() - 1);
             final List<AllocObject> current = store.get(currentIndex);
             current.forEach(obj -> tryRef(obj, currentIndex));
             current.forEach(AllocObject::touch);

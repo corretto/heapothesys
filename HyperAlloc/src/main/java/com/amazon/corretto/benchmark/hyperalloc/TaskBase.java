@@ -2,6 +2,7 @@ package com.amazon.corretto.benchmark.hyperalloc;
 
 import java.util.ArrayDeque;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 public abstract class TaskBase {
     // The default maximum object size.
@@ -91,6 +92,49 @@ public abstract class TaskBase {
             }
 
             return throughput.getCurrent();
+        };
+    }
+
+static Callable<Long> createSingle2(final ObjectStore store, final long rateInMb, final long durationInMs,
+                                       final int minObjectSize, final int maxObjectSize, final int queueLength) {
+        return () -> {
+            final long rate = rateInMb * 1024 * 1024;
+            final ArrayDeque<AllocObject> survivorQueue = new ArrayDeque<>();
+
+            final long end = System.nanoTime() + durationInMs * 1000000;
+            final TokenBucket2 throughput = new TokenBucket2(rate, TimeUnit.SECONDS);
+            int longLivedRate = MAX_LONG_LIVED_RATIO;
+            int longLivedCounter = longLivedRate;
+            long totalBytesAllocated = 0;
+
+            while (System.nanoTime() < end) {
+                long size = AllocObject.getRandomSize(minObjectSize, maxObjectSize);
+                long allowed = throughput.take(size);
+                if (allowed >= minObjectSize) {
+                    final AllocObject obj = AllocObject.create((int)allowed);
+                    totalBytesAllocated += allowed;
+
+                    survivorQueue.push(obj);
+
+                    if (survivorQueue.size() > queueLength) {
+                        final AllocObject removed = survivorQueue.poll();
+                        if (--longLivedCounter == 0) {
+                            if (store.tryAdd(removed)) {
+                                if (longLivedRate > MAX_LONG_LIVED_RATIO) {
+                                    longLivedRate /= 2;
+                                }
+                            } else {
+                                if (longLivedRate < MIN_LONG_LIVED_RATIO) {
+                                    longLivedRate *= 2;
+                                }
+                            }
+                            longLivedCounter = longLivedRate;
+                        }
+                    }
+                }
+            }
+
+            return totalBytesAllocated;
         };
     }
 }

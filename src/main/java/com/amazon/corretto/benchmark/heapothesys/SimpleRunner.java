@@ -71,9 +71,9 @@ public class SimpleRunner extends TaskBase {
     }
 
     private List<Callable<Long>> createTasks(final ObjectStore store) {
-        final int queueSize = config.getMidAgedInMb() * 1024 * 1024 * 2
+        final int queueSize = (int)(config.getMidAgedInMb() * 1024L * 1024L * 2L
                 / (config.getMaxObjectSize() + config.getMinObjectSize())
-                / config.getNumOfThreads();
+                / config.getNumOfThreads());
 
         return IntStream.range(0, config.getNumOfThreads())
                 .mapToObj(i -> createSingle(store, config.getAllocRateInMbPerSecond() / config.getNumOfThreads(),

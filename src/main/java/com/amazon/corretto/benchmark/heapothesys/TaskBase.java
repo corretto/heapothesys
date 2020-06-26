@@ -66,7 +66,7 @@ public abstract class TaskBase {
                         final AllocObject obj = AllocObject.create(minObjectSize, maxObjectSize, null);
                         throughput.deduct(obj.getRealSize());
                         wave += obj.getRealSize();
-                        survivorQueue.push(obj);
+                        survivorQueue.addLast(obj);
 
                         if (survivorQueue.size() > queueLength) {
                             final AllocObject removed = survivorQueue.poll();

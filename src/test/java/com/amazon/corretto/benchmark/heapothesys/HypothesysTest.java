@@ -1,12 +1,12 @@
 package com.amazon.corretto.benchmark.heapothesys;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+
+import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class HypothesysTest {
-    @Rule
-    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Test
     public void SimpleRunTest() {
@@ -19,8 +19,9 @@ public class HypothesysTest {
     }
 
     @Test
-    public void UnknownRunTypeTest() {
-        exit.expectSystemExitWithStatus(1);
-        Heapothesys.main(new String[]{"-u", "unknown", "-a", "5"});
+    public void UnknownRunTypeTest() throws Exception {
+        int status = catchSystemExit(
+                () -> Heapothesys.main(new String[]{"-u", "unknown", "-a", "5"}));
+        assertThat(status, is(1));
     }
 }

@@ -1,10 +1,10 @@
 package com.amazon.corretto.benchmark.heapothesys;
 
-import org.junit.Rule;
 import org.junit.Test;
+
+import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
 public class SimpleRunConfigTest {
     @Test
@@ -66,13 +66,11 @@ public class SimpleRunConfigTest {
         assertFalse(config.isUseCompressedOops());
     }
 
-    @Rule
-    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
-
     @Test
-    public void UnknownParameterShouldExitTest() {
-        exit.expectSystemExitWithStatus(1);
+    public void UnknownParameterShouldExitTest() throws Exception {
+        int status = catchSystemExit(
+                () -> new SimpleRunConfig(new String[]{"-w", "who"}));
 
-        final SimpleRunConfig config = new SimpleRunConfig(new String[]{"-w", "who"});
+        assertThat(status, is(1));
     }
 }

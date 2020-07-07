@@ -67,8 +67,8 @@
             </dependency>
             <dependency>
                 <groupId>com.github.stefanbirkner</groupId>
-                <artifactId>system-rules</artifactId>
-                <version>1.19.0</version>
+                <artifactId>system-lambda</artifactId>
+                <version>1.0.0</version>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
@@ -90,7 +90,7 @@
         </dependency>
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
-            <artifactId>system-rules</artifactId>
+            <artifactId>system-lambda</artifactId>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>

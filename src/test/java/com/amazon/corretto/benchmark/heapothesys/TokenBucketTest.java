@@ -5,6 +5,7 @@ import org.junit.Test;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;

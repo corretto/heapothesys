@@ -1,9 +1,9 @@
 package com.amazon.corretto.benchmark.heapothesys;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static com.amazon.corretto.benchmark.heapothesys.AssertionUtils.*;
 
 import org.hamcrest.Matchers;

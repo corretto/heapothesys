@@ -1,11 +1,11 @@
 package com.amazon.corretto.benchmark.heapothesys;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class SimpleRunnerTest {
+class SimpleRunnerTest {
 
     @Test
-    public void DefaultRunTest() {
+    void DefaultRunTest() {
         new SimpleRunner(new SimpleRunConfig(new String[]{"-d", "5"})).start();
     }
 }

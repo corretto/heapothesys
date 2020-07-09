@@ -1,7 +1,7 @@
 package com.amazon.corretto.benchmark.heapothesys;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,11 +9,11 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ObjectStoreTest {
+class ObjectStoreTest {
     @Test
-    public void CreationTest() {
+    void CreationTest() {
         final ObjectStore store = new ObjectStore(1);
         assertThat(store.queue.size(), is(0));
         assertThat(store.getStore().size(), is(1));
@@ -22,7 +22,7 @@ public class ObjectStoreTest {
     }
 
     @Test
-    public void ShouldAddWhenNotFullTest() {
+    void ShouldAddWhenNotFullTest() {
         final ObjectStore store = new ObjectStore(1);
         final AllocObject obj = new AllocObject(1024, null);
 
@@ -34,7 +34,7 @@ public class ObjectStoreTest {
     }
 
     @Test
-    public void ShouldFailToAddWhenFullTest() {
+    void ShouldFailToAddWhenFullTest() {
         final ObjectStore store = new ObjectStore(1);
         final AllocObject objA = new AllocObject(512 * 1024, null);
         final AllocObject objB = new AllocObject(512 * 1024, null);
@@ -46,14 +46,14 @@ public class ObjectStoreTest {
     }
 
     @Test
-    public void ShouldFailToAddWhenSizeIsZeroTest() {
+    void ShouldFailToAddWhenSizeIsZeroTest() {
         final ObjectStore store = new ObjectStore(0);
 
         assertFalse(store.tryAdd(new AllocObject(64, null)));
     }
 
     @Test
-    public void StopShouldReturnCurrentSizeTest() {
+    void StopShouldReturnCurrentSizeTest() {
         final ObjectStore store = new ObjectStore(1);
         final AllocObject obj = new AllocObject(1024, null);
 
@@ -63,7 +63,7 @@ public class ObjectStoreTest {
     }
 
     @Test
-    public void FromQueueToStoreTest() throws InterruptedException {
+    void FromQueueToStoreTest() throws InterruptedException {
         final ObjectStore store = new ObjectStore(1, 0, 0);
 
         final AllocObject obj = new AllocObject(1024, null);
@@ -83,7 +83,7 @@ public class ObjectStoreTest {
     }
 
     @Test
-    public void PruneShouldReplaceObjectTest() throws InterruptedException {
+    void PruneShouldReplaceObjectTest() throws InterruptedException {
         final ObjectStore store = new ObjectStore(1, 2, 0, 10);
         final List<AllocObject> initial = new ArrayList<>();
 
@@ -108,7 +108,7 @@ public class ObjectStoreTest {
     }
 
     @Test
-    public void ReshuffleTest() throws InterruptedException {
+    void ReshuffleTest() throws InterruptedException {
         final ObjectStore store = new ObjectStore(1, 2, 2);
         final List<AllocObject> initial = new ArrayList<>();
 
@@ -136,8 +136,8 @@ public class ObjectStoreTest {
     }
 
     @Test
-    @Ignore("For debugging only.")
-    public void DebugTest() throws InterruptedException {
+    @Disabled("For debugging only.")
+    void DebugTest() throws InterruptedException {
         final ObjectStore store = new ObjectStore(1);
         new Thread(store).start();
         int rejected = 0;

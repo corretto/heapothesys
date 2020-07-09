@@ -2,17 +2,15 @@ package com.amazon.corretto.benchmark.heapothesys;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static com.amazon.corretto.benchmark.heapothesys.AssertionUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.hamcrest.Matchers;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-public class AllocObjectTest {
+class AllocObjectTest {
     @Test
-    public void ObjectSizeTest() {
+    void ObjectSizeTest() {
         final AllocObject o1 = new AllocObject(40, null);
         final AllocObject o2 = new AllocObject(41, null);
         final AllocObject o3 = new AllocObject(42, null);
@@ -30,19 +28,19 @@ public class AllocObjectTest {
     }
 
     @Test
-    public void NullReferenceTest() {
+    void NullReferenceTest() {
         assertNull(AllocObject.create(56, 100, null).getNext());
     }
 
     @Test
-    public void NonNullReferenceTest() {
+    void NonNullReferenceTest() {
         final AllocObject obj = AllocObject.create(100, 200, null);
 
         assertThat(AllocObject.create(100, 200, obj).getNext(), Matchers.is(obj));
     }
 
     @Test
-    public void SetReferenceTest() {
+    void SetReferenceTest() {
         final AllocObject ref = AllocObject.create(100, 200, null);
         final AllocObject obj = AllocObject.create(100, 200, null);
         assertNull(obj.getNext());
@@ -54,7 +52,7 @@ public class AllocObjectTest {
     }
 
     @Test
-    public void ObjectCreateRangeTest() {
+    void ObjectCreateRangeTest() {
         for (int i = 56; i < 100000; i++) {
             final int size = AllocObject.create(56, i, null).getRealSize();
             assertThat(size, greaterThanOrEqualTo(56));
@@ -63,15 +61,15 @@ public class AllocObjectTest {
     }
 
     @Test
-    public void TouchTest() {
+    void TouchTest() {
         final AllocObject obj = AllocObject.create(100, 100, null);
         for (int i = 0; i < 10000; i++) {
-            assertNoThrow(() -> obj.touch());
+            assertDoesNotThrow(() -> obj.touch());
         }
     }
 
     @Test
-    public void ObjectCreateFixedTest() {
+    void ObjectCreateFixedTest() {
         for (int i = 56; i < 100000; i++) {
             final int size = AllocObject.create(i, i, null).getRealSize();
             assertThat(size, greaterThanOrEqualTo(i));
@@ -80,19 +78,19 @@ public class AllocObjectTest {
     }
 
     @Test
-    public void OverheadTest() {
+    void OverheadTest() {
         AllocObject.setOverhead(AllocObject.ObjectOverhead.CompressedOops);
-        assertNoThrow(() -> AllocObject.create(40, 40, null), AssertionError.class);
+        assertDoesNotThrow(() -> AllocObject.create(40, 40, null));
         AllocObject.setOverhead(AllocObject.ObjectOverhead.NonCompressedOops);
-        assertThrow(() -> AllocObject.create(40, 40, null), AssertionError.class);
-        assertNoThrow(() -> AllocObject.create(56, 56, null), AssertionError.class);
+        assertThrows(AssertionError.class, () -> AllocObject.create(40, 40, null));
+        assertDoesNotThrow(() -> AllocObject.create(56, 56, null));
 
         AllocObject.setOverhead(AllocObject.ObjectOverhead.CompressedOops);
     }
 
     @Test
-    @Ignore("Only run when compressed oops disabled.")
-    public void ObjectSizeNoCompressedOopsTest() {
+    @Disabled("Only run when compressed oops disabled.")
+    void ObjectSizeNoCompressedOopsTest() {
         AllocObject.setOverhead(AllocObject.ObjectOverhead.NonCompressedOops);
 
         final AllocObject o1 = new AllocObject(56, null);

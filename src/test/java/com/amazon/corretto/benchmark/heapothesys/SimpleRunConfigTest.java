@@ -1,15 +1,15 @@
 package com.amazon.corretto.benchmark.heapothesys;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class SimpleRunConfigTest {
+class SimpleRunConfigTest {
     @Test
-    public void DefaultStringsTest() {
+    void DefaultStringsTest() {
         final SimpleRunConfig config = new SimpleRunConfig(new String[0]);
 
         assertThat(config.getNumOfThreads(), is(4));
@@ -27,7 +27,7 @@ public class SimpleRunConfigTest {
     }
 
     @Test
-    public void ConstructorTest() {
+    void ConstructorTest() {
         final SimpleRunConfig config = new SimpleRunConfig(16384L, 32768, 256,
                 32, 3000, 16, 256, 512,
                 10, 20, false, "nosuch.csv");
@@ -47,7 +47,7 @@ public class SimpleRunConfigTest {
     }
 
     @Test
-    public void StringArgsTest() {
+    void StringArgsTest() {
         final SimpleRunConfig config = new SimpleRunConfig(new String[]{"-a", "16384", "-s", "256", "-h", "32768",
                                                                         "-d", "3000", "-m", "32", "-t", "16",
                                                                         "-f", "20", "-r", "10", "-x", "512", "-u", "simple",
@@ -68,7 +68,7 @@ public class SimpleRunConfigTest {
     }
 
     @Test
-    public void UnknownParameterShouldExitTest() throws Exception {
+    void UnknownParameterShouldExitTest() throws Exception {
         int status = catchSystemExit(
                 () -> new SimpleRunConfig(new String[]{"-w", "who"}));
 

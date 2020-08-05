@@ -1,4 +1,4 @@
-package com.amazon.corretto.benchmark.heapothesys;
+package com.amazon.corretto.benchmark.hyperalloc;
 
 import java.io.FileWriter;
 import java.io.IOException;

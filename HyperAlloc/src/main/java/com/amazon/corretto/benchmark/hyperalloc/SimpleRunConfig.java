@@ -1,4 +1,4 @@
-package com.amazon.corretto.benchmark.heapothesys;
+package com.amazon.corretto.benchmark.hyperalloc;
 
 /**
  * Class for parsing simple run parameters.

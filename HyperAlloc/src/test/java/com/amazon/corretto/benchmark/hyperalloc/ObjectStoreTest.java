@@ -1,4 +1,4 @@
-package com.amazon.corretto.benchmark.heapothesys;
+package com.amazon.corretto.benchmark.hyperalloc;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

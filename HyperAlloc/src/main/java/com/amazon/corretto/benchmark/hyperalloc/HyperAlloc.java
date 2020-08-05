@@ -1,9 +1,9 @@
-package com.amazon.corretto.benchmark.heapothesys;
+package com.amazon.corretto.benchmark.hyperalloc;
 
-public final class Heapothesys {
+public final class HyperAlloc {
     private static final String DEFAULT_RUN_TYPE = "simple";
 
-    private Heapothesys() {}
+    private HyperAlloc() {}
 
     public static void main(String[] args) {
         switch (findRunType(args)) {

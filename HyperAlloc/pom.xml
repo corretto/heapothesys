@@ -5,17 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.amazon.corretto.benchmark</groupId>
-    <artifactId>Heapothesys</artifactId>
+    <artifactId>HyperAlloc</artifactId>
     <version>1.0</version>
 
-    <name>Heapothesys</name>
+    <name>HyperAlloc</name>
     <description>
-        Heapothesys is an allocation based JVM heap benchmark tool developed by the Amazon Corretto team.
+        HyperAlloc is an allocation based JVM heap benchmark tool developed by the Amazon Corretto team.
         It can be used to create various load to exercising heap memory allocation and Garbage Collection.
         The benchmark is a culmination of effort by the team to better characterize workload allocation rates and 
         their impact on garbage collection.
     </description>
-    <url>https://github.com/corretto/heapothesys</url>
+    <url>https://github.com/corretto/heapothesys/HyperAlloc</url>
 
     <licenses>
         <license>
@@ -26,9 +26,9 @@
     </licenses>
 
     <scm>
-        <url>https://github.com/corretto/heapothesys</url>
-        <connection>scm:git:git://github.com/corretto/heapothesys.git</connection>
-        <developerConnection>scm:git:git@github.com:corretto/heapothesys.git</developerConnection>
+        <url>https://github.com/corretto/heapothesys/HyperAlloc</url>
+        <connection>scm:git:git://github.com/corretto/heapothesys/HyperAlloc.git</connection>
+        <developerConnection>scm:git:git@github.com:corretto/heapothesys/HyperAlloc.git</developerConnection>
     </scm>
 
     <developers>
@@ -397,13 +397,13 @@
                     <archive>
                         <manifest>
                             <addClasspath>false</addClasspath>
-                            <mainClass>com.amazon.corretto.benchmark.heapothesys.Heapothesys</mainClass>
+                            <mainClass>com.amazon.corretto.benchmark.hyperalloc.HyperAlloc</mainClass>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>
                         <manifestEntries>
-                            <Premain-Class>com.amazon.corretto.benchmark.heapothesys.Heapothesys</Premain-Class>
-                            <Agent-Class>com.amazon.corretto.benchmark.heapothesys.Heapothesys</Agent-Class>
+                            <Premain-Class>com.amazon.corretto.benchmark.hyperalloc.HyperAlloc</Premain-Class>
+                            <Agent-Class>com.amazon.corretto.benchmark.hyperalloc.HyperAlloc</Agent-Class>
                         </manifestEntries>
                     </archive>
                 </configuration>

@@ -1,4 +1,4 @@
-package com.amazon.corretto.benchmark.heapothesys;
+package com.amazon.corretto.benchmark.hyperalloc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;

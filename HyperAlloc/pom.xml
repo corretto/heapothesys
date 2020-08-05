@@ -402,7 +402,7 @@
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>
                         <manifestEntries>
-                            <Premain-Class>com.amazon.corretto.benchmark.hyperalloc.HyperAlloc/Premain-Class>
+                            <Premain-Class>com.amazon.corretto.benchmark.hyperalloc.HyperAlloc</Premain-Class>
                             <Agent-Class>com.amazon.corretto.benchmark.hyperalloc.HyperAlloc</Agent-Class>
                         </manifestEntries>
                     </archive>

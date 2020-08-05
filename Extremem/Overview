@@ -1,0 +1,130 @@
+
+Extremem represents a configurable memory intensive workload for
+evaluating the strengths and weaknesses of particular garbage
+collection techniques.  While the workload helps measure raw
+throughput capabilities, it is differentiated from most other similar
+benchmarks in that it is designed to help understand the impact of
+GC implementation choices on the ability to meet particular timeliness
+constraints.  Timeliness questions are relevant when service level
+agreements (SLAs) specify, for example, that 99% of transactions must
+be completed within 15 ms of when they are requested.
+
+Specific intended uses of the workload include the following:
+
+1. Compare off-the-shelf garbage collection approach A against
+   off-the-shelf garbage collection approach B on workload X.  Which
+   approach offers higher average-case performance?  Which offers more
+   consistent compliance with target timeliness constraints?  Which
+   approach is able to comply with desired timeliness and performance
+   constraints with smaller amounts of dedicated heap memory and
+   garbage collection CPU time resources?
+
+2. Evaluate scalability and robustness of particular off-the-shelf
+   garbage collection approaches.  Given that garbage collection
+   approach A satisifes the performance and timeliness constraints of
+   workload X, what impacts will be seen if workload X increases its
+   demands by 10%, by 50%, by 100%, by 500%?
+
+3. Support the study of refinements to existing off-the-shelf garbage
+   collection approaches.  If we change the implementation, what is
+   the impact on performance and timeliness and resource consumption?
+
+The Extremem workload is intended to serve particular needs of two
+broad classes of users: service providers and JVM implementors.
+
+Service providers
+
+Use this workload to help evaluate JVM configuration choices that are
+well suited to the needs of your service:
+
+a. Run your application with instrumentation in place to gather
+   metrics (live memory usage, allocate rates, promotion rates,
+   object lifetime distributions).
+
+b. Experiment with Extremem configuration parameters to determine a
+   configuration that resembles your workload.
+
+     i.  To build up large permanent data structures, increase
+         DictionarySize, NumCustomers, NumProducts,
+         ProductNameLength, ProductDescriptionLength.
+    ii.  To force higher transient memory allocation rates, increase
+         ProductReviewLength, CustomerThreads, ProductReviewLength and
+	 decrease the CustomerPeriod and/or CustomerThinkTime.
+   iii.  To simulate higher ratios of compute vs allocate times,
+         use smaller DictionarySize, smaller ProductReviewLength,
+	 larger ProductDescriptionLength, larger KeywordSearchCount,
+         SelectionCriteriaCount.  These actions force more "thinking"
+         time to choose between larger numbers of products matching
+	 each customer search.
+    iv.  Adjust CustomerThinkTime, BrowsingExpiration, ServerPeriod,
+         ServerThreads to mimic desired transient object lifespan
+         distributions.
+     v.  To exercise churn in long-term allocations, increase
+         CustomerReplacementCount and decrease CustomerReplacementPeriod.
+         Also, increase ProductReplacementCount and decrease
+         ProductReplacementPeriod. Replacement customers and products
+         will have to bubble through nursery to older generation.
+         During this process, intergenerational pointers will be
+	 created and manipulated.
+    vi.  To exercise large numbers of intergenerational pointers
+         without churn in long-term memory, increase the value of
+         SaveForLaterThreshold.  (This causes "permanent" Customer
+         objects to maintain pointers to more transient BrowsingHistory
+         objects.)
+
+c. Having determined the Extremem configuration that approximates the
+   needs of your service, use this Extremem configuration to study
+   various questions about how different GC configuration choices will
+   impact the throughput and latency of your service.  There are
+   multiple reasons to use Extremem rather than your real-world
+   workload to perform these studies:
+
+     i.  The real-world workload typically requires interaction with
+         external clients which may be difficult to simulate.  Typical
+         client behaviors are burstry and otherwise unpredictable,
+         making it difficult to reproduce experimental results.
+         Running experiments with live clients is risky, as some
+         experiments are likely to demonstrate very poor throughput
+         and/or unacceptably long pauses.
+
+    ii.  In the ideal, you will use this experimental workload to
+         explore the "extremes" of your execution envelope, subjecting
+         it to demands that are not commonly seen in the "real world".
+         You want to know how robust your service is to less common
+         transient work overloads.  You want to know how your service
+         will scale if next year's demand is 50% higher than this
+         year's demand.  You want to know what will happen to your
+         performance and latency if you switch from JVM configuration
+         X to JVM configuration Y.  
+
+d. If you've made it this far, please take one more step and share your
+   configuration(s) with the Extremem open-source community.  This
+   will help JVM implementors know what design tradeoffs are important
+   to your particular service.  This knowledge allows this community
+   to better serve your needs in future technology releases.
+
+JVM implementors
+
+Through the use of different configuration options, the Extremem
+workload is intended to represent a broad variety of distinct
+application workload characteristics.  Use these workloads to:
+
+1. Evaluate proposed enhancements to the JVM implementation.  Typical
+   improvements in one dimension may have serious negative impact on
+   other dimensions of performance, latency, and computational
+   resources.  Broad testing of many different workload configurations
+   is required.
+
+2. Dive deeper using the Extremem workload as it is carefully designed
+   to be repeatable and to offer transparency to workload attributes
+   that are not readily visible from traditional GC logs.
+
+3. Automate execution of performance and latency regression testing.
+
+4. Work with application and service developers to capture
+   configurations of the Extremem workload which represent their
+   needs.  Use these configurations to guide design tradeoffs that
+   are attuned with real customer needs.
+   
+
+

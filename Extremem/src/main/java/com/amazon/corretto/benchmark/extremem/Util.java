@@ -7,7 +7,7 @@ import java.util.Collection;
 
 class Util {
 
-  static boolean Is64Bit = is64bit();
+  static final boolean Is64BitJVM = is64Bit();
 
   /* Every String object (even substrings) is presumed to consist of
    * the following information:
@@ -27,7 +27,7 @@ class Util {
   static final int SizeOfLong = 8;
   static final int SizeOfDouble = 8;
   // Treat compressed OOPS representation as if it requires 8 bytes.
-  static final int SizeOfReference = Is64Bit? 8: 4;
+  static final int SizeOfReference = Is64BitJVM? 8: 4;
 
   static final int InitialHashMapArraySize = 16;
 

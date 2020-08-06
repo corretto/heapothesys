@@ -21,6 +21,7 @@ CLASSFILES=\
  $(PKGDIR)/ExtrememThread.class \
  $(PKGDIR)/ExtrememUncaughtExceptionHandler.class \
  $(PKGDIR)/HighResolutionTime.class \
+ $(PKGDIR)/Is64Bit.class \
  $(PKGDIR)/LifeSpan.class \
  $(PKGDIR)/Main.class \
  $(PKGDIR)/MemoryFlavor.class \

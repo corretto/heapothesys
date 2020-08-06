@@ -1,0 +1,1 @@
+Main-Class: com.amazon.corretto.benchmark.extremem.Main

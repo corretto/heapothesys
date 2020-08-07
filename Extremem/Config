@@ -1,0 +1,27 @@
+package.Extremem = {
+    interfaces = (1.0);
+
+    # Use NoOpBuild. See https://w.amazon.com/index.php/BrazilBuildSystem/NoOpBuild
+    build-system = make;
+    build-tools = {
+        1.0 = {
+	    GnuMake = 3.81;
+            NoOpBuild = 1.0;
+        };
+    };
+
+    # Use runtime-dependencies for when you want to bring in additional
+    # packages when deploying.
+    # Use dependencies instead if you intend for these dependencies to
+    # be exported to other packages that build against you.
+    dependencies = {
+        1.0 = {
+        };
+    };
+
+    runtime-dependencies = {
+        1.0 = {
+        };
+    };
+
+};

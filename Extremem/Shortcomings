@@ -1,0 +1,84 @@
+
+Following is a list of desirable improvements to be made to the
+Extremem GC Workload.  As time and prioritization of efforts dictate,
+these improvements may be made by Amazon team members in collaboration
+with external open-source partners.  Please note that the workload as
+is provides valuable and enlightening data even with existing
+shortcomings.
+
+1. To facilitate the development and sharing of configurations between
+   service providers and JVM implementors, it would be desirable to
+   allow configurations to be provided in a file rather than specified
+   on the command line.
+
+2. Add a version and build number and report this as part of the
+   Configuration.  This is necessary when reproducing experimental
+   results reported by others.
+
+3. Memory accounting accumulations associated with activities of
+   CustomerThread and ServerThread instance behaviors appear to be
+   off.  Correct the accounting of memory allocation and garbage
+   reclamation of objects through a combination of code inspection and
+   careful review of execution traces.  (Even with known errors in the
+   detailed memory accounting breakdown, the workload is still useful
+   for comparing between alternative garbage collection implementation
+   techniques as long as the same workload configuration is used with 
+   each alternative.)
+
+4. To facilitate comparision between configurations of the Extremem GC
+   and real-world workloads, it is desirable to provide a mapping between
+   Extremem configuration parameters and quantities that are typically
+   provided in performance metrics that are reported for real-world
+   metrics.  Whereas Extremem is configured in terms of how many
+   unique vocabulary words are stored in its permanent in-memory
+   dictionary, how many of these vocabulary words are catenated
+   together to comprise a product name or description, how long a 
+   customer thinks about a purchasing decision, how long a product
+   remains in a customer's save-for-later history, the metrics that
+   represent a real-world workload are more typically represented as
+   bytes of persistent (long-term) live memory, rates of new memory
+   allocation in bytes per second, and statistical distribution of
+   typical life span for newly allocated objects.  Adding
+   documentation to clarify the mapping between these quantities, and
+   adding reporting options to confirm the behavior of particular
+   configuration choices would be very helpful.
+
+   a) A possible "research" project might be to automate the selection
+      of configuration parameters in order to mimic the behavior of
+      particular interesting services.
+
+5. A regression test suite would be of great value, especially when
+   multiple authors and maintainers begin contributing to the
+   implementation of the Extremem GC Workload.
+
+6. Automation of execution runs and review of generated reports for
+   the purpose of performance and latency regression testing would be
+   very useful.
+
+7. Automation of execution runs for the purpose of exploring
+   operational ranges under which certain garbage collection
+   approaches perform reliably and predictably would also be very
+   useful.  In other words, we would like to answer the question: With
+   garbage collection approach X and workload configuration Y, what
+   combinations of heap memory sizes and GC thread CPU time budgets
+   allow P99 bounds of 10 ms on response time jitter.
+
+8. As currently implemented, Extremem is best suited to modeling of
+   application services that are running in steady state mode
+   (allocating temporary objects at roughly the same pace as they are
+    discarding these objects).  It does not model workloads that
+   depend on finalization or weak pointer processing.  It also does
+   not currently model phase changes during which large amounts of
+   longer lived objects maybe discarded and/or allocated.  Future
+   enhancements to the Extremem workload would allow more effective
+   modeling of these sorts of workloads.
+
+9. It would probably be useful to add new "GC log" support that
+   periodically samples the values of individual thread memory and
+   garbage logs.  At any given time, report the total allocated and
+   the global difference between total allocated and total discarded
+   objects of each memory flavor and each life-span category.  This
+   information would interleave with traditional GC log information
+   in the output reports, providing insight into how effective
+   garbage collection is at reclaiming discarded data.
+

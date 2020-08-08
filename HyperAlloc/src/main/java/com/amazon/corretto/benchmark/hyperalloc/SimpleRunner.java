@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -45,6 +46,22 @@ public class SimpleRunner extends TaskBase {
                 System.exit(1);
             }
 
+	    executor.shutdown();
+	    try {
+	      // All tasks should already be idle, but we'll still
+	      // allow 60 seconds for termination.
+	      if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+		executor.shutdownNow(); // Recommended protocol is overkill
+		if (!executor.awaitTermination(60, TimeUnit.SECONDS))
+		  System.err.println("Executor pool did not terminate!\n");
+	      }
+	    } catch (InterruptedException ie) {
+	      System.err.println("Unexpected exception shutting down Executor pool\n");
+	      // Recancel just to be sure
+	      executor.shutdownNow();
+	      // Preserve interrupt status
+	      Thread.currentThread().interrupt();
+	    }
             store.stopAndReturnSize();
             printResult((config.getAllocRateInMbPerSecond() * 1024L * 1024L * config.getDurationInSecond() - sum)
                     / config.getDurationInSecond() / 1024 / 1024);

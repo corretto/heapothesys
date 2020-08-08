@@ -88,9 +88,8 @@ public class ObjectStore implements Runnable {
         }
     }
 
-    public long stopAndReturnSize() {
+    public synchronized long stopAndReturnSize() {
         running = false;
-
         return currentSize.get();
     }
 
@@ -98,9 +97,13 @@ public class ObjectStore implements Runnable {
         return store;
     }
 
+    private synchronized boolean amRunning() {
+        return running;
+    }
+
     @Override
     public void run() {
-        while (running) {
+        while (amRunning()) {
             try {
                 if (currentSize.get() < sizeLimit * (1D - 1D / IN_QUEUE_RATIO)) {
                     final AllocObject obj = queue.poll(1, TimeUnit.MICROSECONDS);

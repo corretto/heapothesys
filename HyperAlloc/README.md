@@ -125,7 +125,7 @@ The next line of this file reports on the measurements gathered during the secon
 ```
 2.788: I:825 (   3.506  17.170  43.254 ) T:1657 (   3.981  36.176 124.256 139.461 140.509 140.509 )
 ```
-During this second interval, an additional 825 data samples were collected.  In the cumulative total columns, 825 is added to 832 to obtain a cumulative total of 1657 data samples.  For this second interval of time, the P50 response time was 3.506 ms, the P90 was 17.170 ms, and the P100 was 43.254 ms.  The cumulative totals columns show the percentile measurements for the two-second span accumulated from the first two intervals.  Note that the P100 and P99.99 percentiles are the same as for the first cumulative interval since the total number of accumulations is still less than 10,000 and the maximum response times from the first interval are longer than the maximum response times measured during the second interval.  Note that the P99.9 value for the two-second span is smaller than for the initial one-second span since the total number of samples is now greater than 1,000 and the second longest measurement from the initial time interval was remembered or approximated to have had value 139.461.  The cumulative percentiles for P50, P90, and P99 are all smaller than the values reported in the previous line of cumulative output.  This is because all of the response time percentiles measured in the second time interval are lower than the values measured in the first time interval.
+During this second interval, an additional 825 data samples were collected.  In the cumulative total columns, 825 is added to 832 to obtain a cumulative total of 1657 data samples.  For this second interval of time, the P50 response time was 3.506 ms, the P90 was 17.170 ms, and the P100 was 43.254 ms.  The cumulative totals columns show the percentile measurements for the two-second span accumulated from the first two intervals.  Note that the P100 and P99.99 percentiles are the same as for the first cumulative interval since the total number of accumulations is still less than 10,000 and the maximum response times from the first interval are longer than the maximum response times measured during the second interval.  Note that the P99.9 value for the two-second span is smaller than for the initial one-second span since the total number of samples is now greater than 1,000 and the second longest measurement from the initial time interval was remembered or approximated to have had value 139.461.  The cumulative percentiles for P50, P90, and P99 are all smaller than the values reported in the previous line of cumulative output.  This is because all of the response-time percentiles measured in the second time interval are lower than the values measured in the first time interval.
 
 The last line of the readable.log file represents the last one-second interval measured during this execution run.  Note that a total of 48,679 data samples were gathered during 60.777 seconds of execution.  
 ```
@@ -140,7 +140,7 @@ The content of readable.log.hgrm file is a histogram representation of the cumul
         0.02 0.000000000000         32           1.00
         0.15 0.100000000000       4998           1.11
 ```
-This tells us that 32 data samples were measured to require less than 0.02 ms of time, with a total of 4,998 data samples requiring less than 0.15 ms of time.  The percentiles represented by these two entries are P0 and P10.0 respectively.  Subsequent entries in this histogram chart correspond to the cumulative P50, P90, P99, P99.9, and P100 values reported in the last entry of the readable.log show above:
+This tells us that 32 data samples were measured to require less than 0.02 ms of time, with a total of 4,998 data samples requiring less than 0.15 ms of time.  The percentiles represented by these two entries are P0 (actually, P0.07, but rounded down) and P10.0 respectively.  Subsequent entries in this histogram chart correspond to the cumulative P50, P90, P99, P99.9, and P100 values reported in the last entry of the readable.log show above:
 ```
 ...
         3.95 0.500000000000      24351           2.00
@@ -160,7 +160,9 @@ This tells us that 32 data samples were measured to require less than 0.02 ms of
       150.99 1.000000000000      48679
 ```
 
-Note that the command line specified also requests generation of GC log files.  The content and interpretation of these log files depends on the type of garbage collection that is being performed.
+Note that the sample command line also requests generation of GC log files.  The content and interpretation of these log files depends on the type of garbage collection that is being performed.
+
+It is important to recognize that jHiccup only measures pauses that impact the entire JVM at once.  Because of the way the jHiccup agent is attached to the HyperAlloc test workload, it is not able to measure or report pauses that might be seen by only one thread at a time.  This includes pauses caused by GC pacing and delays caused by copy-on-first-access read barriers with Shenandoah and ZGC garbage collectors.  The heapothesys/Extremem workload accounts for and reports these other effects in addition to global JVM pauses.
 
 ## Implementation
 

@@ -106,7 +106,61 @@ This command sets JHiccup as a Java agent and use it to create the hiccup log. T
 ```
 65536,16384,16384,0.5,false,16,64,32768,50,100,
 ```
-The first column is the heap size in Mb, the second is allocation rate in Kb/sec, and the third is the actual achieved allocation rate. The fourth column is the long-lived object heap occupancy fraction.
+The first column is the heap size in Mb, the second is allocation rate in Kb/sec, and the third is the actual achieved allocation rate. The fourth column is the fraction of the total heap size that holds long-lived objects.  Subsequent entries in this line denote whether the the run uses compressed OOPs, the number of threads (as specified by -t option), the minimum allocated object size (as specified by the -n option), the maximum allocated object size (as specified by the -x option), the prune ratio (as specified by the -r option), and the reshuffle ratio (as specified by the -f option).
+
+The sample command sets up hyperalloc.hlog to accumulate data from the JHiccup Java agent.  This output file is not human readable.  Use the jHiccupLogProcessor program to convert this file into a form that is more easily understood by human readers.  See the README.md file for jHiccup for additional detail.  The typical command is:
+
+```
+$ jHiccupLogProcessor -i hyperalloc.hlog -o readable.log
+```
+
+This produces two files, readable.log and readable.log.hgrm.  The first of these two files contains one line of output for approximately each 1-second interval of execution.  Consider, for example, the following two lines of this log file:
+```
+Time: IntervalPercentiles:count ( 50% 90% Max ) TotalPercentiles:count ( 50% 90% 99% 99.9% 99.99% Max )
+1.783: I:832 (   4.653  62.128 140.509 ) T:832 (   4.653  62.128 132.121 140.509 140.509 140.509 )
+```
+During the reporting interval starting at time 1.783 seconds (from start up), 832 samples were collected.  Of these 832 samples, the P50 response time was 4.653 ms, the P90 response time was 62.128 ms, and the P100 (labeled Max) response time was 140.509 ms.  For this initial entry, the balues reported in the cumulative TotalPrecentiles columns are identical to the values in the IntervalPercentiles columns.  Besides reporting the same values for the P50, P90, and P100 entires, the cumulative columns also report a P99 value of 132.121 ms, a P99.9 value of 140.509 ms, and a P99.99 value of 140.509.  Since the total number of data samples is less than 1,000, the P99.9 value equals the P99.99 value which equals the P100 value.
+
+The next line of this file reports on the measurements gathered during the second reporting interval, starting at 2.788 seconds (from startup).
+```
+2.788: I:825 (   3.506  17.170  43.254 ) T:1657 (   3.981  36.176 124.256 139.461 140.509 140.509 )
+```
+During this second interval, an additional 825 data samples were collected.  In the cumulative total columns, 825 is added to 832 to obtain a cumulative total of 1657 data samples.  For this second interval of time, the P50 response time was 3.506 ms, the P90 was 17.170 ms, and the P100 was 43.254 ms.  The cumulative totals columns show the percentile measurements for the two-second span accumulated from the first two intervals.  Note that the P100 and P99.99 percentiles are the same as for the first cumulative interval since the total number of accumulations is still less than 10,000 and the maximum response times from the first interval are longer than the maximum response times measured during the second interval.  Note that the P99.9 value for the two-second span is smaller than for the initial one-second span since the total number of samples is now greater than 1,000 and the second longest measurement from the initial time interval was remembered or approximated to have had value 139.461.  The cumulative percentiles for P50, P90, and P99 are all smaller than the values reported in the previous line of cumulative output.  This is because all of the response time percentiles measured in the second time interval are lower than the values measured in the first time interval.
+
+The last line of the readable.log file represents the last one-second interval measured during this execution run.  Note that a total of 48,679 data samples were gathered during 60.777 seconds of execution.  
+```
+60.777: I:801 (   3.457  14.418  36.700 ) T:48679 (   3.949  35.127 106.430 135.266 146.801 150.995 )
+```
+The content of readable.log.hgrm file is a histogram representation of the cumulative percentiles for the complete execution.  The first few lines of this file might be the following:
+```
+#[Overall percentile distribution between 0.000 and <Infinite> seconds (relative to StartTime)]
+#[StartTime: 1596849642.829 (seconds since epoch), Sat Aug 08 01:20:42 UTC 2020]
+       Value     Percentile TotalCount 1/(1-Percentile)
+
+        0.02 0.000000000000         32           1.00
+        0.15 0.100000000000       4998           1.11
+```
+This tells us that 32 data samples were measured to require less than 0.02 ms of time, with a total of 4,998 data samples requiring less than 0.15 ms of time.  The percentiles represented by these two entries are P0 and P10.0 respectively.  Subsequent entries in this histogram chart correspond to the cumulative P50, P90, P99, P99.9, and P100 values reported in the last entry of the readable.log show above:
+```
+...
+        3.95 0.500000000000      24351           2.00
+...
+       35.13 0.900000000000      43834          10.00
+...
+      104.86 0.989062500000      48156          91.43
+      108.00 0.990625000000      48235         106.67
+...
+      134.22 0.998828125000      48625         853.33
+      135.27 0.999023437500      48633        1024.00
+...
+      145.75 0.999890136719      48674        9102.22
+      146.80 0.999902343750      48675       10240.00
+...
+      150.99 0.999981689453      48679       54613.33
+      150.99 1.000000000000      48679
+```
+
+Note that the command line specified also requests generation of GC log files.  The content and interpretation of these log files depends on the type of garbage collection that is being performed.
 
 ## Implementation
 

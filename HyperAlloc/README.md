@@ -114,12 +114,12 @@ The sample command sets up hyperalloc.hlog to accumulate data from the JHiccup J
 $ jHiccupLogProcessor -i hyperalloc.hlog -o readable.log
 ```
 
-This produces two files, readable.log and readable.log.hgrm.  The first of these two files contains one line of output for approximately each 1-second interval of execution.  Consider, for example, the following two lines of this log file:
+This produces two files, readable.log and readable.log.hgrm.  These files report on the times required by jHiccup to do nothing more than measure the time required to do essentially nothing.  In the ideal, there would be no variance in these time measurements.  However, there is variance due to pauses imposed on the execution of Java threads by various contending components, including the hypervisor, the operating system, garbage collection, JIT compilation and deoptimization, class unloading, and so forth.  The first of these two files contains one line of output for approximately each 1-second interval of execution.  Consider, for example, the following two lines of the log file:
 ```
 Time: IntervalPercentiles:count ( 50% 90% Max ) TotalPercentiles:count ( 50% 90% 99% 99.9% 99.99% Max )
 1.783: I:832 (   4.653  62.128 140.509 ) T:832 (   4.653  62.128 132.121 140.509 140.509 140.509 )
 ```
-During the reporting interval starting at time 1.783 seconds (from start up), 832 samples were collected.  Of these 832 samples, the P50 response time was 4.653 ms, the P90 response time was 62.128 ms, and the P100 (labeled Max) response time was 140.509 ms.  For this initial entry, the balues reported in the cumulative TotalPrecentiles columns are identical to the values in the IntervalPercentiles columns.  Besides reporting the same values for the P50, P90, and P100 entires, the cumulative columns also report a P99 value of 132.121 ms, a P99.9 value of 140.509 ms, and a P99.99 value of 140.509.  Since the total number of data samples is less than 1,000, the P99.9 value equals the P99.99 value which equals the P100 value.
+During the reporting interval starting at time 1.783 seconds (from start up), 832 samples were collected.  Of these 832 samples, the P50 response time was 4.653 ms, the P90 response time was 62.128 ms, and the P100 (labeled Max) response time was 140.509 ms.  For this initial entry, the values reported in the cumulative TotalPrecentiles columns are identical to the values in the IntervalPercentiles columns.  Besides reporting the same values for the P50, P90, and P100 entires, the cumulative columns also report a P99 value of 132.121 ms, a P99.9 value of 140.509 ms, and a P99.99 value of 140.509.  Since the total number of data samples is less than 1,000, the P99.9 value equals the P99.99 value which equals the P100 value.
 
 The next line of this file reports on the measurements gathered during the second reporting interval, starting at 2.788 seconds (from startup).
 ```

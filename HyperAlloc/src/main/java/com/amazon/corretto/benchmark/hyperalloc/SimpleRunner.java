@@ -2,6 +2,7 @@ package com.amazon.corretto.benchmark.hyperalloc;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -9,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -16,6 +18,8 @@ import java.util.stream.IntStream;
  * Simple runner class to evenly divide the load and sent to multiple runners.
  */
 public class SimpleRunner extends TaskBase {
+
+    private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(0);
 
     private final SimpleRunConfig config;
 
@@ -30,15 +34,29 @@ public class SimpleRunner extends TaskBase {
                     : AllocObject.ObjectOverhead.NonCompressedOops);
             final ObjectStore store = new ObjectStore(config.getLongLivedInMb(), config.getPruneRatio(),
                     config.getReshuffleRatio());
-            new Thread(store).start();
-            final ExecutorService executor = Executors.newFixedThreadPool(config.getNumOfThreads());
+            final Thread storeThread = new Thread(store);
+            storeThread.setDaemon(true);
+            storeThread.setName("HyperAlloc-Store");
+            storeThread.start();
+
+            AllocationRateLogger allocationLogger = new AllocationRateLogger();
+            final Thread allocationLoggerThread = new Thread(allocationLogger);
+            allocationLoggerThread.setName("HyperAlloc-Allocations");
+            allocationLoggerThread.setDaemon(true);
+            allocationLoggerThread.start();
+
+            final ExecutorService executor = Executors.newFixedThreadPool(config.getNumOfThreads(), runnable -> {
+                Thread thread = new Thread(runnable);
+                thread.setDaemon(true);
+                thread.setName("HyperAlloc-" + THREAD_COUNTER.incrementAndGet());
+                return thread;
+            });
+
             final List<Future<Long>> results = executor.invokeAll(createTasks(store));
 
-            long sum = 0;
             try {
                 for (Future<Long> r : results) {
-                    final long t = r.get();
-                    sum += t;
+                    r.get();
                 }
             } catch (ExecutionException ex) {
                 ex.printStackTrace();
@@ -46,6 +64,8 @@ public class SimpleRunner extends TaskBase {
                 System.exit(1);
             }
 
+            allocationLogger.shouldRun = false;
+            allocationLoggerThread.join();
             executor.shutdown();
             try {
                 // All tasks should already be idle, but we'll still
@@ -63,8 +83,7 @@ public class SimpleRunner extends TaskBase {
                 Thread.currentThread().interrupt();
             }
             store.stopAndReturnSize();
-            printResult((config.getAllocRateInMbPerSecond() * 1024L * 1024L * config.getDurationInSecond() - sum)
-                    / config.getDurationInSecond() / 1024 / 1024);
+            printResult(AllocObject.getBytesAllocated() / 1024 / 1024 / config.getDurationInSecond());
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);
@@ -97,5 +116,46 @@ public class SimpleRunner extends TaskBase {
                         config.getDurationInSecond() * 1000, config.getMinObjectSize(),
                         config.getMaxObjectSize(), queueSize))
                 .collect(Collectors.toList());
+    }
+
+    private class AllocationRateLogger implements Runnable {
+
+        volatile boolean shouldRun = true;
+
+        @Override
+        public void run() {
+            final long MB = 1024 * 1024;
+            final long NANOS = TimeUnit.SECONDS.toNanos(1);
+
+            long lastValue = AllocObject.getBytesAllocated();
+            long lastTime = System.nanoTime();
+            long startTime = lastTime;
+
+            try (PrintWriter writer = new PrintWriter(config.getLogFile() + ".allocation")) {
+                while (shouldRun) {
+                    long now = System.nanoTime();
+                    long timeDeltaNs = now - lastTime;
+                    long bytesAllocated = AllocObject.getBytesAllocated();
+
+                    if (timeDeltaNs > 0) {
+
+                        double allocationDelta = bytesAllocated - lastValue;
+                        double megaBytesPerSecond = (allocationDelta * NANOS / timeDeltaNs) / MB;
+
+                        double elapsedSecondsSinceBoot = (double) (now - startTime) / NANOS;
+                        writer.printf("%.2f, %.2f\n", elapsedSecondsSinceBoot, megaBytesPerSecond);
+                        writer.flush();
+
+                        lastTime = now;
+                        lastValue = bytesAllocated;
+                    }
+
+                    //noinspection BusyWait
+                    Thread.sleep(100);
+                }
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

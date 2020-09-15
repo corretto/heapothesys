@@ -105,14 +105,36 @@ static Callable<Long> createSingle2(final ObjectStore store, final long rateInMb
             final TokenBucket2 throughput = new TokenBucket2(rate, TimeUnit.SECONDS);
             int longLivedRate = MAX_LONG_LIVED_RATIO;
             int longLivedCounter = longLivedRate;
-            long totalBytesAllocated = 0;
+
+            // This arguably belongs inside the rate limiter. This code is meant
+            // to smooth out the extremely spikey allocation patterns. Even with
+            // the rate limiter and the maximum 'burst' size this code will burn
+            // through its tokens very quickly and then recover them slowly. What
+            // we do here is compute how long the allocation operation _should_
+            // take to achieve a smooth, constant rate. Every time we complete an
+            // allocation we compute the difference between this target operation
+            // time and the actual operation time. We then add this difference to
+            // a 'sleep debt'. Once the debt is over a millisecond (the resolution
+            // of our sleep timer), we sleep away the time to track closer to the
+            // target.
+            double expectedAverageSize = (maxObjectSize - minObjectSize) / 2.0;
+            double allocationTargetTimeForRate = (expectedAverageSize / rate) * TimeUnit.SECONDS.toNanos(1);
+            long sleepDebtNs = 0;
+            long nanosPerMilli = TimeUnit.MILLISECONDS.toNanos(1);
 
             while (System.nanoTime() < end) {
                 long size = AllocObject.getRandomSize(minObjectSize, maxObjectSize);
                 long allowed = throughput.take(size);
                 if (allowed >= minObjectSize) {
+                    long start = System.nanoTime();
                     final AllocObject obj = AllocObject.create((int)allowed);
-                    totalBytesAllocated += allowed;
+                    long elapsed = start - System.nanoTime();
+                    sleepDebtNs += (allocationTargetTimeForRate - elapsed);
+
+                    if (sleepDebtNs > nanosPerMilli) {
+                        sleepDebtNs = 0;
+                        Thread.sleep(1);
+                    }
 
                     survivorQueue.push(obj);
 
@@ -133,8 +155,7 @@ static Callable<Long> createSingle2(final ObjectStore store, final long rateInMb
                     }
                 }
             }
-
-            return totalBytesAllocated;
+            return 0L;
         };
     }
 }

@@ -14,7 +14,7 @@ class TaskBaseTest {
 
     @Test
     void ExerciseLongLivedTest() throws Exception {
-        assertThat(TaskBase.createSingle(new ObjectStore(10), 10, 5000, 8192, 65535, 100).call(),
+        assertThat(TaskBase.createSingle(new ObjectStore(10), 10, 0.0, 5000, 8192, 65535, 100).call(),
                 lessThanOrEqualTo(0L));
     }
 }

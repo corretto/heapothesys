@@ -43,4 +43,19 @@ public class TokenBucket2Test {
         assertThat(bucket.take(1000), is(0L));    // 1ns.
         assertThat(bucket.take(1000), is(1000L)); // 100ns.
     }
+
+    @Test
+    public void actualRateLimiting() {
+        long rate = 512 * 1024 * 1024;
+        long max = 1024 * 1024 * 1024;
+        System.out.println((double)rate / TimeUnit.SECONDS.toNanos(1));
+        TokenBucket2 bucket = new TokenBucket2(rate, rate / 1000, TimeUnit.MILLISECONDS, System::nanoTime);
+        long start = System.nanoTime();
+        long end = start + TimeUnit.SECONDS.toNanos(30);
+        long taken = 0;
+        while (System.nanoTime() < end) {
+            taken += bucket.take(max);
+        }
+        System.out.println("Rate: " + (taken / 1024 / 1024 / 30) + " tokens/sec");
+    }
 }

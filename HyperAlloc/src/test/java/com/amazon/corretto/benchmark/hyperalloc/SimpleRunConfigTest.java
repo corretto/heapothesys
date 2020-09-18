@@ -28,7 +28,7 @@ class SimpleRunConfigTest {
 
     @Test
     void ConstructorTest() {
-        final SimpleRunConfig config = new SimpleRunConfig(16384L, 32768, 256,
+        final SimpleRunConfig config = new SimpleRunConfig(16384L, 0.0, 32768, 256,
                 32, 3000, 16, 256, 512,
                 10, 20, false, "nosuch.csv", null);
 

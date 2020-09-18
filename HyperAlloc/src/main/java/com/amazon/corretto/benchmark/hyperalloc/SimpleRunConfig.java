@@ -5,6 +5,7 @@ package com.amazon.corretto.benchmark.hyperalloc;
  */
 public class SimpleRunConfig {
     private long allocRateInMbPerSecond = 1024L;
+    private double allocSmoothnessFactor = 0.0;
     private int durationInSecond = 60;
     private int longLivedInMb = 64;
     private int midAgedInMb = 64;
@@ -46,6 +47,8 @@ public class SimpleRunConfig {
                 reshuffleRatio = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-c")) {
                 useCompressedOops = Boolean.parseBoolean(args[++i]);
+            } else if (args[i].equals("-z")) {
+                allocSmoothnessFactor = Double.parseDouble(args[++i]);
             } else if (args[i].equals("-l")) {
                 logFile = args[++i];
             } else if (args[i].equals("-b") || args[i].equals("--allocation-log")) {
@@ -79,12 +82,14 @@ public class SimpleRunConfig {
      * @param logFile The name of the output .csv file.
      * @param allocationLogFile The name of the allocation log file.
      */
-    public SimpleRunConfig(final long allocRateInMbPerSecond, final int heapSizeInMb, final int longLivedInMb,
+    public SimpleRunConfig(final long allocRateInMbPerSecond, final double allocSmoothnessFactor,
+                           final int heapSizeInMb, final int longLivedInMb,
                            final int midAgedInMb, final int durationInSecond, final int numOfThreads,
                            final int minObjectSize, final int maxObjectSize, final int pruneRatio,
                            final int reshuffleRatio, final boolean useCompressedOops, final String logFile,
                            final String allocationLogFile) {
         this.allocRateInMbPerSecond = allocRateInMbPerSecond;
+        this.allocSmoothnessFactor = allocSmoothnessFactor;
         this.heapSizeInMb = heapSizeInMb;
         this.longLivedInMb = longLivedInMb;
         this.midAgedInMb = midAgedInMb;
@@ -145,6 +150,10 @@ public class SimpleRunConfig {
 
     public String getLogFile() {
         return logFile;
+    }
+
+    public double getAllocationSmoothnessFactor() {
+        return allocSmoothnessFactor;
     }
 
     public String  getAllocationLogFile() {

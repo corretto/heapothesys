@@ -9,6 +9,8 @@ public abstract class TaskBase {
     protected static final int DEFAULT_MAX_OBJECT_SIZE = 1024;
     // The default minimum object size.
     protected static final int DEFAULT_MIN_OBJECT_SIZE = 64;
+    // The default allocation spike factor.
+    protected static final double DEFAULT_ALLOC_SMOOTHNESS_FACTOR = 0.0;
     // The default length of object queue.
     // All created objects would be put into the queue before being popped out later.
     protected static final int DEFAULT_SURVIVOR_QUEUE_LENGTH = 512 * 1024;
@@ -32,10 +34,10 @@ public abstract class TaskBase {
      * @param store Long-lived object store.
      * @param rateInMb Allocation rate in Mb.
      * @param durationInMs The duration of run in millisecond.
-     * @return
+     * @return A runnable that allocates objects and drives retention.
      */
     static Callable<Long> createSingle(final ObjectStore store, final long rateInMb, final long durationInMs) {
-        return createSingle(store, rateInMb, durationInMs,
+        return createSingle(store, rateInMb, DEFAULT_ALLOC_SMOOTHNESS_FACTOR, durationInMs,
                 DEFAULT_MIN_OBJECT_SIZE, DEFAULT_MAX_OBJECT_SIZE, DEFAULT_SURVIVOR_QUEUE_LENGTH);
     }
 
@@ -43,14 +45,15 @@ public abstract class TaskBase {
      * Create a single task runner to generate allocation.
      * @param store Long-lived object store.
      * @param rateInMb Allocation rate in Mb.
+     * @param allocSmoothnessFactor Higher numbers reduce allocation spikes.
      * @param durationInMs The duration of run in millisecond.
      * @param minObjectSize The minimum object size.
      * @param maxObjectSize The maximum object size.
      * @param queueLength The queue length of mid-aged objects.
      * @return The unused allocation allowance during the run.
      */
-    static Callable<Long> createSingle(final ObjectStore store, final long rateInMb, final long durationInMs,
-                                       final int minObjectSize, final int maxObjectSize, final int queueLength) {
+    static Callable<Long> createSingle(final ObjectStore store, final long rateInMb, final double allocSmoothnessFactor,
+                                       final long durationInMs, final int minObjectSize, final int maxObjectSize, final int queueLength) {
         return () -> {
             final long rate = rateInMb * 1024 * 1024;
             final ArrayDeque<AllocObject> survivorQueue = new ArrayDeque<>();
@@ -116,9 +119,11 @@ static Callable<Long> createSingle2(final ObjectStore store, final long rateInMb
             // time and the actual operation time. We then add this difference to
             // a 'sleep debt'. Once the debt is over a millisecond (the resolution
             // of our sleep timer), we sleep away the time to track closer to the
-            // target.
+            // target. The alloc smoothness factor controls how fast the sleep
+            // debt accumulates, 0 = no sleep debt, most spikey alloc rate.
+            // 1 = normal sleep debt rate, least spikey alloc rate.
             double expectedAverageSize = (maxObjectSize - minObjectSize) / 2.0;
-            double allocationTargetTimeForRate = (expectedAverageSize / rate) * TimeUnit.SECONDS.toNanos(1);
+            double allocationTargetTimeForRate = ((expectedAverageSize / rate) * TimeUnit.SECONDS.toNanos(1)) * allocSmoothnessFactor;
             long sleepDebtNs = 0;
             long nanosPerMilli = TimeUnit.MILLISECONDS.toNanos(1);
 
@@ -133,7 +138,12 @@ static Callable<Long> createSingle2(final ObjectStore store, final long rateInMb
 
                     if (sleepDebtNs > nanosPerMilli) {
                         sleepDebtNs = 0;
-                        Thread.sleep(1);
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException e) {
+                            Thread.interrupted();
+                            return 0L;
+                        }
                     }
 
                     survivorQueue.push(obj);

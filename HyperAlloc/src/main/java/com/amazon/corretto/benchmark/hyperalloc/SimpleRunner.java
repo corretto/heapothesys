@@ -46,22 +46,22 @@ public class SimpleRunner extends TaskBase {
                 System.exit(1);
             }
 
-	    executor.shutdown();
-	    try {
-	      // All tasks should already be idle, but we'll still
-	      // allow 60 seconds for termination.
-	      if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-		executor.shutdownNow(); // Recommended protocol is overkill
-		if (!executor.awaitTermination(60, TimeUnit.SECONDS))
-		  System.err.println("Executor pool did not terminate!\n");
-	      }
-	    } catch (InterruptedException ie) {
-	      System.err.println("Unexpected exception shutting down Executor pool\n");
-	      // Recancel just to be sure
-	      executor.shutdownNow();
-	      // Preserve interrupt status
-	      Thread.currentThread().interrupt();
-	    }
+            executor.shutdown();
+            try {
+                // All tasks should already be idle, but we'll still
+                // allow 60 seconds for termination.
+                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    executor.shutdownNow(); // Recommended protocol is overkill
+                    if (!executor.awaitTermination(60, TimeUnit.SECONDS))
+                        System.err.println("Executor pool did not terminate!\n");
+                }
+            } catch (InterruptedException ie) {
+                System.err.println("Unexpected exception shutting down Executor pool\n");
+                // Recancel just to be sure
+                executor.shutdownNow();
+                // Preserve interrupt status
+                Thread.currentThread().interrupt();
+            }
             store.stopAndReturnSize();
             printResult((config.getAllocRateInMbPerSecond() * 1024L * 1024L * config.getDurationInSecond() - sum)
                     / config.getDurationInSecond() / 1024 / 1024);
@@ -88,7 +88,7 @@ public class SimpleRunner extends TaskBase {
     }
 
     private List<Callable<Long>> createTasks(final ObjectStore store) {
-        final int queueSize = (int)(config.getMidAgedInMb() * 1024L * 1024L * 2L
+        final int queueSize = (int) (config.getMidAgedInMb() * 1024L * 1024L * 2L
                 / (config.getMaxObjectSize() + config.getMinObjectSize())
                 / config.getNumOfThreads());
 

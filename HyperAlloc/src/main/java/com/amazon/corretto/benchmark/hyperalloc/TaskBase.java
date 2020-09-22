@@ -37,7 +37,7 @@ public abstract class TaskBase {
      * @return A runnable that allocates objects and drives retention.
      */
     static Callable<Long> createSingle(final ObjectStore store, final long rateInMb, final long durationInMs) {
-        return createSingle(store, rateInMb, DEFAULT_ALLOC_SMOOTHNESS_FACTOR, durationInMs,
+        return createSingle(store, rateInMb, durationInMs,
                 DEFAULT_MIN_OBJECT_SIZE, DEFAULT_MAX_OBJECT_SIZE, DEFAULT_SURVIVOR_QUEUE_LENGTH);
     }
 
@@ -45,14 +45,13 @@ public abstract class TaskBase {
      * Create a single task runner to generate allocation.
      * @param store Long-lived object store.
      * @param rateInMb Allocation rate in Mb.
-     * @param allocSmoothnessFactor Higher numbers reduce allocation spikes.
      * @param durationInMs The duration of run in millisecond.
      * @param minObjectSize The minimum object size.
      * @param maxObjectSize The maximum object size.
      * @param queueLength The queue length of mid-aged objects.
      * @return The unused allocation allowance during the run.
      */
-    static Callable<Long> createSingle(final ObjectStore store, final long rateInMb, final double allocSmoothnessFactor,
+    static Callable<Long> createSingle(final ObjectStore store, final long rateInMb,
                                        final long durationInMs, final int minObjectSize, final int maxObjectSize, final int queueLength) {
         return () -> {
             final long rate = rateInMb * 1024 * 1024;
@@ -99,6 +98,7 @@ public abstract class TaskBase {
     }
 
 static Callable<Long> createSingle2(final ObjectStore store, final long rateInMb, final long durationInMs,
+                                    final double allocSmoothnessFactor,
                                        final int minObjectSize, final int maxObjectSize, final int queueLength) {
         return () -> {
             final long rate = rateInMb * 1024 * 1024;
@@ -110,7 +110,7 @@ static Callable<Long> createSingle2(final ObjectStore store, final long rateInMb
             int longLivedCounter = longLivedRate;
 
             // This arguably belongs inside the rate limiter. This code is meant
-            // to smooth out the extremely spikey allocation patterns. Even with
+            // to smooth out the extremely spiky allocation patterns. Even with
             // the rate limiter and the maximum 'burst' size this code will burn
             // through its tokens very quickly and then recover them slowly. What
             // we do here is compute how long the allocation operation _should_
@@ -120,8 +120,8 @@ static Callable<Long> createSingle2(final ObjectStore store, final long rateInMb
             // a 'sleep debt'. Once the debt is over a millisecond (the resolution
             // of our sleep timer), we sleep away the time to track closer to the
             // target. The alloc smoothness factor controls how fast the sleep
-            // debt accumulates, 0 = no sleep debt, most spikey alloc rate.
-            // 1 = normal sleep debt rate, least spikey alloc rate.
+            // debt accumulates, 0 = no sleep debt, most spiky alloc rate.
+            // 1 = normal sleep debt rate, least spiky alloc rate.
             double expectedAverageSize = (maxObjectSize - minObjectSize) / 2.0;
             double allocationTargetTimeForRate = ((expectedAverageSize / rate) * TimeUnit.SECONDS.toNanos(1)) * allocSmoothnessFactor;
             long sleepDebtNs = 0;

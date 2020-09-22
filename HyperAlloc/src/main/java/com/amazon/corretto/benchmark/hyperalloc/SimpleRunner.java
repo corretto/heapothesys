@@ -115,7 +115,7 @@ public class SimpleRunner extends TaskBase {
                 .collect(Collectors.toList());
     }
 
-    private class AllocationRateLogger implements Runnable {
+    private static class AllocationRateLogger implements Runnable {
 
         volatile boolean shouldRun = true;
         private final Thread allocationLoggerThread;
@@ -155,7 +155,7 @@ public class SimpleRunner extends TaskBase {
             long lastTime = System.nanoTime();
             long startTime = lastTime;
 
-            try (PrintWriter writer = new PrintWriter(config.getAllocationLogFile())) {
+            try (PrintWriter writer = new PrintWriter(allocationLogFile)) {
                 while (shouldRun) {
                     long now = System.nanoTime();
                     long timeDeltaNs = now - lastTime;
@@ -177,8 +177,11 @@ public class SimpleRunner extends TaskBase {
                     //noinspection BusyWait
                     Thread.sleep(100);
                 }
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+            } catch (IOException ioe) {
+                System.err.println("Cannot write to allocation log: " + allocationLogFile);
+                ioe.printStackTrace(System.err);
+            } catch (InterruptedException iee) {
+                Thread.currentThread().interrupt();
             }
         }
     }

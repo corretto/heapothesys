@@ -39,11 +39,8 @@ public class SimpleRunner extends TaskBase {
             storeThread.setName("HyperAlloc-Store");
             storeThread.start();
 
-            AllocationRateLogger allocationLogger = new AllocationRateLogger();
-            final Thread allocationLoggerThread = new Thread(allocationLogger);
-            allocationLoggerThread.setName("HyperAlloc-Allocations");
-            allocationLoggerThread.setDaemon(true);
-            allocationLoggerThread.start();
+            AllocationRateLogger allocationLogger = new AllocationRateLogger(config.getAllocationLogFile());
+            allocationLogger.start();
 
             final ExecutorService executor = Executors.newFixedThreadPool(config.getNumOfThreads(), runnable -> {
                 Thread thread = new Thread(runnable);
@@ -64,8 +61,8 @@ public class SimpleRunner extends TaskBase {
                 System.exit(1);
             }
 
-            allocationLogger.shouldRun = false;
-            allocationLoggerThread.join();
+            allocationLogger.stop();
+
             executor.shutdown();
             try {
                 // All tasks should already be idle, but we'll still
@@ -121,6 +118,33 @@ public class SimpleRunner extends TaskBase {
     private class AllocationRateLogger implements Runnable {
 
         volatile boolean shouldRun = true;
+        private final Thread allocationLoggerThread;
+        private final String allocationLogFile;
+
+        public AllocationRateLogger(String allocationLogFile) {
+            this.allocationLogFile = allocationLogFile;
+            allocationLoggerThread = new Thread(this);
+            allocationLoggerThread.setName("HyperAlloc-Allocations");
+            allocationLoggerThread.setDaemon(true);
+
+        }
+
+        public void start() {
+            if (allocationLogFile != null) {
+                allocationLoggerThread.start();
+            }
+        }
+
+        public void stop() {
+            if (allocationLogFile != null) {
+                try {
+                    shouldRun = false;
+                    allocationLoggerThread.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
 
         @Override
         public void run() {
@@ -131,7 +155,7 @@ public class SimpleRunner extends TaskBase {
             long lastTime = System.nanoTime();
             long startTime = lastTime;
 
-            try (PrintWriter writer = new PrintWriter(config.getLogFile() + ".allocation")) {
+            try (PrintWriter writer = new PrintWriter(config.getAllocationLogFile())) {
                 while (shouldRun) {
                     long now = System.nanoTime();
                     long timeDeltaNs = now - lastTime;

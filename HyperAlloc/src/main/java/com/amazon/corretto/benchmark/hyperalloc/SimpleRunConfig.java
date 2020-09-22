@@ -16,6 +16,7 @@ public class SimpleRunConfig {
     private int reshuffleRatio = ObjectStore.DEFAULT_RESHUFFLE_RATIO;
     private int heapSizeInMb = 1024;
     private String logFile = "output.csv";
+    private String allocationLogFile = null;
 
     /**
      * Parse input arguments from a string array.
@@ -47,6 +48,8 @@ public class SimpleRunConfig {
                 useCompressedOops = Boolean.parseBoolean(args[++i]);
             } else if (args[i].equals("-l")) {
                 logFile = args[++i];
+            } else if (args[i].equals("-b") || args[i].equals("--allocation-log")) {
+                allocationLogFile = args[++i];
             } else if (args[i].equals("-u")) {
                 i++;
             } else {
@@ -54,7 +57,7 @@ public class SimpleRunConfig {
                         "[-u run type] [-a allocRateInMb] [-h heapSizeInMb] [-s longLivedObjectsInMb] " +
                         "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
                         "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-c useCompressedOops] " +
-                        "[-l outputFile]");
+                        "[-l outputFile] [-b|-allocation-log logFile");
                 System.exit(1);
             }
         }
@@ -74,11 +77,13 @@ public class SimpleRunConfig {
      * @param reshuffleRatio The reshuffle ratio.
      * @param useCompressedOops Whether compressedOops is enabled.
      * @param logFile The name of the output .csv file.
+     * @param allocationLogFile The name of the allocation log file.
      */
     public SimpleRunConfig(final long allocRateInMbPerSecond, final int heapSizeInMb, final int longLivedInMb,
                            final int midAgedInMb, final int durationInSecond, final int numOfThreads,
                            final int minObjectSize, final int maxObjectSize, final int pruneRatio,
-                           final int reshuffleRatio, final boolean useCompressedOops, final String logFile) {
+                           final int reshuffleRatio, final boolean useCompressedOops, final String logFile,
+                           final String allocationLogFile) {
         this.allocRateInMbPerSecond = allocRateInMbPerSecond;
         this.heapSizeInMb = heapSizeInMb;
         this.longLivedInMb = longLivedInMb;
@@ -91,6 +96,7 @@ public class SimpleRunConfig {
         this.reshuffleRatio = reshuffleRatio;
         this.useCompressedOops = useCompressedOops;
         this.logFile = logFile;
+        this.allocationLogFile = allocationLogFile;
     }
 
     public long getAllocRateInMbPerSecond() {
@@ -139,6 +145,10 @@ public class SimpleRunConfig {
 
     public String getLogFile() {
         return logFile;
+    }
+
+    public String  getAllocationLogFile() {
+        return allocationLogFile;
     }
 }
 

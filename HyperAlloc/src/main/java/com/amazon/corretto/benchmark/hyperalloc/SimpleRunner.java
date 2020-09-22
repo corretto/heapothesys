@@ -4,13 +4,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -108,14 +104,26 @@ public class SimpleRunner extends TaskBase {
                 / (config.getMaxObjectSize() + config.getMinObjectSize())
                 / config.getNumOfThreads());
 
+        long allocRateMbPerThread = config.getAllocRateInMbPerSecond() / config.getNumOfThreads();
+        int durationInMs = config.getDurationInSecond() * 1000;
+        IntFunction<Callable<Long>> factory;
+        if (config.getAllocationSmoothnessFactor() == null) {
+            factory = (ignored) -> createSingle(store, allocRateMbPerThread,
+                    durationInMs, config.getMinObjectSize(),
+                    config.getMaxObjectSize(), queueSize);
+        } else {
+            factory = (ignored) -> createBurstyAllocator(store, allocRateMbPerThread,
+                    durationInMs, config.getAllocationSmoothnessFactor(),
+                    config.getMinObjectSize(), config.getMaxObjectSize(),
+                    queueSize);
+        }
+
         return IntStream.range(0, config.getNumOfThreads())
-                .mapToObj(i -> createSingle(store, config.getAllocRateInMbPerSecond() / config.getNumOfThreads(),
-                        config.getDurationInSecond() * 1000, config.getMinObjectSize(),
-                        config.getMaxObjectSize(), queueSize))
+                .mapToObj(factory)
                 .collect(Collectors.toList());
     }
 
-    private class AllocationRateLogger implements Runnable {
+    private static class AllocationRateLogger implements Runnable {
 
         volatile boolean shouldRun = true;
         private final Thread allocationLoggerThread;
@@ -155,7 +163,7 @@ public class SimpleRunner extends TaskBase {
             long lastTime = System.nanoTime();
             long startTime = lastTime;
 
-            try (PrintWriter writer = new PrintWriter(config.getAllocationLogFile())) {
+            try (PrintWriter writer = new PrintWriter(allocationLogFile)) {
                 while (shouldRun) {
                     long now = System.nanoTime();
                     long timeDeltaNs = now - lastTime;

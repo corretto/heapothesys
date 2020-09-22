@@ -5,7 +5,6 @@ package com.amazon.corretto.benchmark.hyperalloc;
  */
 public class SimpleRunConfig {
     private long allocRateInMbPerSecond = 1024L;
-    private double allocSmoothnessFactor = 0.0;
     private int durationInSecond = 60;
     private int longLivedInMb = 64;
     private int midAgedInMb = 64;
@@ -18,6 +17,7 @@ public class SimpleRunConfig {
     private int heapSizeInMb = 1024;
     private String logFile = "output.csv";
     private String allocationLogFile = null;
+    private Double allocationSmoothnessFactor = null;
 
     /**
      * Parse input arguments from a string array.
@@ -48,7 +48,7 @@ public class SimpleRunConfig {
             } else if (args[i].equals("-c")) {
                 useCompressedOops = Boolean.parseBoolean(args[++i]);
             } else if (args[i].equals("-z")) {
-                allocSmoothnessFactor = Double.parseDouble(args[++i]);
+                allocationSmoothnessFactor = Double.parseDouble(args[++i]);
             } else if (args[i].equals("-l")) {
                 logFile = args[++i];
             } else if (args[i].equals("-b") || args[i].equals("--allocation-log")) {
@@ -89,7 +89,7 @@ public class SimpleRunConfig {
                            final int reshuffleRatio, final boolean useCompressedOops, final String logFile,
                            final String allocationLogFile) {
         this.allocRateInMbPerSecond = allocRateInMbPerSecond;
-        this.allocSmoothnessFactor = allocSmoothnessFactor;
+        this.allocationSmoothnessFactor = allocSmoothnessFactor;
         this.heapSizeInMb = heapSizeInMb;
         this.longLivedInMb = longLivedInMb;
         this.midAgedInMb = midAgedInMb;
@@ -152,8 +152,8 @@ public class SimpleRunConfig {
         return logFile;
     }
 
-    public double getAllocationSmoothnessFactor() {
-        return allocSmoothnessFactor;
+    public Double getAllocationSmoothnessFactor() {
+        return allocationSmoothnessFactor;
     }
 
     public String  getAllocationLogFile() {

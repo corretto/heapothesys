@@ -9,8 +9,6 @@ public abstract class TaskBase {
     protected static final int DEFAULT_MAX_OBJECT_SIZE = 1024;
     // The default minimum object size.
     protected static final int DEFAULT_MIN_OBJECT_SIZE = 64;
-    // The default allocation spike factor.
-    protected static final double DEFAULT_ALLOC_SMOOTHNESS_FACTOR = 0.0;
     // The default length of object queue.
     // All created objects would be put into the queue before being popped out later.
     protected static final int DEFAULT_SURVIVOR_QUEUE_LENGTH = 512 * 1024;
@@ -97,15 +95,16 @@ public abstract class TaskBase {
         };
     }
 
-static Callable<Long> createSingle2(final ObjectStore store, final long rateInMb, final long durationInMs,
-                                    final double allocSmoothnessFactor,
-                                       final int minObjectSize, final int maxObjectSize, final int queueLength) {
+
+    static Callable<Long> createBurstyAllocator(final ObjectStore store, final long rateInMb, final long durationInMs,
+                                                final double allocSmoothnessFactor, final int minObjectSize,
+                                                final int maxObjectSize, final int queueLength) {
         return () -> {
             final long rate = rateInMb * 1024 * 1024;
             final ArrayDeque<AllocObject> survivorQueue = new ArrayDeque<>();
 
             final long end = System.nanoTime() + durationInMs * 1000000;
-            final TokenBucket2 throughput = new TokenBucket2(rate, TimeUnit.SECONDS);
+            final BurstyTokenBucket throughput = new BurstyTokenBucket(rate, TimeUnit.SECONDS);
             int longLivedRate = MAX_LONG_LIVED_RATIO;
             int longLivedCounter = longLivedRate;
 

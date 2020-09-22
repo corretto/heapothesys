@@ -1,4 +1,4 @@
-package com.amazon.corretto.benchmark.heapothesys;
+package com.amazon.corretto.benchmark.hyperalloc;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -11,7 +11,7 @@ import java.util.function.Supplier;
  *
  * This class is not thread safe.
  */
-public class TokenBucket2 {
+public class BurstyTokenBucket {
     private final long capacity;
     private final Supplier<Long> clock;
     private final TimeUnit refillTimeUnit;
@@ -27,7 +27,7 @@ public class TokenBucket2 {
      * @param refillRate The number of tokens to generate for the given time unit.
      * @param timeUnit   The unit of time for the refill rate.
      */
-    public TokenBucket2(long refillRate, TimeUnit timeUnit) {
+    public BurstyTokenBucket(long refillRate, TimeUnit timeUnit) {
         this(refillRate, refillRate, timeUnit, System::nanoTime);
     }
 
@@ -40,7 +40,7 @@ public class TokenBucket2 {
      * @param timeUnit   The unit of time for the refill rate.
      * @param clock      Used to measure elapsed time.
      */
-    public TokenBucket2(long capacity, long refillRate, TimeUnit timeUnit, Supplier<Long> clock) {
+    public BurstyTokenBucket(long capacity, long refillRate, TimeUnit timeUnit, Supplier<Long> clock) {
         this.available = capacity;
         this.capacity = capacity;
         this.clock = clock;

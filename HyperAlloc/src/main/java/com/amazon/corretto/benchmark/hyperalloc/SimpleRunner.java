@@ -112,7 +112,7 @@ public class SimpleRunner extends TaskBase {
 
         return IntStream.range(0, config.getNumOfThreads())
                 .mapToObj(i -> createSingle(store, config.getAllocRateInMbPerSecond() / config.getNumOfThreads(),
-                        config.getDurationInSecond() * 1000, config.getMinObjectSize(),
+                        config.getDurationInSecond() * 1000L, config.getMinObjectSize(),
                         config.getMaxObjectSize(), queueSize))
                 .collect(Collectors.toList());
     }

@@ -13,6 +13,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -28,6 +30,8 @@ public class SimpleRunner extends TaskBase {
     public SimpleRunner(SimpleRunConfig config) {
         this.config = config;
     }
+
+    static Logger logger = Logger.getGlobal();
 
     @Override
     public void start() {
@@ -58,7 +62,7 @@ public class SimpleRunner extends TaskBase {
                     r.get();
                 }
             } catch (ExecutionException ex) {
-                ex.printStackTrace();
+                logger.log(Level.SEVERE, ex.getMessage(), ex);
                 printResult(-1);
                 System.exit(1);
             }
@@ -181,7 +185,7 @@ public class SimpleRunner extends TaskBase {
                 }
             } catch (IOException ioe) {
                 System.err.println("Cannot write to allocation log: " + allocationLogFile);
-                ioe.printStackTrace(System.err);
+                logger.log(Level.SEVERE, ioe.getMessage(), ioe);
             } catch (InterruptedException iee) {
                 Thread.currentThread().interrupt();
             }

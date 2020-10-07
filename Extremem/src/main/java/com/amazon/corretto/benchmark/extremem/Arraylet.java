@@ -133,7 +133,7 @@ class Arraylet<BaseType> extends ExtrememObject {
     BaseType[] elements = (BaseType []) fan_out_node[at / max_length];
     return elements[at % max_length];
   }
-  
+
   final void set(int at, BaseType value) {
     if ((at < 0) || (at >= length)) {
       Exception x = new ArrayIndexOutOfBoundsException(at);
@@ -189,7 +189,6 @@ class Arraylet<BaseType> extends ExtrememObject {
       }
     } catch (Exception x) {
       Trace.debug("caught exception during first batch");
-      x.printStackTrace();
     }
 
     try {
@@ -204,7 +203,7 @@ class Arraylet<BaseType> extends ExtrememObject {
       }
     } catch (Exception x) {
       Trace.debug("caught exception during second batch");
-      x.printStackTrace();
+      Util.printException(x);
     }
 
     try {
@@ -219,7 +218,7 @@ class Arraylet<BaseType> extends ExtrememObject {
       }
     } catch (Exception x) {
       Trace.debug("caught exception during third batch");
-      x.printStackTrace();
+      Util.printException(x);
     }
   }
 }

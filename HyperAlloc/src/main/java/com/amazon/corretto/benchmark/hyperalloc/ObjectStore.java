@@ -9,6 +9,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The object store for long lived object. The objects are stored in a list of object lists. Objects from one list may
@@ -39,6 +41,8 @@ public class ObjectStore implements Runnable {
 
     private AtomicLong currentSize;
     private boolean running;
+
+    static Logger logger = Logger.getGlobal();
 
     public ObjectStore(final int sizeLimitInMb) {
         this(sizeLimitInMb, DEFAULT_PRUNE_RATIO, DEFAULT_RESHUFFLE_RATIO);
@@ -127,7 +131,7 @@ public class ObjectStore implements Runnable {
 
                 Thread.sleep(INTERVAL_IN_MS);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, e.getMessage(), e);
                 System.exit(1);
             }
         }

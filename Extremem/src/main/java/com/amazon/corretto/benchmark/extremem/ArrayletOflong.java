@@ -137,7 +137,7 @@ class ArrayletOflong extends ExtrememObject {
     long[] elements = (long []) fan_out_node[at / max_length];
     return elements[at % max_length];
   }
-  
+
   final void set(int at, long value) {
     if ((at < 0) || (at >= length)) {
       Exception x = new ArrayIndexOutOfBoundsException(at);
@@ -195,7 +195,7 @@ class ArrayletOflong extends ExtrememObject {
       }
     } catch (Exception x) {
       Trace.debug("caught exception during first batch");
-      x.printStackTrace();
+      Util.printException(x);
     }
 
     try {
@@ -210,7 +210,7 @@ class ArrayletOflong extends ExtrememObject {
       }
     } catch (Exception x) {
       Trace.debug("caught exception during second batch");
-      x.printStackTrace();
+      Util.printException(x);
     }
 
     try {
@@ -225,7 +225,7 @@ class ArrayletOflong extends ExtrememObject {
       }
     } catch (Exception x) {
       Trace.debug("caught exception during third batch");
-      x.printStackTrace();
+      Util.printException(x);
     }
   }
 }

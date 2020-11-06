@@ -1,12 +1,21 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -22,6 +31,8 @@ public class SimpleRunner extends TaskBase {
     public SimpleRunner(SimpleRunConfig config) {
         this.config = config;
     }
+
+    static Logger logger = Logger.getGlobal();
 
     @Override
     public void start() {
@@ -52,7 +63,7 @@ public class SimpleRunner extends TaskBase {
                     r.get();
                 }
             } catch (ExecutionException ex) {
-                ex.printStackTrace();
+                logger.log(Level.SEVERE, ex.getMessage(), ex);
                 printResult(-1);
                 System.exit(1);
             }
@@ -105,7 +116,7 @@ public class SimpleRunner extends TaskBase {
                 / config.getNumOfThreads());
 
         long allocRateMbPerThread = config.getAllocRateInMbPerSecond() / config.getNumOfThreads();
-        int durationInMs = config.getDurationInSecond() * 1000;
+        long durationInMs = config.getDurationInSecond() * 1000L;
         IntFunction<Callable<Long>> factory;
         if (config.getAllocationSmoothnessFactor() == null) {
             factory = (ignored) -> createSingle(store, allocRateMbPerThread,
@@ -185,8 +196,11 @@ public class SimpleRunner extends TaskBase {
                     //noinspection BusyWait
                     Thread.sleep(100);
                 }
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+            } catch (IOException ioe) {
+                System.err.println("Cannot write to allocation log: " + allocationLogFile);
+                logger.log(Level.SEVERE, ioe.getMessage(), ioe);
+            } catch (InterruptedException iee) {
+                Thread.currentThread().interrupt();
             }
         }
     }

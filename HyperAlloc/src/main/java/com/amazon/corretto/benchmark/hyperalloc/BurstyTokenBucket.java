@@ -49,14 +49,33 @@ public class BurstyTokenBucket {
         this.lastFilled = clock.get();
     }
 
+    public synchronized long take(long requested) {
+        if (requested <= 0) {
+            return 0;
+        }
+
+        replenish();
+
+        return takeWithoutReplenish(requested);
+    }
+
     /**
-     * Attempt to take tokens from the bucket. This returns the number of
-     * tokens taken from the bucket which will be between 0 and requested.
+     * Attempt to take the requested number of tokens from the bucket. If the
+     * minimum number of tokens is not available, no tokens are taken from the
+     * bucket. This returns the number of tokens taken from the bucket which
+     * will be between 0 and requested.
      *
      * @param requested The number of tokens to try to take from the bucket.
+     * @param minimum The minimum number to take. If there aren't at least this
+     *                many tokens available, no tokens will be taken from the
+     *                bucket.
      * @return The number of tokens actually taken from the bucket.
      */
-    public long take(long requested) {
+    public synchronized long take(long requested, long minimum) {
+        if (requested < minimum) {
+            throw new IllegalArgumentException("Requested should be higher than minimum.");
+        }
+
         if (requested <= 0) {
             return 0;
         }
@@ -64,13 +83,13 @@ public class BurstyTokenBucket {
         replenish();
 
         if (requested > available) {
-            long taken = available;
-            available = 0;
-            return taken;
+            if (minimum > available) {
+                return 0;
+            }
+            requested = minimum;
         }
 
-        available -= requested;
-        return requested;
+        return takeWithoutReplenish(requested);
     }
 
     private void replenish() {
@@ -82,5 +101,17 @@ public class BurstyTokenBucket {
              available = newValue;
              lastFilled = now;
          }
+    }
+
+    private long takeWithoutReplenish(long requested) {
+
+        if (requested > available) {
+            long taken = available;
+            available = 0;
+            return taken;
+        }
+
+        available -= requested;
+        return requested;
     }
 }

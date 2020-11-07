@@ -62,7 +62,7 @@ public class SimpleRunConfig {
                         "[-u run type] [-a allocRateInMb] [-h heapSizeInMb] [-s longLivedObjectsInMb] " +
                         "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
                         "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-c useCompressedOops] " +
-                        "[-l outputFile] [-b|-allocation-log logFile");
+                        "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness");
                 System.exit(1);
             }
         }

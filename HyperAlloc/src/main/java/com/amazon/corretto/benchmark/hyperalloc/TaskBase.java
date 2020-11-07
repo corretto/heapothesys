@@ -130,7 +130,7 @@ public abstract class TaskBase {
 
             while (System.nanoTime() < end) {
                 long size = AllocObject.getRandomSize(minObjectSize, maxObjectSize);
-                long allowed = throughput.take(size);
+                long allowed = throughput.take(size, minObjectSize);
                 if (allowed >= minObjectSize) {
                     long start = System.nanoTime();
                     final AllocObject obj = AllocObject.create((int)allowed);

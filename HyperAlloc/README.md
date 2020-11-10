@@ -94,6 +94,14 @@ The default value 50 means that 1/50 of the objects in the store are replaced wi
 
 The default value 100 means that when the Object Store replaces the objects, it will also pick 1/100 of the objects in the store and reshuffle their references.
 
+HyperAlloc can record its allocation rate in a file. The allocation rate is sampled at 10Hz this is the size of the objects being created by the benchmark and may not reflect other allocations made by the runtime. The path to the log file can be controlled with:
+
+* -b < allocation log file >, default: none - no allocation log file will be produced
+
+There is also an experimental "spiky" allocator that can be used to simulate applications with a spiky allocation pattern. This allocator is controlled by a _smoothness_ parameter. Higher values result in smoother allocation rates. Lower values are less smooth and have higher allocation spikes.
+
+* -z < allocation smoothness factor>, default: none (this is not enabled by default) Values may range from 0.0 to 1.0 (inclusive).
+
 ### Example
 
 We normally use [JHiccup](https://www.azul.com/jhiccup/) to measure JVM pauses. You can either download it from its [website](https://www.azul.com/jhiccup-2/), or build it from the source code in its [GitHub repo](https://github.com/giltene/jHiccup). You can also use GC logs to measure safepoint times, allocation stalls, and Garbage Collection pauses. In the example below, we run HyperAlloc for the Shenandoah collector for 10 minutes using a 16Gb/s allocation rate and with 32Gb of a 64Gb heap occupied by long-lived objects.

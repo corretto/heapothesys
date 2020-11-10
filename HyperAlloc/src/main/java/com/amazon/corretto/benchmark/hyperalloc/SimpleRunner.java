@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -114,10 +115,22 @@ public class SimpleRunner extends TaskBase {
                 / (config.getMaxObjectSize() + config.getMinObjectSize())
                 / config.getNumOfThreads());
 
+        long allocRateMbPerThread = config.getAllocRateInMbPerSecond() / config.getNumOfThreads();
+        long durationInMs = config.getDurationInSecond() * 1000L;
+        IntFunction<Callable<Long>> factory;
+        if (config.getAllocationSmoothnessFactor() == null) {
+            factory = (ignored) -> createSingle(store, allocRateMbPerThread,
+                    durationInMs, config.getMinObjectSize(),
+                    config.getMaxObjectSize(), queueSize);
+        } else {
+            factory = (ignored) -> createBurstyAllocator(store, allocRateMbPerThread,
+                    durationInMs, config.getAllocationSmoothnessFactor(),
+                    config.getMinObjectSize(), config.getMaxObjectSize(),
+                    queueSize);
+        }
+
         return IntStream.range(0, config.getNumOfThreads())
-                .mapToObj(i -> createSingle(store, config.getAllocRateInMbPerSecond() / config.getNumOfThreads(),
-                        config.getDurationInSecond() * 1000L, config.getMinObjectSize(),
-                        config.getMaxObjectSize(), queueSize))
+                .mapToObj(factory)
                 .collect(Collectors.toList());
     }
 

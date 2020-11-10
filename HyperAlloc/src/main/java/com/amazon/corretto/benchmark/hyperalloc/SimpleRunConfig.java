@@ -19,6 +19,7 @@ public class SimpleRunConfig {
     private int heapSizeInMb = 1024;
     private String logFile = "output.csv";
     private String allocationLogFile = null;
+    private Double allocationSmoothnessFactor = null;
 
     /**
      * Parse input arguments from a string array.
@@ -48,6 +49,12 @@ public class SimpleRunConfig {
                 reshuffleRatio = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-c")) {
                 useCompressedOops = Boolean.parseBoolean(args[++i]);
+            } else if (args[i].equals("-z")) {
+                allocationSmoothnessFactor = Double.parseDouble(args[++i]);
+                if (allocationSmoothnessFactor < 0 || allocationSmoothnessFactor > 1.0) {
+                    usage();
+                    System.exit(1);
+                }
             } else if (args[i].equals("-l")) {
                 logFile = args[++i];
             } else if (args[i].equals("-b") || args[i].equals("--allocation-log")) {
@@ -55,14 +62,18 @@ public class SimpleRunConfig {
             } else if (args[i].equals("-u")) {
                 i++;
             } else {
-                System.out.println("Usage: java heaputils " +
-                        "[-u run type] [-a allocRateInMb] [-h heapSizeInMb] [-s longLivedObjectsInMb] " +
-                        "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
-                        "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-c useCompressedOops] " +
-                        "[-l outputFile] [-b|-allocation-log logFile");
+                usage();
                 System.exit(1);
             }
         }
+    }
+
+    private void usage() {
+        System.out.println("Usage: java -jar HyperAlloc.jar " +
+                "[-u run type] [-a allocRateInMb] [-h heapSizeInMb] [-s longLivedObjectsInMb] " +
+                "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
+                "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-c useCompressedOops] " +
+                "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)]");
     }
 
     /**
@@ -81,12 +92,14 @@ public class SimpleRunConfig {
      * @param logFile The name of the output .csv file.
      * @param allocationLogFile The name of the allocation log file.
      */
-    public SimpleRunConfig(final long allocRateInMbPerSecond, final int heapSizeInMb, final int longLivedInMb,
+    public SimpleRunConfig(final long allocRateInMbPerSecond, final double allocSmoothnessFactor,
+                           final int heapSizeInMb, final int longLivedInMb,
                            final int midAgedInMb, final int durationInSecond, final int numOfThreads,
                            final int minObjectSize, final int maxObjectSize, final int pruneRatio,
                            final int reshuffleRatio, final boolean useCompressedOops, final String logFile,
                            final String allocationLogFile) {
         this.allocRateInMbPerSecond = allocRateInMbPerSecond;
+        this.allocationSmoothnessFactor = allocSmoothnessFactor;
         this.heapSizeInMb = heapSizeInMb;
         this.longLivedInMb = longLivedInMb;
         this.midAgedInMb = midAgedInMb;
@@ -147,6 +160,10 @@ public class SimpleRunConfig {
 
     public String getLogFile() {
         return logFile;
+    }
+
+    public Double getAllocationSmoothnessFactor() {
+        return allocationSmoothnessFactor;
     }
 
     public String  getAllocationLogFile() {

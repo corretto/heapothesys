@@ -4,6 +4,7 @@ package com.amazon.corretto.benchmark.hyperalloc;
 
 import java.util.ArrayDeque;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 public abstract class TaskBase {
     // The default maximum object size.
@@ -33,7 +34,7 @@ public abstract class TaskBase {
      * @param store Long-lived object store.
      * @param rateInMb Allocation rate in Mb.
      * @param durationInMs The duration of run in millisecond.
-     * @return
+     * @return A runnable that allocates objects and drives retention.
      */
     static Callable<Long> createSingle(final ObjectStore store, final long rateInMb, final long durationInMs) {
         return createSingle(store, rateInMb, durationInMs,
@@ -50,8 +51,8 @@ public abstract class TaskBase {
      * @param queueLength The queue length of mid-aged objects.
      * @return The unused allocation allowance during the run.
      */
-    static Callable<Long> createSingle(final ObjectStore store, final long rateInMb, final long durationInMs,
-                                       final int minObjectSize, final int maxObjectSize, final int queueLength) {
+    static Callable<Long> createSingle(final ObjectStore store, final long rateInMb,
+                                       final long durationInMs, final int minObjectSize, final int maxObjectSize, final int queueLength) {
         return () -> {
             final long rate = rateInMb * 1024 * 1024;
             final ArrayDeque<AllocObject> survivorQueue = new ArrayDeque<>();
@@ -93,6 +94,79 @@ public abstract class TaskBase {
             }
 
             return throughput.getCurrent();
+        };
+    }
+
+
+    static Callable<Long> createBurstyAllocator(final ObjectStore store, final long rateInMb, final long durationInMs,
+                                                final double allocSmoothnessFactor, final int minObjectSize,
+                                                final int maxObjectSize, final int queueLength) {
+        return () -> {
+            final long rate = rateInMb * 1024 * 1024;
+            final ArrayDeque<AllocObject> survivorQueue = new ArrayDeque<>();
+
+            final long end = System.nanoTime() + durationInMs * 1000000;
+            final BurstyTokenBucket throughput = new BurstyTokenBucket(rate, TimeUnit.SECONDS);
+            int longLivedRate = MAX_LONG_LIVED_RATIO;
+            int longLivedCounter = longLivedRate;
+
+            // This arguably belongs inside the rate limiter. This code is meant
+            // to smooth out the extremely spiky allocation patterns. Even with
+            // the rate limiter and the maximum 'burst' size this code will burn
+            // through its tokens very quickly and then recover them slowly. What
+            // we do here is compute how long the allocation operation _should_
+            // take to achieve a smooth, constant rate. Every time we complete an
+            // allocation we compute the difference between this target operation
+            // time and the actual operation time. We then add this difference to
+            // a 'sleep debt'. Once the debt is over a millisecond (the resolution
+            // of our sleep timer), we sleep away the time to track closer to the
+            // target. The alloc smoothness factor controls how fast the sleep
+            // debt accumulates, 0 = no sleep debt, most spiky alloc rate.
+            // 1 = normal sleep debt rate, least spiky alloc rate.
+            double expectedAverageSize = (maxObjectSize - minObjectSize) / 2.0;
+            double allocationTargetTimeForRate = ((expectedAverageSize / rate) * TimeUnit.SECONDS.toNanos(1)) * allocSmoothnessFactor;
+            long sleepDebtNs = 0;
+            long nanosPerMilli = TimeUnit.MILLISECONDS.toNanos(1);
+
+            while (System.nanoTime() < end) {
+                long size = AllocObject.getRandomSize(minObjectSize, maxObjectSize);
+                long allowed = throughput.take(size, minObjectSize);
+                if (allowed >= minObjectSize) {
+                    long start = System.nanoTime();
+                    final AllocObject obj = AllocObject.create((int)allowed);
+                    long elapsed = start - System.nanoTime();
+                    sleepDebtNs += (allocationTargetTimeForRate - elapsed);
+
+                    if (sleepDebtNs > nanosPerMilli) {
+                        sleepDebtNs = 0;
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException e) {
+                            Thread.interrupted();
+                            return 0L;
+                        }
+                    }
+
+                    survivorQueue.push(obj);
+
+                    if (survivorQueue.size() > queueLength) {
+                        final AllocObject removed = survivorQueue.poll();
+                        if (--longLivedCounter == 0) {
+                            if (store.tryAdd(removed)) {
+                                if (longLivedRate > MAX_LONG_LIVED_RATIO) {
+                                    longLivedRate /= 2;
+                                }
+                            } else {
+                                if (longLivedRate < MIN_LONG_LIVED_RATIO) {
+                                    longLivedRate *= 2;
+                                }
+                            }
+                            longLivedCounter = longLivedRate;
+                        }
+                    }
+                }
+            }
+            return 0L;
         };
     }
 }

@@ -51,6 +51,10 @@ public class SimpleRunConfig {
                 useCompressedOops = Boolean.parseBoolean(args[++i]);
             } else if (args[i].equals("-z")) {
                 allocationSmoothnessFactor = Double.parseDouble(args[++i]);
+                if (allocationSmoothnessFactor < 0 || allocationSmoothnessFactor > 1.0) {
+                    usage();
+                    System.exit(1);
+                }
             } else if (args[i].equals("-l")) {
                 logFile = args[++i];
             } else if (args[i].equals("-b") || args[i].equals("--allocation-log")) {
@@ -58,14 +62,18 @@ public class SimpleRunConfig {
             } else if (args[i].equals("-u")) {
                 i++;
             } else {
-                System.out.println("Usage: java heaputils " +
-                        "[-u run type] [-a allocRateInMb] [-h heapSizeInMb] [-s longLivedObjectsInMb] " +
-                        "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
-                        "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-c useCompressedOops] " +
-                        "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness");
+                usage();
                 System.exit(1);
             }
         }
+    }
+
+    private void usage() {
+        System.out.println("Usage: java -jar HyperAlloc.jar " +
+                "[-u run type] [-a allocRateInMb] [-h heapSizeInMb] [-s longLivedObjectsInMb] " +
+                "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
+                "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-c useCompressedOops] " +
+                "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)]");
     }
 
     /**

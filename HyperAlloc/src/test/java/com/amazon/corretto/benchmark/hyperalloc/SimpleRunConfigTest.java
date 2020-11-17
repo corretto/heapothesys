@@ -1,3 +1,5 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
 import org.junit.jupiter.api.Test;
@@ -28,9 +30,9 @@ class SimpleRunConfigTest {
 
     @Test
     void ConstructorTest() {
-        final SimpleRunConfig config = new SimpleRunConfig(16384L, 32768, 256,
+        final SimpleRunConfig config = new SimpleRunConfig(16384L, 0.0, 32768, 256,
                 32, 3000, 16, 256, 512,
-                10, 20, false, "nosuch.csv");
+                10, 20, false, "nosuch.csv", null);
 
         assertThat(config.getNumOfThreads(), is(16));
         assertThat(config.getAllocRateInMbPerSecond(), is(16384L));

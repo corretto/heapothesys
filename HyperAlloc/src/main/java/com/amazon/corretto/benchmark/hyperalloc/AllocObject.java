@@ -1,6 +1,9 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * The representation of an allocated object with fixed size in heap. It can also have a reference
@@ -8,6 +11,8 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 class AllocObject {
     private static ObjectOverhead objectOverhead = ObjectOverhead.CompressedOops;
+
+    private static final LongAdder BytesAllocated = new LongAdder();
 
     /**
      * Set the object overhead. By default it assumes that compressedOops is enabled.
@@ -78,7 +83,25 @@ class AllocObject {
      */
     static AllocObject create(final int min, final int max, final AllocObject ref) {
         assert max >= min : "The max value must be greater than min";
-        return new AllocObject(min == max ? min : ThreadLocalRandom.current().nextInt(max - min) + min, ref);
+        int size = getRandomSize(min, max);
+        return create(size, ref);
+    }
+
+    static int getRandomSize(int min, int max) {
+        return min == max ? min : ThreadLocalRandom.current().nextInt(max - min) + min;
+    }
+
+    static AllocObject create(final int size) {
+        return create(size, null);
+    }
+
+    static AllocObject create(final int size, final AllocObject ref) {
+        BytesAllocated.add(size);
+        return new AllocObject(size, ref);
+    }
+
+    static long getBytesAllocated() {
+        return BytesAllocated.longValue();
     }
 
     /**

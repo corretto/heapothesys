@@ -4,6 +4,8 @@
 package com.amazon.corretto.benchmark.extremem;
 
 import java.util.Collection;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 class Util {
 
@@ -31,6 +33,8 @@ class Util {
 
   static final int InitialHashMapArraySize = 16;
 
+  static Logger logger = Logger.getGlobal();
+
   /*
    * Generic utilities
    */
@@ -44,14 +48,18 @@ class Util {
   static void fatalException(String msg, Throwable t) {
     System.err.print("Intecepted fatal exception: ");
     System.err.println(msg);
-    t.printStackTrace();
+    printException(t);
     System.exit(-1);
+  }
+
+  static void printException(Throwable t) {
+      logger.log(Level.INFO, t.getMessage(), t);
   }
 
   // Use this service, without a message, when there is a strong
   // likelihood that we are out of memory and any attempt to print
   // a message will result in exceptions, thereby circumventing the exit
-  // attempt. 
+  // attempt.
   static void severeInternalError() {
     System.exit(-1);
   }
@@ -174,7 +182,7 @@ class Util {
     log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayRSB, Grow,
 		   len * element_size);
   }
-  
+
   static void abandonEphemeralRSBArray(ExtrememThread t,
 				       int len, int element_size) {
     MemoryLog garbage = t.garbageLog();
@@ -242,7 +250,7 @@ class Util {
     log.accumulate (ls, MemoryFlavor.ObjectReference, p, tree_entries * 5);
     log.accumulate (ls, MemoryFlavor.ObjectRSB, p,
 		    tree_entries * Util.SizeOfBoolean);
-  }			 
+  }
 
   static void createTreeNode(ExtrememThread t, LifeSpan ls) {
     Polarity Grow = Polarity.Expand;
@@ -315,7 +323,7 @@ class Util {
     // Account for referenced array
     garbage.accumulate(ls, MemoryFlavor.ArrayObject, Grow, 1);
     garbage.accumulate(ls, MemoryFlavor.ArrayReference, Grow, capacity);
-    
+
     tallyHashNodes(garbage, ls, Grow, size);
   }
 
@@ -345,7 +353,7 @@ class Util {
     l.accumulate(ls, MemoryFlavor.PlainObject, p, n);
     l.accumulate (ls, MemoryFlavor.ObjectReference, p, n * 3);
     l.accumulate (ls, MemoryFlavor.ObjectRSB, p, n * Util.SizeOfInt);
-    
+
   }
 
   // Usie addHashEntry and abandonHashEntry to adjust the number of
@@ -356,7 +364,7 @@ class Util {
     Polarity Grow = Polarity.Expand;
     // Identify that one node of HashMap representation has become garbage.
     // Each node consists of a key, content, and next reference fields
-    // and an int hash_code field. 
+    // and an int hash_code field.
     log.accumulate (ls, MemoryFlavor.PlainObject, Grow, 1);
     log.accumulate (ls, MemoryFlavor.ObjectReference, Grow, 3);
     log.accumulate (ls, MemoryFlavor.ObjectRSB, Grow, Util.SizeOfInt);
@@ -367,7 +375,7 @@ class Util {
     Polarity Grow = Polarity.Expand;
     // Identify that one node of HashMap representation has become garbage.
     // Each node consists of a key, content, and next reference fields
-    // and an int hash_code field. 
+    // and an int hash_code field.
     garbage.accumulate (ls, MemoryFlavor.PlainObject, Grow, 1);
     garbage.accumulate (ls, MemoryFlavor.ObjectReference, Grow, 3);
     garbage.accumulate (ls, MemoryFlavor.ObjectRSB, Grow, Util.SizeOfInt);
@@ -420,7 +428,7 @@ class Util {
   /*
    * Memory accounting utilities for HashSet
    */
-  
+
   /* Account for the HashSet representations associated with name and
    * descriptor indexes used for Product lookups.  This accounting
    * does not include memory to represent the individual Long
@@ -500,7 +508,7 @@ class Util {
   }
 
   // Discard the StringBuilder and its backing store.  Allocate string
-  // and its backing store. 
+  // and its backing store.
   static void ephemeralStringBuilderToString(ExtrememThread t,
 					     int count, int capacity) {
     MemoryLog garbage = t.garbageLog();

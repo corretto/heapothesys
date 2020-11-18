@@ -49,6 +49,12 @@ package com.amazon.corretto.benchmark.extremem;
  *    coalescing the contents of neighboring buckets, as necessary.
  */
 class RelativeTimeMetrics extends ExtrememObject {
+  // How many buckets used for histogram report?
+  private final int HistoColumnCount = 64;
+
+  // Assumed width of display device for histogram report
+  private final int PageColumns = 80;
+
   // Count the RelativeTimeMetrics instantiations in order to
   // associate a unique identifying label to each.
   static int num_instances = 0;
@@ -1261,106 +1267,215 @@ class RelativeTimeMetrics extends ExtrememObject {
     return result.substring(0, result.length() - 1);
   }
 
-  /* What percent of the bucket beginning at bucket_start and ending
-   * at bucket_start + span overlaps with the reporting range between
-   * range_start and range_end?
-   */
-  float helpOverlap(long bucket_start, long span,
-		    long range_start, long range_end) {
-
-    long bucket_end = bucket_start + span;
-    if (bucket_end <= range_start)
-      return 0.0f;
-    else if (bucket_start >= range_end)
-      return 0.0f;
-    else if (bucket_start <= range_start) {
-      // subtract out the portion of the bucket not within range
-      long exclude_portion = range_start - bucket_start;
-      if (bucket_end > range_end)
-	exclude_portion += bucket_end - range_end;
-      return 1.0f - (((float) exclude_portion) / (bucket_end - bucket_start));
-    } else {	// (bucket_start > range_start)
-      if (bucket_end > range_end) {
-	long exclude_portion = bucket_end - range_end;
-	return 1.0f - (((float) exclude_portion)
-		       / (bucket_end - bucket_start));
-      } else
-	return 1.0f;
-    }
+  void addToReportTally(long[] histo_columns, long lb, long histo_span,
+                        long sample_midpoint, int increment) {
+    int bucket_index = (int) ((sample_midpoint - lb) / histo_span);
+    histo_columns[bucket_index] += increment;
   }
 
-  /* What percent of the bucket beginning at bucket_start and ending
-   * at bucket_start + span overlaps with the reporting range between
-   * range_start and range_end?
-   */
-  float overlap(long bucket_start, long span,
-		long range_start, long range_end) {
-    float result = helpOverlap(bucket_start, span, range_start, range_end);
-    Trace.msgNoLine(4, id, ":Overlap(", 
-		    Long.toString(bucket_start), ", ",
-		    Long.toString(span), ", ", Long.toString(range_start));
-    Trace.msg(4, ", ", Long.toString(range_end), ")");
-    Trace.msg(4, id, ":  returns ", Float.toString(result));
-    return result;
-  }
-
-  /* Accumulate bucket tallies into the reporting range between
-   * between low_bound and high_bound.
+  /* Accumulate bucket tallies into the reporting buckets represented
+   * by histo_columns, where lb represents the low bound on time
+   * spanned by the histogram (i.e. the time at which the first
+   * histogram bucket begins) and histo_span is the amount of time
+   * represented by each histogram bucket.
    *
-   * The algorithm is not particularly efficient, but this effort only
-   * runs after the simulation has been completed, for the purpose of
-   * formatting the histogram reports.
+   * lb and histo_span are multiples of 256.  histo_columns is known
+   * to have HistoColumnCount (64) elements.  The entries of
+   * histo_columns are not necessarily initialized to zero prior to
+   * invocation of repack.
    */
-  float repack(long low_bound, long high_bound) {
-    float accumulator = 0.0f;
+  void repack(long[] histo_columns, long lb, long histo_span) {
+
+    for (int i = 0; i < HistoColumnCount; i++)
+      histo_columns[i] = 0;
     int index = fbi;
-    
     for (int i = 0; i < biu; i++) {
-      if (index > high_bound)
-	return accumulator;
+      // model each existing bucket as a linear prog
+      //  We're looking at bucket i, containing N entries
+      //  Suppose 
 
-      float overlap;
-      /* Do some special handling here.  I've observed that it is
-       * common for discontiguous latency numbers to be observed at
-       * the long tail end.  In the future, improved reporting
-       * precision might be achieved by keeping track of low-bound
-       * and high-bound for each bucket.  We don't have this
-       * information currently.  However, in the case that we are
-       * dealing with the last bucket in use, we know the end
-       * of the range is this.lis.  Further, if there is only one
-       * entry in this tally, we know that the start of this range is
-       * also this.lis.
-       */
-      if (i + 1 == biu) {		// This is last bucket in use
-	long end_bucket_range = lis;
-	long start_bucket_range;
-	if (buckets[index] == 1)
-	  start_bucket_range = lis;
-	else
-	  start_bucket_range = bucket_bounds[index];
+      // Every data "bucket" has a hit_rate which is the total number
+      // of samples divided by the number of 256-microsecond intervals
+      // spanned by this bucket.
 
-	overlap = overlap(start_bucket_range,
-			  (end_bucket_range - start_bucket_range),
-			  low_bound, high_bound);
-      } else
-	overlap = overlap(bucket_bounds[index],
-			  spanAt(index), low_bound, high_bound);
+      // Since data buckets may not align exactly with report buckets,
+      // we need a way to map between them.
+
+      // Model each data bucket's distribution by assuming linear
+      // progression of hit_rate throughout the interval of time
+      // spanned by the bucket, with the hit_rate at the beginning of
+      // the interval matching the preceding bucket's hit_rate and the
+      // hit_rate at the end of the interval matching the hit_rate of
+      // the interval that follows.
+
+      // Use floating point y-intercept and slope to model each
+      // data bucket's distribution.  y-intercept is relative to the
+      // a time value of zero.  Thus, the y-intercept value may be
+      // negative.
+
+      // To compute how much of a particular data bucket pertains to a
+      // particular reporting quantum, take the calculate the y-value
+      // at the midpoint of the reporting quantum, rounding fractional
+      // results to the nearest integer.
+
+      // For complete "integrity", correct round-off errors by summing
+      // the contributions over all reported quanta and adding or
+      // subtracting to report totals, working from the center time of
+      // the data bucket's time span outward.
       
-      if (overlap > 0.0)
-	accumulator += buckets[index] * overlap;
 
-      index++;
-      if (index >= BucketCount)
-	index = 0;
+      float right_rate, left_rate;
+
+      if (buckets[index] > 0) {
+        int segment_quanta;
+
+        int bucket_tally = buckets[index];
+        float my_slope;
+        float my_intercept;
+        long segment_start;
+        if (i == 0) {             // use sis instead of region span
+          long start_of_span = sis;
+          int end_index = incrIndex(index);
+          long end_of_span = bucket_bounds[end_index];
+          segment_start = truncate256(start_of_span);
+
+          // end_of_interval and segment_start are both multiples of 256
+          segment_quanta = (int) ((end_of_span - segment_start) / 256);
+          float this_rate = ((float) buckets[index]) / segment_quanta;
+       
+          left_rate = 0.0F;
+          if (biu > 1) {
+            int next_index = incrIndex(index);
+            float right_tally = (float) buckets[next_index];
+            right_rate = right_tally / (spanAt(next_index) / 256);
+          } else
+            right_rate = this_rate * 2;
+          
+          // Log the sis value within the first bucket now.
+          // Spread the remaining tally values as appropriate.
+          addToReportTally(histo_columns, lb, histo_span,
+                           sis, 1);
+          bucket_tally--;
+        } else if (i + 1 == biu) {
+          segment_start = bucket_bounds[index];
+          long end_of_span = truncate256(lis);
+          if (end_of_span < lis)
+            end_of_span += 256;
+          segment_quanta = (int) ((end_of_span - segment_start) / 256);
+          float this_rate = ((float) buckets[index] / segment_quanta);
+          
+          if (biu > 1) {
+            int prev_index = decrIndex(index);
+            float left_tally = (float) buckets[prev_index];
+            left_rate = left_tally / (spanAt(prev_index) / 256);
+          } else
+            left_rate = this_rate * 2;
+          right_rate = 0.0F;
+          
+          if (lis > segment_start) {
+            // Log the lis value within the last bucket now.
+            // Spread the remaining tally values as appropriate.
+            addToReportTally(histo_columns, lb, histo_span, lis, 1);
+            bucket_tally--;
+          }
+          // expect my slope to be negative
+        } else {
+          // since this is not first and not last, we know it has neighbors
+          segment_start = bucket_bounds[index];
+          int next_index = incrIndex(index);
+          int prev_index = decrIndex(index);
+
+          long end_of_span = bucket_bounds[next_index];
+          segment_quanta = (int) ((end_of_span - segment_start) / 256);
+          float this_rate = ((float) buckets[index] / segment_quanta);
+          
+          float left_tally = (float) buckets[prev_index];
+          left_rate = left_tally / (spanAt(prev_index) / 256);
+          
+          float right_tally = (float) buckets[next_index];
+          right_rate = right_tally / (spanAt(next_index) / 256);
+          
+          if ((lis >= segment_start) && (lis < end_of_span))  {
+            // Log the lis value within the last bucket now.
+            // Spread the remaining tally values as appropriate.
+            addToReportTally(histo_columns, lb, histo_span, lis, 1);
+            bucket_tally--;
+          }
+        }
+        
+        my_slope = (right_rate - left_rate) / segment_quanta;
+        float midpoint_time = segment_start + segment_quanta * 128;
+        my_intercept =
+        ((float) bucket_tally) / segment_quanta - my_slope * midpoint_time;
+        
+        if (bucket_tally < segment_quanta) {
+          long midpoint;
+          if (my_slope > 0.0) {      // fill in from high end
+            int pad = segment_quanta - bucket_tally;
+            midpoint = segment_start - 128 + pad * 256;
+          } else if (my_slope < 0.0) { // fill in from low end
+            midpoint = segment_start + 128;
+          } else {              // fill form middle
+            int pad = (segment_quanta - bucket_tally) / 2;
+            midpoint = segment_start - 128 + pad * 256;
+          }
+
+          while (bucket_tally-- > 0) {
+            addToReportTally(histo_columns, lb, histo_span, midpoint, 1);
+            midpoint += 256;
+          }
+        } else {
+          // But don't allow the rate to go negative
+          if (my_intercept + (segment_start + 128) * my_slope < 0) {
+            // form a triangle that slopes downward to the left, the
+            // enclosing rectangle holding twice my tally.
+            left_rate = 0.0F;
+            right_rate = (2 * (float) bucket_tally) / segment_quanta;
+            my_slope = (right_rate - left_rate) / segment_quanta;
+            my_intercept =
+            ((float) bucket_tally) / segment_quanta - my_slope * midpoint_time;
+          } else if ((segment_start - 128 + 256 * segment_quanta) * my_slope
+                     + my_intercept < 0) {
+            // form a triangle that slopes downward to the right, the
+            // enclosing rectangle holding twice my tally.
+            left_rate = (2 * (float) bucket_tally) / segment_quanta;
+            right_rate = 0.0F;
+            my_slope = (right_rate - left_rate) / segment_quanta;
+            my_intercept =
+            ((float) bucket_tally) / segment_quanta - my_slope * midpoint_time;
+          }
+
+          for (int j = 0; j < segment_quanta; j++) {
+            long quanta_midpoint = segment_start + 128 + 256 * j;
+            int quanta_contribution = java.lang.Math.round(
+              my_intercept + quanta_midpoint * my_slope);
+            addToReportTally(histo_columns, lb, histo_span,
+                             quanta_midpoint, quanta_contribution);
+          }
+        }
+      }
+      index = incrIndex(index);
     }
-    return accumulator;
   }
 
-  static String logScaleLabels = "1248abcdefghijklmnopqrstuvwxyz";
+  
+  // Return greatest multiple of 256 that is less than or equal to val
+  private final long truncate256(long val) {
+    long multiple = val / 256;
+    return multiple * 256;
+  }
+
+  // Return smallest multiple of 256 for which BucketCount (64) * this
+  // multiple spans the range from low_bound to upper_bound
+  private final long repackSpan(long low_bound, long upper_bound) {
+    long total_span = upper_bound - low_bound;
+    long proposed_span = truncate256(total_span / BucketCount);
+    while (low_bound + HistoColumnCount * proposed_span < upper_bound)
+      proposed_span += 256;
+    return proposed_span;
+  }
 
   void report(ExtrememThread t, boolean reportCSV) {
-    final int HistoColumnCount = 64;
-    final int PageColumns = 80;
 
     String s;
     int l;
@@ -1497,7 +1612,7 @@ class RelativeTimeMetrics extends ExtrememObject {
     } else {
 
       // Make a histogram with 64 equal-sized buckets
-      float histo_columns[] = new float[HistoColumnCount];
+      long histo_columns[] = new long[HistoColumnCount];
 
       Trace.msg(4, id, ":Preparing histogram for ",
 		Integer.toString(total_entries));
@@ -1505,99 +1620,64 @@ class RelativeTimeMetrics extends ExtrememObject {
       Trace.msg(4, id, ":                     to: ", debug_us2s(lis));
       Trace.msg(4, id, ":            from (fblb): ", debug_us2s(fblb));
       Trace.msg(4, id, ":              to (lbhb): ", debug_us2s(lbhb));
-      
-      long measure_span = lbhb - fblb; // known to be 256 * integer
-      Trace.msg(4, id, ":       measure_span: ", debug_us2s(measure_span));
-      
-      // figure out largest power-of-two N, such that N*256 < measure_span
-      long num256Buckets = measure_span / 256;
-      
-      Trace.msg(4, id, ":        buckets to span: ",
-		Long.toString(num256Buckets));
-      
-      int bucketsPerColumn = 1;
-      while (bucketsPerColumn * HistoColumnCount < num256Buckets)
-	bucketsPerColumn *= 2;
-      
-      Trace.msg(4, id,
-		": buckets per column: ", Long.toString(bucketsPerColumn));
-    
-      // Each histo bucket represents span of 256*bucketsPerColumn microseconds.
-      int unused_columns = (int) (
-	(((bucketsPerColumn * HistoColumnCount) - num256Buckets)
-	 / bucketsPerColumn));
-      
-      Trace.msg(4, id, ":         unused columns: ",
-		Integer.toString(unused_columns));
-      
-      int empty_front_columns = unused_columns / 2;
-      
-      Trace.msg(4, id, ":    empty front columns: ",
-		Integer.toString(empty_front_columns));
-      
-      long first_column_low_bound = (
-	fblb - (empty_front_columns * bucketsPerColumn * 256));
-      
-      Trace.msg(4, id, ":       first_column_low: ",
-		Long.toString(first_column_low_bound));
-      
-      long histo_start = first_column_low_bound;
-      long histo_end = histo_start + bucketsPerColumn * 256;
+
+      long repack_lb = truncate256(sis);
+      long repack_bucket_span = repackSpan(repack_lb, lis);
+      repack(histo_columns, repack_lb, repack_bucket_span);
+
       int max_histo_size = 0;
       for (int i = 0; i < HistoColumnCount; i++) {
-	histo_columns[i] = repack(histo_start, histo_end);
-	if (histo_columns[i] > max_histo_size)
-	  max_histo_size = (int) histo_columns[i];
-	histo_start = histo_end;
-	histo_end = histo_start + bucketsPerColumn * 256;
+        if (histo_columns[i] > max_histo_size)
+          max_histo_size = (int) histo_columns[i];
       }
-      
-      Trace.msg(4, id, ":      max_histo_size: ",
-		Integer.toString(max_histo_size));
-      
       int num_rows = 0;
       int two_to_rows = 1;
       while (two_to_rows < max_histo_size) {
 	num_rows++;
 	two_to_rows += two_to_rows;
       }
-      Trace.msg(4, id, ":      num_rows: ", Integer.toString(num_rows));
       Report.output();
-      Report.output("Logarithmic histogram (each symbol represents ",
-		    "twice the symbol below it)");
-      Report.output("  ~ identifies uncertainty range for ",
-		    "outlier measurements");
+      Report.output("Logarithmic histogram (Each column's stars represent ",
+		    "a binary tally)");
+
+      // all values of seen_star initially false
+      boolean[] seen_star = new boolean[HistoColumnCount];
       while (num_rows >= 0) {
+        String histo_count = Integer.toString(two_to_rows);
+        int pad = 7 - histo_count.length();
+        for (int i = 0; i < pad; i++)
+          Report.outputNoLine(" ");
+        Report.outputNoLine(histo_count);
+        Report.outputNoLine(" ");
 	for (int col = 0; col < HistoColumnCount; col++) {
-	  if (two_to_rows <= histo_columns[col])
-	    Report.outputNoLine(logScaleLabels
-				.substring(num_rows, num_rows + 1));
-	  else
+	  if (two_to_rows <= histo_columns[col]) {
+	    Report.outputNoLine("*");
+            seen_star[col] = true;
+            histo_columns[col] -= two_to_rows;
+          }
+	  else if (seen_star[col])
+	    Report.outputNoLine("0");
+          else
 	    Report.outputNoLine(" ");
 	}
 	Report.output();
 	two_to_rows /= 2;
 	num_rows--;
       }
-      // print out fractional values
-      for (int col = 0; col < HistoColumnCount; col++) {
-	if (histo_columns[col] > 0)
-	  Report.outputNoLine("~");
-	else
-	  Report.outputNoLine(" ");
-      }
-      Report.output();
+      Report.outputNoLine("        ");
       Report.output(
 	"----------------------------------------------------------------");
+      Report.outputNoLine("        ");
       Report.output(
 	"^               ^               ^               ^              ^");
       int available_columns = PageColumns - 3 * (HistoColumnCount / 4);
-      String last_label = us2s(t, first_column_low_bound +
-			       HistoColumnCount * bucketsPerColumn * 256);
+      String last_label = us2s(t, (repack_lb +
+                                   HistoColumnCount * repack_bucket_span));
       int last_label_length = last_label.length();
       int pad_columns = (available_columns - last_label_length) / 2;
       if (pad_columns < 0)
 	pad_columns = 0;
+      Report.outputNoLine("        ");
       Report.outputNoLine(
 	"|               |               |               |");
       for (int i = 0; i < pad_columns; i++)
@@ -1605,29 +1685,30 @@ class RelativeTimeMetrics extends ExtrememObject {
       Report.output(last_label);
       Util.abandonEphemeralString(t, last_label_length);
       
-      s = us2s(t, first_column_low_bound +
-	       HistoColumnCount * bucketsPerColumn * 192);
+      s = us2s(t, repack_lb + HistoColumnCount * repack_bucket_span *  3 / 4);
       l = s.length();
+      Report.outputNoLine("        ");
       Report.output(
 	"|               |               |               +--- ", s);
       Util.abandonEphemeralString(t, l);
       
-      s = us2s(t, first_column_low_bound +
-	       HistoColumnCount * bucketsPerColumn * 128);
+      s = us2s(t, repack_lb + HistoColumnCount * repack_bucket_span / 2); 
       l = s.length();
+      Report.outputNoLine("        ");
       Report.output(
 	"|               |               +--- ", s);
       Util.abandonEphemeralString(t, l);
       
-      s = us2s(t, first_column_low_bound +
-	       HistoColumnCount * bucketsPerColumn * 64);
+      s = us2s(t, repack_lb + HistoColumnCount * repack_bucket_span / 4); 
       l = s.length();
+      Report.outputNoLine("        ");
       Report.output(
 	"|               +--- ", s);
       Util.abandonEphemeralString(t, l);
       
-      s = us2s(t, first_column_low_bound);
+      s = us2s(t, repack_lb);
       l = s.length();
+      Report.outputNoLine("        ");
       Report.output(
 	"+--- ", s);
       Util.abandonEphemeralString(t, l);

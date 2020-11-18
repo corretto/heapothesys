@@ -46,7 +46,7 @@ class Util {
   }
 
   static void fatalException(String msg, Throwable t) {
-    System.err.print("Intecepted fatal exception: ");
+    System.err.print("Intercepted fatal exception: ");
     System.err.println(msg);
     printException(t);
     System.exit(-1);

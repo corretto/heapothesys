@@ -102,6 +102,10 @@ There is also an experimental "spiky" allocator that can be used to simulate app
 
 * -z < allocation smoothness factor>, default: none (this is not enabled by default) Values may range from 0.0 to 1.0 (inclusive).
 
+In order to calm the allocation rate during startup, HyperAlloc can gradually increase the allocation rate over a period
+ of time defined by the 'ramp up seconds' option. The ramp up increases from zero to the maximum following a sinusoidal curve.
+
+* -p < ramp up seconds >, default: none, the initial allocation rate is the maximum.
 ### Example
 
 We normally use [JHiccup](https://www.azul.com/jhiccup/) to measure JVM pauses. You can either download it from its [website](https://www.azul.com/jhiccup-2/), or build it from the source code in its [GitHub repo](https://github.com/giltene/jHiccup). You can also use GC logs to measure safepoint times, allocation stalls, and Garbage Collection pauses. In the example below, we run HyperAlloc for the Shenandoah collector for 10 minutes using a 16Gb/s allocation rate and with 32Gb of a 64Gb heap occupied by long-lived objects.

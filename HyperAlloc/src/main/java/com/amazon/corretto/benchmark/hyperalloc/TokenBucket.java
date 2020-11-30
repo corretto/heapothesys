@@ -15,9 +15,9 @@ public class TokenBucket {
     private static final long DEFAULT_TIME_SLICE = TimeUnit.MILLISECONDS.toNanos(10);
     private static final int DEFAULT_OVERDRAFT_RATIO = 10;
     private final long timeSlice;
-    private final long limit;
     private final long overdraftLimit;
     private final Supplier<Long> clock;
+    private long limit;
     private long current;
     private long resetAtNanoSecond;
 
@@ -96,5 +96,12 @@ public class TokenBucket {
      */
     public boolean isThrottled() {
         return clock.get() < this.resetAtNanoSecond && current <= 0;
+    }
+
+    public void adjustThrottle(final long newLimit) {
+        limit = newLimit / 100;
+        if (current > limit) {
+            current = limit;
+        }
     }
 }

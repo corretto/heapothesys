@@ -20,6 +20,7 @@ public class SimpleRunConfig {
     private String logFile = "output.csv";
     private String allocationLogFile = null;
     private Double allocationSmoothnessFactor = null;
+    private double rampUpSeconds = 0.0;
 
     /**
      * Parse input arguments from a string array.
@@ -61,6 +62,8 @@ public class SimpleRunConfig {
                 allocationLogFile = args[++i];
             } else if (args[i].equals("-u")) {
                 i++;
+            } else if (args[i].equals("-p") || args[i].equals("--ramp-up-seconds")) {
+                rampUpSeconds = Double.parseDouble(args[++i]);
             } else {
                 usage();
                 System.exit(1);
@@ -73,7 +76,8 @@ public class SimpleRunConfig {
                 "[-u run type] [-a allocRateInMb] [-h heapSizeInMb] [-s longLivedObjectsInMb] " +
                 "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
                 "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-c useCompressedOops] " +
-                "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)]");
+                "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)] " +
+                "[-p rampUpSeconds ]");
     }
 
     /**
@@ -91,13 +95,14 @@ public class SimpleRunConfig {
      * @param useCompressedOops Whether compressedOops is enabled.
      * @param logFile The name of the output .csv file.
      * @param allocationLogFile The name of the allocation log file.
+     * @param rampUpSeconds Gradually increase allocation rate over this period of time.
      */
     public SimpleRunConfig(final long allocRateInMbPerSecond, final double allocSmoothnessFactor,
                            final int heapSizeInMb, final int longLivedInMb,
                            final int midAgedInMb, final int durationInSecond, final int numOfThreads,
                            final int minObjectSize, final int maxObjectSize, final int pruneRatio,
                            final int reshuffleRatio, final boolean useCompressedOops, final String logFile,
-                           final String allocationLogFile) {
+                           final String allocationLogFile, final double rampUpSeconds) {
         this.allocRateInMbPerSecond = allocRateInMbPerSecond;
         this.allocationSmoothnessFactor = allocSmoothnessFactor;
         this.heapSizeInMb = heapSizeInMb;
@@ -112,6 +117,7 @@ public class SimpleRunConfig {
         this.useCompressedOops = useCompressedOops;
         this.logFile = logFile;
         this.allocationLogFile = allocationLogFile;
+        this.rampUpSeconds = rampUpSeconds;
     }
 
     public long getAllocRateInMbPerSecond() {
@@ -168,6 +174,10 @@ public class SimpleRunConfig {
 
     public String  getAllocationLogFile() {
         return allocationLogFile;
+    }
+
+    public double getRampUpSeconds() {
+        return rampUpSeconds;
     }
 }
 

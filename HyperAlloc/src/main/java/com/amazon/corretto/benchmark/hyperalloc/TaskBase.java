@@ -5,6 +5,7 @@ package com.amazon.corretto.benchmark.hyperalloc;
 import java.util.ArrayDeque;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 public abstract class TaskBase {
     // The default maximum object size.
@@ -38,7 +39,7 @@ public abstract class TaskBase {
      */
     static Callable<Long> createSingle(final ObjectStore store, final long rateInMb, final long durationInMs) {
         return createSingle(store, rateInMb, durationInMs,
-                DEFAULT_MIN_OBJECT_SIZE, DEFAULT_MAX_OBJECT_SIZE, DEFAULT_SURVIVOR_QUEUE_LENGTH);
+                DEFAULT_MIN_OBJECT_SIZE, DEFAULT_MAX_OBJECT_SIZE, DEFAULT_SURVIVOR_QUEUE_LENGTH, 0.0);
     }
 
     /**
@@ -52,12 +53,19 @@ public abstract class TaskBase {
      * @return The unused allocation allowance during the run.
      */
     static Callable<Long> createSingle(final ObjectStore store, final long rateInMb,
-                                       final long durationInMs, final int minObjectSize, final int maxObjectSize, final int queueLength) {
+                                       final long durationInMs, final int minObjectSize, final int maxObjectSize,
+                                       final int queueLength, double rampUpSeconds) {
         return () -> {
             final long rate = rateInMb * 1024 * 1024;
             final ArrayDeque<AllocObject> survivorQueue = new ArrayDeque<>();
 
-            final long end = System.nanoTime() + durationInMs * 1000000;
+            final long start = System.nanoTime();
+            final long end = start + durationInMs * 1000000;
+            Function<Double, Double> rampUp = null;
+            if (rampUpSeconds > 0) {
+                rampUp = sinusoidalRampUp(rate, rampUpSeconds);
+            }
+
             final TokenBucket throughput = new TokenBucket(rate);
             int longLivedRate = MAX_LONG_LIVED_RATIO;
             int longLivedCounter = longLivedRate;
@@ -65,6 +73,17 @@ public abstract class TaskBase {
             while (System.nanoTime() < end) {
                 long wave = 0L;
                 while (wave < rate / 10) {
+                    if (rampUp != null) {
+                        final double elapsedSeconds = (System.nanoTime() - start) / 1_000_000_000.0;
+                        if (elapsedSeconds < rampUpSeconds) {
+                            double currentRate = rampUp.apply(elapsedSeconds);
+                            throughput.adjustThrottle((long)currentRate);
+                        } else {
+                            throughput.adjustThrottle(rate);
+                            rampUp = null;
+                        }
+                    }
+
                     if (!throughput.isThrottled()) {
                         final AllocObject obj = AllocObject.create(minObjectSize, maxObjectSize, null);
                         throughput.deduct(obj.getRealSize());
@@ -167,6 +186,21 @@ public abstract class TaskBase {
                 }
             }
             return 0L;
+        };
+    }
+
+    private static Function<Double, Double> linearRampUp(long maxRate, double rampUpSeconds) {
+        final double rampUpRate = maxRate / rampUpSeconds;
+        return (Double elapsedSeconds) -> elapsedSeconds * rampUpRate;
+    }
+
+    private static Function<Double, Double> sinusoidalRampUp(final long maxRate, final double rampUpSeconds) {
+        return (Double elapsedSeconds) -> {
+            // First, map the elapsed time to the domain over which our function (cosine)
+            // takes the minimum and maximum values: cos(pi) -> -1, cos(2pi) -> +1. Then,
+            // map the range of our function to a rate between 0 and the maximum.
+            double radians = Math.PI * ((elapsedSeconds / rampUpSeconds) + 1);
+            return ((Math.cos(radians) + 1) / 2) * maxRate;
         };
     }
 }

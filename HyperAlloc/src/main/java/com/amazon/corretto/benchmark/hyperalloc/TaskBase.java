@@ -25,6 +25,8 @@ public abstract class TaskBase {
     // The maximum ratio to try make objects long lived.
     protected static final int MAX_LONG_LIVED_RATIO = 2;
 
+    private static final double NANOS_PER_SECOND = 1_000_000_000.0;
+    
     /**
      * Start all task runners.
      */
@@ -74,7 +76,7 @@ public abstract class TaskBase {
                 long wave = 0L;
                 while (wave < rate / 10) {
                     if (rampUp != null) {
-                        final double elapsedSeconds = (System.nanoTime() - start) / 1_000_000_000.0;
+                        final double elapsedSeconds = (System.nanoTime() - start) / NANOS_PER_SECOND;
                         if (elapsedSeconds < rampUpSeconds) {
                             double currentRate = rampUp.apply(elapsedSeconds);
                             throughput.adjustThrottle((long)currentRate);

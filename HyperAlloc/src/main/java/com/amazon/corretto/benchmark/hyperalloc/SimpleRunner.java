@@ -121,7 +121,8 @@ public class SimpleRunner extends TaskBase {
         if (config.getAllocationSmoothnessFactor() == null) {
             factory = (ignored) -> createSingle(store, allocRateMbPerThread,
                     durationInMs, config.getMinObjectSize(),
-                    config.getMaxObjectSize(), queueSize);
+                    config.getMaxObjectSize(), queueSize,
+                    config.getRampUpSeconds());
         } else {
             factory = (ignored) -> createBurstyAllocator(store, allocRateMbPerThread,
                     durationInMs, config.getAllocationSmoothnessFactor(),
@@ -145,7 +146,6 @@ public class SimpleRunner extends TaskBase {
             allocationLoggerThread = new Thread(this);
             allocationLoggerThread.setName("HyperAlloc-Allocations");
             allocationLoggerThread.setDaemon(true);
-
         }
 
         public void start() {

@@ -1177,13 +1177,96 @@ class RelativeTimeMetrics extends ExtrememObject {
    * possibly adjusting the accounting of its LifeSpan along the way
    * to becoming garbage. 
    */
+  static String us2decimal_ms(ExtrememThread t, long us) {
+    StringBuilder result;
+
+    if (us == 0) {
+      Util.ephemeralString(t, 3);
+      return new String("0ms");
+    } else if (us < 0) {
+      us *= -1;
+      result = new StringBuilder("-");
+    } else
+      result = new StringBuilder("");
+
+    int sb_length = result.length();
+    int sb_capacity = Util.ephemeralStringBuilder(t, sb_length);
+
+    if (us > 1000) {
+      int quotient = (int) (us / 1000);
+      int digits = Util.decimalDigits(quotient);
+
+      result.append(quotient);
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, digits);
+      sb_length += digits;
+
+      us %= 1000;
+    } else {
+      result.append("0");
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 1);
+      sb_length += 1;
+    }
+
+    if (us > 0) {
+      result.append(".");
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 1);
+      sb_length += 1;
+
+      if (us > 100) {
+        result.append(us / 100);
+	us %= 100;
+      } else
+	result.append("0");
+
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 1);
+      sb_length += 1;
+
+      if (us > 10) {
+	result.append(us / 10);
+	us %= 10;
+      } else
+        result.append("0");
+
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 1);
+      sb_length += 1;
+
+      if (us > 0)
+	result.append(us);
+      else
+	result.append("0");
+
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 1);
+      sb_length += 1;
+    }
+
+    result.append("ms");
+    sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 2);
+    sb_length += 2;
+
+    // Assume compiler optimizes this (so there's not a String
+    // followed by a substring operation).
+    Util.ephemeralStringBuilderToString(t, sb_length, sb_capacity);
+
+    return result.toString();
+  }
+
+  /**
+   * This method, used for reporting, returns an Ephemeral
+   * String representation of this.
+   *
+   * The code that invokes toString is expected to account for the
+   * returned String object's memory eventually becoming garbage,
+   * possibly adjusting the accounting of its LifeSpan along the way
+   * to becoming garbage. 
+   */
   static String us2s (ExtrememThread t, long us) {
     String result;
     long quotient = 0;
 
-    if (us == 0)
-      return "0us";
-    else if (us < 0) {
+    if (us == 0) {
+      Util.ephemeralString(t, 3);
+      return new String("0us");
+    } else if (us < 0) {
       us *= -1;
       result = "-";
     } else
@@ -1403,23 +1486,24 @@ class RelativeTimeMetrics extends ExtrememObject {
           }
         }
         
-        my_slope = (right_rate - left_rate) / segment_quanta;
+        my_slope = (right_rate - left_rate) / (segment_quanta * 256);
         float midpoint_time = segment_start + segment_quanta * 128;
         my_intercept =
         ((float) bucket_tally) / segment_quanta - my_slope * midpoint_time;
         
         if (bucket_tally < segment_quanta) {
+          int pad;
           long midpoint;
           if (my_slope > 0.0) {      // fill in from high end
-            int pad = segment_quanta - bucket_tally;
+	    pad = segment_quanta - bucket_tally;
             midpoint = segment_start - 128 + pad * 256;
           } else if (my_slope < 0.0) { // fill in from low end
+            pad = 0;
             midpoint = segment_start + 128;
           } else {              // fill form middle
-            int pad = (segment_quanta - bucket_tally) / 2;
-            midpoint = segment_start - 128 + pad * 256;
+	    pad = (segment_quanta - bucket_tally) / 2;
+            midpoint = segment_start + 128 + pad * 256;
           }
-
           while (bucket_tally-- > 0) {
             addToReportTally(histo_columns, lb, histo_span, midpoint, 1);
             midpoint += 256;
@@ -1431,26 +1515,72 @@ class RelativeTimeMetrics extends ExtrememObject {
             // enclosing rectangle holding twice my tally.
             left_rate = 0.0F;
             right_rate = (2 * (float) bucket_tally) / segment_quanta;
-            my_slope = (right_rate - left_rate) / segment_quanta;
-            my_intercept =
-            ((float) bucket_tally) / segment_quanta - my_slope * midpoint_time;
+            my_slope = (right_rate - left_rate) / (segment_quanta * 256);
+
+	    // Since y = mx + b, calculate b = y_0 - m * x_0
+	    // Rectangle holds bucket_tally * 2.
+	    // Width of rectangle is segment_quanta.
+	    // Height of rectangle is tally * 2 / segment_quanta.
+	    // height at midpoint is (tally * 2 / segment_quanta) / 2, aka (tally / segment_quanta)
+	    //    y_0 is 0
+	    //    x_0 is segment_start
+            my_intercept = 0.0F - my_slope * segment_start;
           } else if ((segment_start - 128 + 256 * segment_quanta) * my_slope
                      + my_intercept < 0) {
             // form a triangle that slopes downward to the right, the
             // enclosing rectangle holding twice my tally.
             left_rate = (2 * (float) bucket_tally) / segment_quanta;
             right_rate = 0.0F;
-            my_slope = (right_rate - left_rate) / segment_quanta;
-            my_intercept =
-            ((float) bucket_tally) / segment_quanta - my_slope * midpoint_time;
-          }
+            my_slope = (right_rate - left_rate) / (segment_quanta * 256);
+	    // Since y = mx + b, calculate b = y_0 - m * x_0
+	    //    y_0 is 0
+	    //    x_0 is segment_start + segment_quanta * 256
 
-          for (int j = 0; j < segment_quanta; j++) {
-            long quanta_midpoint = segment_start + 128 + 256 * j;
-            int quanta_contribution = java.lang.Math.round(
-              my_intercept + quanta_midpoint * my_slope);
-            addToReportTally(histo_columns, lb, histo_span,
-                             quanta_midpoint, quanta_contribution);
+            my_intercept = 0.0F - my_slope * (segment_start + segment_quanta * 256);
+          }
+	  if (my_slope > 0) {
+	    // fill from low to high
+	    for (int j = 0; j < segment_quanta; j++) {
+	      long quanta_midpoint = segment_start + 128 + 256 * j;
+
+	      int quanta_contribution = java.lang.Math.round(my_intercept + quanta_midpoint * my_slope);
+              if (quanta_contribution > bucket_tally) {
+	        quanta_contribution = bucket_tally;
+	      }
+	      addToReportTally(histo_columns, lb, histo_span, quanta_midpoint, quanta_contribution);
+	      bucket_tally -= quanta_contribution;
+	    }
+	    while (bucket_tally > 0) {
+              long midpoint = segment_start + 128;
+	      for (int j = 0; j < segment_quanta; j++) {
+		addToReportTally(histo_columns, lb, histo_span, midpoint, 1);
+		midpoint += 256;
+		if (bucket_tally-- == 1)
+		  break;
+	      }
+	    }
+	  } else {
+	    // fill from high to low
+	    for (int j = segment_quanta - 1; j >= 0; j--) {
+	      long quanta_midpoint = segment_start + 128 + 256 * j;
+	      int quanta_contribution =
+		java.lang.Math.round(my_intercept + quanta_midpoint * my_slope);
+              if (quanta_contribution > bucket_tally) {
+	        quanta_contribution = bucket_tally;
+	      }
+	      addToReportTally(histo_columns, lb, histo_span,
+			       quanta_midpoint, quanta_contribution);
+	      bucket_tally -= quanta_contribution;
+	    }
+	    while (bucket_tally > 0) {
+              long midpoint = segment_start - 128 + 256 * segment_quanta;
+	      for (int j = 0; j < segment_quanta; j++) {
+		addToReportTally(histo_columns, lb, histo_span, midpoint, 1);
+		midpoint -= 256;
+		if (bucket_tally-- == 1)
+		  break;
+	      }
+	    }
           }
         }
       }
@@ -1614,8 +1744,8 @@ class RelativeTimeMetrics extends ExtrememObject {
       // Make a histogram with 64 equal-sized buckets
       long histo_columns[] = new long[HistoColumnCount];
 
-      Trace.msg(4, id, ":Preparing histogram for ",
-		Integer.toString(total_entries));
+      Trace.msg(4, id, ":Preparing histogram with ",
+		Integer.toString(total_entries), " entries");
       Trace.msg(4, id, ":           ranging from: ", debug_us2s(sis));
       Trace.msg(4, id, ":                     to: ", debug_us2s(lis));
       Trace.msg(4, id, ":            from (fblb): ", debug_us2s(fblb));
@@ -1637,8 +1767,27 @@ class RelativeTimeMetrics extends ExtrememObject {
 	two_to_rows += two_to_rows;
       }
       Report.output();
-      Report.output("Logarithmic histogram (Each column's stars represent ",
-		    "a binary tally)");
+      Report.output("Logarithmic histogram (each column encoded as binary representation of tally total)");
+      Report.output();
+      Report.outputNoLine("        [");
+      int avail_space = 62;
+
+      s = us2decimal_ms(t, repack_lb);
+      l = s.length();
+      Report.outputNoLine(s);
+      avail_space -= l;
+
+      s = us2decimal_ms(t, repack_lb + HistoColumnCount * repack_bucket_span);
+      l = s.length();
+      avail_space -= l;
+      while (avail_space-- > 0)
+	Report.outputNoLine(" ");
+      Report.outputNoLine(s);
+      Report.output("]");
+
+      // all values initially empty
+      boolean[] populations = new boolean[HistoColumnCount];
+      int last_populated_column = -1;
 
       // all values of seen_star initially false
       boolean[] seen_star = new boolean[HistoColumnCount];
@@ -1651,11 +1800,13 @@ class RelativeTimeMetrics extends ExtrememObject {
         Report.outputNoLine(" ");
 	for (int col = 0; col < HistoColumnCount; col++) {
 	  if (two_to_rows <= histo_columns[col]) {
-	    Report.outputNoLine("*");
-            seen_star[col] = true;
+	    Report.outputNoLine("1");
+	    populations[col] = true;
+	    if (last_populated_column < col)
+	      last_populated_column = col;
             histo_columns[col] -= two_to_rows;
           }
-	  else if (seen_star[col])
+	  else if (populations[col])
 	    Report.outputNoLine("0");
           else
 	    Report.outputNoLine(" ");
@@ -1668,50 +1819,47 @@ class RelativeTimeMetrics extends ExtrememObject {
       Report.output(
 	"----------------------------------------------------------------");
       Report.outputNoLine("        ");
-      Report.output(
-	"^               ^               ^               ^              ^");
-      int available_columns = PageColumns - 3 * (HistoColumnCount / 4);
-      String last_label = us2s(t, (repack_lb +
-                                   HistoColumnCount * repack_bucket_span));
-      int last_label_length = last_label.length();
-      int pad_columns = (available_columns - last_label_length) / 2;
-      if (pad_columns < 0)
-	pad_columns = 0;
-      Report.outputNoLine("        ");
-      Report.outputNoLine(
-	"|               |               |               |");
-      for (int i = 0; i < pad_columns; i++)
-	Report.outputNoLine(" ");
-      Report.output(last_label);
-      Util.abandonEphemeralString(t, last_label_length);
-      
-      s = us2s(t, repack_lb + HistoColumnCount * repack_bucket_span *  3 / 4);
-      l = s.length();
-      Report.outputNoLine("        ");
-      Report.output(
-	"|               |               |               +--- ", s);
-      Util.abandonEphemeralString(t, l);
-      
-      s = us2s(t, repack_lb + HistoColumnCount * repack_bucket_span / 2); 
-      l = s.length();
-      Report.outputNoLine("        ");
-      Report.output(
-	"|               |               +--- ", s);
-      Util.abandonEphemeralString(t, l);
-      
-      s = us2s(t, repack_lb + HistoColumnCount * repack_bucket_span / 4); 
-      l = s.length();
-      Report.outputNoLine("        ");
-      Report.output(
-	"|               +--- ", s);
-      Util.abandonEphemeralString(t, l);
-      
-      s = us2s(t, repack_lb);
-      l = s.length();
-      Report.outputNoLine("        ");
-      Report.output(
-	"+--- ", s);
-      Util.abandonEphemeralString(t, l);
+      int penultimate_column = -1;
+      for (int i = 0; i <= last_populated_column; i++) {
+	if (populations[i])
+	  Report.outputNoLine("^");
+	else
+	  Report.outputNoLine(" ");
+      }
+      Report.output();
+
+      boolean non_empty_column = (last_populated_column >= 0);
+      while (last_populated_column > 0) {
+        int penultimate_populated = -1;
+	Report.outputNoLine("        ");
+	for (int i = 0; i < last_populated_column; i++) {
+	  if (populations[i]) {
+	    Report.outputNoLine("|");
+	    penultimate_populated = i;
+	  } else
+	    Report.outputNoLine(" ");
+	}
+	Report.outputNoLine("+- < ");
+	long span_end = repack_lb + (last_populated_column + 1) * repack_bucket_span;
+	s = us2decimal_ms(t, span_end);
+	Report.output(s);
+	Util.abandonEphemeralString(t, s);
+	last_populated_column = penultimate_populated;
+      }
+      if (non_empty_column) {
+	Report.outputNoLine("        ");
+	for (int i = 0; i < HistoColumnCount; i++) {
+	  if (populations[i]) {
+	    Report.outputNoLine("+- < ");
+	    long span_end = repack_lb + (i + 1) * repack_bucket_span;
+	    s = us2decimal_ms(t, span_end);
+	    Report.output(s);
+	    Util.abandonEphemeralString(t, s);
+	    break;
+	  } else
+	    Report.outputNoLine(" ");
+	}
+      }
     }
   }
 

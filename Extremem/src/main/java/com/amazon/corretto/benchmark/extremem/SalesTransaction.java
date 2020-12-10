@@ -15,10 +15,10 @@ class SalesTransaction extends ExtrememObject {
   private Customer customer;
   private Product product;
   private String reviewer_info;
-  SalesTransaction next;	// For linked list of pending transactions.
+  SalesTransaction next;        // For linked list of pending transactions.
 
   SalesTransaction (ExtrememThread t, LifeSpan ls, Configuration config,
-		    Product p, Customer c) {
+                    Product p, Customer c) {
     super (t, ls);
     this.customer = c;
     this.product = p;
@@ -54,4 +54,3 @@ class SalesTransaction extends ExtrememObject {
     Util.tallyString(log, ls, p, reviewer_info.length());
   }
 }
-

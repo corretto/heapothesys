@@ -17,9 +17,9 @@ class Customers extends ExtrememObject {
   final private Arraylet<String> customer_names;
   final private HashMap<String, Customer> customer_map;
 
-  private int cbhs = 0;		// cumulative browsing history size.
+  private int cbhs = 0;         // cumulative browsing history size.
 
-  private long cncl;		// customer name cumulative length
+  private long cncl;            // customer name cumulative length
   private long next_customer_no = 0;
 
   Customers(ExtrememThread t, LifeSpan ls, Configuration config) {
@@ -32,7 +32,7 @@ class Customers extends ExtrememObject {
     log.accumulate(ls, MemoryFlavor.ObjectReference, Grow, 4);
     // Account for long cncl, next_customer_no; int cbhs
     log.accumulate(ls, MemoryFlavor.ObjectRSB, Grow,
-		   2 * Util.SizeOfLong + Util.SizeOfInt);
+                   2 * Util.SizeOfLong + Util.SizeOfInt);
 
     this.cc = new ConcurrencyControl(t, ls);
     this.config = config;
@@ -41,13 +41,13 @@ class Customers extends ExtrememObject {
     // same String instances that serve as names for each of the
     // embedded Customer objects.
     this.customer_names = new Arraylet<String>(t, ls, config.MaxArrayLength(),
-					       num_customers);
+                                               num_customers);
 
     int capacity = Util.computeHashCapacity(num_customers,
-					    DefaultLoadFactor,
-					    Util.InitialHashMapArraySize);
+                                            DefaultLoadFactor,
+                                            Util.InitialHashMapArraySize);
     this.customer_map = new HashMap<String, Customer>(capacity,
-						      DefaultLoadFactor);
+                                                      DefaultLoadFactor);
     // Account for the HashMap referenced by customer_map.
     Util.tallyHashMap(log, ls, Grow, config.NumCustomers(), DefaultLoadFactor);
 
@@ -101,17 +101,17 @@ class Customers extends ExtrememObject {
       int capacity = Util.ephemeralStringBuilder(t, first_len);
       capacity = Util.ephemeralStringBuilderAppend(t, first_len, capacity, 1);
       capacity = Util.ephemeralStringBuilderAppend(t, first_len, capacity,
-						   last_len);
+                                                   last_len);
       int full_name_length = first_len + last_len + 1;
       Util.ephemeralStringBuilderToString(t, full_name_length, capacity);
       Util.abandonEphemeralString(t, first_len);
       Util.abandonEphemeralString(t, last_len);
 
       if (customer_map.get(full_name) == null) {
-	// Caller will convert returned String from Ephemeral
-	return full_name;
+        // Caller will convert returned String from Ephemeral
+        return full_name;
       } else
-	Util.abandonEphemeralString(t, full_name_length);
+        Util.abandonEphemeralString(t, full_name_length);
     } while (true);
   }
 
@@ -155,7 +155,7 @@ class Customers extends ExtrememObject {
     int new_customer_length = new_customer_name.length();
     MemoryLog log = t.memoryLog();
     Util.convertEphemeralString(t, this.intendedLifeSpan(),
-				new_customer_length);
+                                new_customer_length);
     adjust_cncl(new_customer_length);
 
     String name = customer_names.get(index);
@@ -165,7 +165,7 @@ class Customers extends ExtrememObject {
     Trace.msg(4, "  index is ", Integer.toString(index));
     Trace.msg(4, "   name is ", name);
     Trace.msg(4, " obsolete_customer has id ",
-	      Long.toString(obsolete_customer.id()));
+              Long.toString(obsolete_customer.id()));
     Trace.msg(4, "  name ", obsolete_customer.name());
 
     // Give the decommissioned customer opportunity to unhook
@@ -185,13 +185,13 @@ class Customers extends ExtrememObject {
     customer_names.set(index, new_customer_name);
 
     Trace.msg(4, "customer_names[", Integer.toString(index),
-	      "] replaced with ", new_customer_name);
+              "] replaced with ", new_customer_name);
 
     customer_map.remove(obsolete_customer_name);
     Util.abandonHashEntry(t, this.intendedLifeSpan());
 
     Customer customer = new Customer(t, LifeSpan.NearlyForever,
-				     new_customer_name, next_customer_no++);
+                                     new_customer_name, next_customer_no++);
     adjust_cbhs(customer.browsingHistorySize());
     customer_map.put(new_customer_name, customer);
 
@@ -206,7 +206,7 @@ class Customers extends ExtrememObject {
     log.accumulate(ls, MemoryFlavor.ObjectReference, p, 4);
     // Account for long cncl, next_customer_no; int cbhs.
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-		   2 * Util.SizeOfLong + Util.SizeOfInt);
+                   2 * Util.SizeOfLong + Util.SizeOfInt);
 
     // Account for the data referenced from customer_names.
     customer_names.tallyMemory(log, ls, p);
@@ -248,7 +248,7 @@ class Customers extends ExtrememObject {
 
       // account for t, all, one
       t.memoryLog().accumulate (ls, MemoryFlavor.ObjectReference,
-				Polarity.Expand, 3);
+                                Polarity.Expand, 3);
       this.t = t;
       this.all = all;
     }
@@ -273,7 +273,7 @@ class Customers extends ExtrememObject {
       super(t, ls);
       // account for t and c fields
       t.memoryLog().accumulate (ls, MemoryFlavor.ObjectReference,
-				Polarity.Expand, 2);
+                                Polarity.Expand, 2);
       this.t = t;
       this.c = c;
     }

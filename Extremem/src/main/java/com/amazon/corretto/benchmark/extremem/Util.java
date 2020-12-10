@@ -86,14 +86,14 @@ class Util {
       String result = "";
       int result_len = 0;
       while (index > 0) {
-	result = "abcdefghijklmnopqrstuvwxyz".charAt(index % 26) + result;
-	int capacity = ephemeralStringBuilder(t, 1);
-	capacity = ephemeralStringBuilderAppend(t, 1, capacity, result_len);
-	if (result_len > 0)
-	  abandonEphemeralString(t, result_len);
-	index /= 26;
-	result_len++;
-	ephemeralStringBuilderToString(t, result_len, capacity);
+        result = "abcdefghijklmnopqrstuvwxyz".charAt(index % 26) + result;
+        int capacity = ephemeralStringBuilder(t, 1);
+        capacity = ephemeralStringBuilderAppend(t, 1, capacity, result_len);
+        if (result_len > 0)
+          abandonEphemeralString(t, result_len);
+        index /= 26;
+        result_len++;
+        ephemeralStringBuilderToString(t, result_len, capacity);
       }
       return result;
     }
@@ -101,15 +101,15 @@ class Util {
 
   // Returned string is presumed to have Ephemeral lifespan.
   static String randomString(ExtrememThread t,
-			     int length, Configuration config) {
+                             int length, Configuration config) {
     String result = "";
     int capacity = Util.ephemeralStringBuilder(t, 0);
     int count = 0;
     for (int i = 0; i < length; i++) {
       if (result.length() > 0) {
-	result += " ";
-	capacity = Util.ephemeralStringBuilderAppend(t, count, capacity, 1);
-	count += 1;
+        result += " ";
+        capacity = Util.ephemeralStringBuilderAppend(t, count, capacity, 1);
+        count += 1;
       }
       String new_word = config.arbitraryWord(t);
       int len = new_word.length();
@@ -131,7 +131,7 @@ class Util {
     Polarity Grow = Polarity.Expand;
     log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.PlainObject, Grow, 1);
     log.accumulate(LifeSpan.Ephemeral,
-		   MemoryFlavor.ObjectRSB, Grow, Util.SizeOfLong);
+                   MemoryFlavor.ObjectRSB, Grow, Util.SizeOfLong);
   }
 
   static void abandonEphemeralLong(ExtrememThread t) {
@@ -139,7 +139,7 @@ class Util {
     Polarity Grow = Polarity.Expand;
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.PlainObject, Grow, 1);
     garbage.accumulate(LifeSpan.Ephemeral,
-		       MemoryFlavor.ObjectRSB, Grow, Util.SizeOfLong);
+                       MemoryFlavor.ObjectRSB, Grow, Util.SizeOfLong);
   }
 
   static void nonEphemeralLong(ExtrememThread t, LifeSpan ls) {
@@ -172,7 +172,7 @@ class Util {
     Polarity Grow = Polarity.Expand;
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject, Grow, 1);
     garbage.accumulate(LifeSpan.Ephemeral,
-		       MemoryFlavor.ArrayReference, Grow, len);
+                       MemoryFlavor.ArrayReference, Grow, len);
   }
 
   static void ephemeralRSBArray(ExtrememThread t, int len, int element_size) {
@@ -180,16 +180,16 @@ class Util {
     Polarity Grow = Polarity.Expand;
     log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject, Grow, 1);
     log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayRSB, Grow,
-		   len * element_size);
+                   len * element_size);
   }
 
   static void abandonEphemeralRSBArray(ExtrememThread t,
-				       int len, int element_size) {
+                                       int len, int element_size) {
     MemoryLog garbage = t.garbageLog();
     Polarity Grow = Polarity.Expand;
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject, Grow, 1);
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayRSB, Grow,
-		       len * element_size);
+                       len * element_size);
   }
 
   static void referenceArray(ExtrememThread t, LifeSpan ls, long len) {
@@ -212,9 +212,9 @@ class Util {
   static void convertStringArray(ExtrememThread t, LifeSpan ls, int length) {
     MemoryLog log = t.memoryLog();
     log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
-		   Polarity.Shrink, 1);
+                   Polarity.Shrink, 1);
     log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayReference,
-		   Polarity.Shrink, length);
+                   Polarity.Shrink, length);
     log.accumulate(ls, MemoryFlavor.ArrayObject, Polarity.Expand, 1);
     log.accumulate(ls, MemoryFlavor.ArrayReference, Polarity.Expand, length);
   }
@@ -223,9 +223,9 @@ class Util {
     MemoryLog garbage = t.garbageLog();
 
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
-		       Polarity.Expand, 1);
+                       Polarity.Expand, 1);
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayReference,
-		       Polarity.Expand, length);
+                       Polarity.Expand, length);
   }
 
   /*
@@ -240,7 +240,7 @@ class Util {
    * and boolean field color (for balancing the tree).
    */
   static void tallyTreeMap(long tree_entries,
-			   MemoryLog log, LifeSpan ls, Polarity p) {
+                           MemoryLog log, LifeSpan ls, Polarity p) {
     log.accumulate (ls, MemoryFlavor.PlainObject, p, 1);
     log.accumulate (ls, MemoryFlavor.ObjectReference, p, 1);
     log.accumulate (ls, MemoryFlavor.ObjectRSB, p, 2 * Util.SizeOfInt);
@@ -249,7 +249,7 @@ class Util {
     log.accumulate (ls, MemoryFlavor.PlainObject, p, tree_entries);
     log.accumulate (ls, MemoryFlavor.ObjectReference, p, tree_entries * 5);
     log.accumulate (ls, MemoryFlavor.ObjectRSB, p,
-		    tree_entries * Util.SizeOfBoolean);
+                    tree_entries * Util.SizeOfBoolean);
   }
 
   static void createTreeNode(ExtrememThread t, LifeSpan ls) {
@@ -293,7 +293,7 @@ class Util {
     log.accumulate (ls, MemoryFlavor.ObjectReference, Grow, 1);
     // Account for count, threshold, next_expand, and load factor
     log.accumulate (ls, MemoryFlavor.ObjectRSB, Grow,
-		    3 * Util.SizeOfInt + Util.SizeOfFloat);
+                    3 * Util.SizeOfInt + Util.SizeOfFloat);
 
     // Account for referenced array
     log.accumulate (ls, MemoryFlavor.ArrayObject, Grow, 1);
@@ -301,13 +301,13 @@ class Util {
   }
 
   static void abandonHashMap(ExtrememThread t, LifeSpan ls,
-			     float load_factor, Collection c) {
+                             float load_factor, Collection c) {
     MemoryLog garbage = t.garbageLog();
     Polarity Grow = Polarity.Expand;
 
     int size = c.size();
     int capacity = computeHashCapacity(size, load_factor,
-				       InitialHashMapArraySize);
+                                       InitialHashMapArraySize);
 
     // A HashMap object is represented by an int size, an int
     // modification count field, an int expand threshold count
@@ -318,7 +318,7 @@ class Util {
     garbage.accumulate(ls, MemoryFlavor.ObjectReference, Grow, 1);
     // Account for count, threshold, next_expand, and load factor
     garbage.accumulate(ls, MemoryFlavor.ObjectRSB, Grow,
-		       3 * Util.SizeOfInt + Util.SizeOfFloat);
+                       3 * Util.SizeOfInt + Util.SizeOfFloat);
 
     // Account for referenced array
     garbage.accumulate(ls, MemoryFlavor.ArrayObject, Grow, 1);
@@ -395,10 +395,10 @@ class Util {
    * array size may be incorrect.)
    */
   static void tallyHashMap(MemoryLog log, LifeSpan ls, Polarity p,
-			   int count, float load_factor) {
+                           int count, float load_factor) {
     int initial_array_capacity = (int) (InitialHashMapArraySize * load_factor);
     int capacity = computeHashCapacity(count, load_factor,
-				       InitialHashMapArraySize);
+                                       InitialHashMapArraySize);
 
     // A HashMap object is represented by an int size, an int
     // modification count field, an int expand threshold count
@@ -409,7 +409,7 @@ class Util {
     log.accumulate (ls, MemoryFlavor.ObjectReference, p, 1);
     // Account for count, threshold, next_expand, and load factor
     log.accumulate (ls, MemoryFlavor.ObjectRSB, p,
-		    (3 * Util.SizeOfInt + Util.SizeOfFloat));
+                    (3 * Util.SizeOfInt + Util.SizeOfFloat));
 
     // Account for referenced array
     log.accumulate (ls, MemoryFlavor.ArrayObject, p, 1);
@@ -467,12 +467,12 @@ class Util {
     final int InitialStringBuilderCapacity = 16;
     int capacity = count + InitialStringBuilderCapacity;
     t.memoryLog().accumulate(LifeSpan.Ephemeral, MemoryFlavor.StringBuilder,
-			     Polarity.Expand, 1);
+                             Polarity.Expand, 1);
     t.memoryLog().accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
-			     Polarity.Expand, 1);
+                             Polarity.Expand, 1);
     t.memoryLog().accumulate(LifeSpan.Ephemeral,
-			     MemoryFlavor.StringBuilderData,
-			     Polarity.Expand, capacity);
+                             MemoryFlavor.StringBuilderData,
+                             Polarity.Expand, capacity);
     return capacity;
   }
 
@@ -482,27 +482,27 @@ class Util {
   // Strings.  Also, expect that a good compiler will constant-fold a
   // strlen() invocation on a literal string constant.
   static int ephemeralStringBuilderAppend(ExtrememThread t,
-					  int count_b4, int capacity_b4,
-					  int appendage_length) {
+                                          int count_b4, int capacity_b4,
+                                          int appendage_length) {
     if(appendage_length <= (capacity_b4 - count_b4))
       return capacity_b4;
     else {
       int new_linear_capacity = count_b4 + appendage_length;
       int new_2x_capacity = capacity_b4 * 2 + 2;
       int new_capacity = ((new_linear_capacity > new_2x_capacity)?
-			  new_linear_capacity: new_2x_capacity);
+                          new_linear_capacity: new_2x_capacity);
       t.garbageLog().accumulate(LifeSpan.Ephemeral,
-				MemoryFlavor.StringBuilderData,
-				Polarity.Expand, capacity_b4);
+                                MemoryFlavor.StringBuilderData,
+                                Polarity.Expand, capacity_b4);
       t.garbageLog().accumulate(LifeSpan.Ephemeral,
-				MemoryFlavor.ArrayObject,
-				Polarity.Expand, 1);
+                                MemoryFlavor.ArrayObject,
+                                Polarity.Expand, 1);
       t.memoryLog().accumulate(LifeSpan.Ephemeral,
-			       MemoryFlavor.StringBuilderData,
-			       Polarity.Expand, new_capacity);
+                               MemoryFlavor.StringBuilderData,
+                               Polarity.Expand, new_capacity);
       t.memoryLog().accumulate(LifeSpan.Ephemeral,
-			       MemoryFlavor.ArrayObject,
-			       Polarity.Expand, 1);
+                               MemoryFlavor.ArrayObject,
+                               Polarity.Expand, 1);
       return new_capacity;
     }
   }
@@ -510,33 +510,33 @@ class Util {
   // Discard the StringBuilder and its backing store.  Allocate string
   // and its backing store.
   static void ephemeralStringBuilderToString(ExtrememThread t,
-					     int count, int capacity) {
+                                             int count, int capacity) {
     MemoryLog garbage = t.garbageLog();
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.StringBuilder,
-		       Polarity.Expand, 1);
+                       Polarity.Expand, 1);
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
-		       Polarity.Expand, 1);
+                       Polarity.Expand, 1);
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.StringBuilderData,
-		       Polarity.Expand, capacity);
+                       Polarity.Expand, capacity);
 
     MemoryLog memory = t.memoryLog();
     memory.accumulate(LifeSpan.Ephemeral, MemoryFlavor.StringObject,
-		      Polarity.Expand, 1);
+                      Polarity.Expand, 1);
     memory.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
-		      Polarity.Expand, 1);
+                      Polarity.Expand, 1);
     memory.accumulate(LifeSpan.Ephemeral, MemoryFlavor.StringData,
-		      Polarity.Expand, count);
+                      Polarity.Expand, count);
   }
 
   static void abandonEphemeralStringBuilder(ExtrememThread t,
-					    int count, int capacity) {
+                                            int count, int capacity) {
     t.garbageLog().accumulate(LifeSpan.Ephemeral, MemoryFlavor.StringBuilder,
-			      Polarity.Expand, 1);
+                              Polarity.Expand, 1);
     t.garbageLog().accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
-			      Polarity.Expand, 1);
+                              Polarity.Expand, 1);
     t.garbageLog().accumulate(LifeSpan.Ephemeral,
-			      MemoryFlavor.StringBuilderData,
-			      Polarity.Expand, capacity);
+                              MemoryFlavor.StringBuilderData,
+                              Polarity.Expand, capacity);
   }
 
   /*
@@ -560,110 +560,110 @@ class Util {
 
     switch (log10floor_approximation) {
       case 0:
-	// if (val == 7), log2floor = 2, log10floor_approximation = 0
-	return 1;
+        // if (val == 7), log2floor = 2, log10floor_approximation = 0
+        return 1;
       case 1:
-	// if (val == 8), log2floor = 3, log10floor_approximation = 1
-	// if (val == 9), log2floor = 3, log10floor_approximation = 1
-	// if (val == 10), log2floor = 3, log10floor_approximation = 1
-	// if (val == 32), log2floor = 4, log10floor_approximation = 1
-	// if (val == 64), log2floor = 5, log10floor_approximation = 1
-	// if (val == 99), log2floor = 5, log10floor_approximation = 1
-	// if (val == 100), log2floor = 5, log10floor_approximation = 1
-	return (val < 10) ? 1: ((val < 100)? 2: 3);
+        // if (val == 8), log2floor = 3, log10floor_approximation = 1
+        // if (val == 9), log2floor = 3, log10floor_approximation = 1
+        // if (val == 10), log2floor = 3, log10floor_approximation = 1
+        // if (val == 32), log2floor = 4, log10floor_approximation = 1
+        // if (val == 64), log2floor = 5, log10floor_approximation = 1
+        // if (val == 99), log2floor = 5, log10floor_approximation = 1
+        // if (val == 100), log2floor = 5, log10floor_approximation = 1
+        return (val < 10) ? 1: ((val < 100)? 2: 3);
       case 2:
-	// if (val == 128, log2floor = 6, log10floor_approximation = 2
-	// if (val == 256, log2floor = 7, log10floor_approximation = 2
-	// if (val == 512, log2floor = 8, log10floor_approximation = 2
-	// if (val == 999), log2floor = 8, log10floor_approximation = 2
-	// if (val == 1000), log2floor = 8, log10floor_approximation = 2
+        // if (val == 128, log2floor = 6, log10floor_approximation = 2
+        // if (val == 256, log2floor = 7, log10floor_approximation = 2
+        // if (val == 512, log2floor = 8, log10floor_approximation = 2
+        // if (val == 999), log2floor = 8, log10floor_approximation = 2
+        // if (val == 1000), log2floor = 8, log10floor_approximation = 2
       case 3:
-	// if (val == 1024, log2floor = 9, log10floor_approximation = 3
-	// if (val == 2048, log2floor = 10, log10floor_approximation = 3
-	// if (val == 4096, log2floor = 11, log10floor_approximation = 3
-	return (val < 1000)? 3: 4;
+        // if (val == 1024, log2floor = 9, log10floor_approximation = 3
+        // if (val == 2048, log2floor = 10, log10floor_approximation = 3
+        // if (val == 4096, log2floor = 11, log10floor_approximation = 3
+        return (val < 1000)? 3: 4;
       case 4:
-	// if (val == 8,192, log2floor = 12, log10floor_approximation = 4
-	// if (val == 17,384, log2floor = 13, log10floor_approximation = 4
-	// if (val == 32,768, log2floor = 14, log10floor_approximation = 4
-	return (val < 10000)? 4: 5;
+        // if (val == 8,192, log2floor = 12, log10floor_approximation = 4
+        // if (val == 17,384, log2floor = 13, log10floor_approximation = 4
+        // if (val == 32,768, log2floor = 14, log10floor_approximation = 4
+        return (val < 10000)? 4: 5;
       case 5:
-	// if (val == 65,536, log2floor = 15, log10floor_approximation = 5
-	// if (val == 131,072, log2floor = 16, log10floor_approximation = 5
-	// if (val == 262,144, log2floor = 17, log10floor_approximation = 5
-	return (val < 100000)? 5: 6;
+        // if (val == 65,536, log2floor = 15, log10floor_approximation = 5
+        // if (val == 131,072, log2floor = 16, log10floor_approximation = 5
+        // if (val == 262,144, log2floor = 17, log10floor_approximation = 5
+        return (val < 100000)? 5: 6;
       case 6:
-	// if (val == 524,288, log2floor = 18, log10floor_approximation = 6
-	// if (val == 1,048,576, log2floor = 19, log10floor_approximation = 6
-	// if (val == 2,097,152, log2floor = 20, log10floor_approximation = 6
-	return (val < 1000000L)? 6: 7;
+        // if (val == 524,288, log2floor = 18, log10floor_approximation = 6
+        // if (val == 1,048,576, log2floor = 19, log10floor_approximation = 6
+        // if (val == 2,097,152, log2floor = 20, log10floor_approximation = 6
+        return (val < 1000000L)? 6: 7;
       case 7:
-	// if (val ==  4,194,304, log2floor = 21, log10floor_approximation = 7
-	// if (val ==  8,388,608, log2floor = 22, log10floor_approximation = 7
-	// if (val == 16,777,216, log2floor = 23, log10floor_approximation = 7
-	return (val < 10000000L)? 7: 8;
+        // if (val ==  4,194,304, log2floor = 21, log10floor_approximation = 7
+        // if (val ==  8,388,608, log2floor = 22, log10floor_approximation = 7
+        // if (val == 16,777,216, log2floor = 23, log10floor_approximation = 7
+        return (val < 10000000L)? 7: 8;
       case 8:
-	// if (val ==  33,554,432, log2floor = 24, log10floor_approximation = 8
-	// if (val ==  67,108,864, log2floor = 25, log10floor_approximation = 8
-	// if (val == 134,217,728, log2floor = 26, log10floor_approximation = 8
-	return (val < 100000000L)? 8: 9;
+        // if (val ==  33,554,432, log2floor = 24, log10floor_approximation = 8
+        // if (val ==  67,108,864, log2floor = 25, log10floor_approximation = 8
+        // if (val == 134,217,728, log2floor = 26, log10floor_approximation = 8
+        return (val < 100000000L)? 8: 9;
       case 9:
-	// if (val ==   268,435,456, log2floor = 27, log10floor_approx = 9
-	// if (val ==   536,870,912, log2floor = 28, log10floor_approx = 9
-	// if (val == 1,073,741,824, log2floor = 29, log10floor_approx = 9
-	return (val < 1000000000L)? 9: 10;
+        // if (val ==   268,435,456, log2floor = 27, log10floor_approx = 9
+        // if (val ==   536,870,912, log2floor = 28, log10floor_approx = 9
+        // if (val == 1,073,741,824, log2floor = 29, log10floor_approx = 9
+        return (val < 1000000000L)? 9: 10;
       case 10:
-	// if (val == 2,147,483,648, log2floor = 30, log10floor_approx = 10
-	// if (val == 4,294,967,296, log2floor = 31, log10floor_approx = 10
-	// if (val == 8,589,934,592, log2floor = 32, log10floor_approx = 10
-	return (val < 10000000000L)? 10: 11;
+        // if (val == 2,147,483,648, log2floor = 30, log10floor_approx = 10
+        // if (val == 4,294,967,296, log2floor = 31, log10floor_approx = 10
+        // if (val == 8,589,934,592, log2floor = 32, log10floor_approx = 10
+        return (val < 10000000000L)? 10: 11;
       case 11:
-	// if (val == 17,179,869,184, log2floor = 33, log10floor_approx = 11
-	// if (val == 34,359,738,368, log2floor = 34, log10floor_approx = 11
-	// if (val == 68,719,476,736, log2floor = 35, log10floor_approx = 11
-	return (val < 10000000000L)? 11: 12;
+        // if (val == 17,179,869,184, log2floor = 33, log10floor_approx = 11
+        // if (val == 34,359,738,368, log2floor = 34, log10floor_approx = 11
+        // if (val == 68,719,476,736, log2floor = 35, log10floor_approx = 11
+        return (val < 10000000000L)? 11: 12;
       case 12:
-	// if (val == 137,438,953,472, log2floor = 36, log10floor_approx = 12
-	// if (val == 274,877,906,944, log2floor = 37, log10floor_approx = 12
-	// if (val == 549,755,813,888, log2floor = 38, log10floor_approx = 12
-	return (val < 100000000000L)? 12: 13;
+        // if (val == 137,438,953,472, log2floor = 36, log10floor_approx = 12
+        // if (val == 274,877,906,944, log2floor = 37, log10floor_approx = 12
+        // if (val == 549,755,813,888, log2floor = 38, log10floor_approx = 12
+        return (val < 100000000000L)? 12: 13;
       case 13:;
-	// if val == 1,099,511,627,776, log2floor = 39, log10floor_approx = 13
-	// if val == 2,199,023,255,552, log2floor = 40, log10floor_approx = 13
-	// if val == 4,398,046,511,104, log2floor = 41, log10floor_approx = 13
-	return 13;
+        // if val == 1,099,511,627,776, log2floor = 39, log10floor_approx = 13
+        // if val == 2,199,023,255,552, log2floor = 40, log10floor_approx = 13
+        // if val == 4,398,046,511,104, log2floor = 41, log10floor_approx = 13
+        return 13;
       case 14:
-	// if val ==  8,796,093,022,208, log2floor = 42, log10floor = 14
-	// if val == 17,592,186,044,416, log2floor = 43, log10floor = 14
-	// if val == 35,184,372,088,832, log2floor = 44, log10floor = 14
-	return (val < 10000000000000L)? 14: 15;
+        // if val ==  8,796,093,022,208, log2floor = 42, log10floor = 14
+        // if val == 17,592,186,044,416, log2floor = 43, log10floor = 14
+        // if val == 35,184,372,088,832, log2floor = 44, log10floor = 14
+        return (val < 10000000000000L)? 14: 15;
       case 15:
-	// if val ==  70,368,744,177,664, log2floor = 45, log10floor = 15
-	// if val == 140,737,488,355,328, log2floor = 46, log10floor = 15
-	// if val == 281,474,976,710,656, log2floor = 47, log10floor = 15
-	return (val < 10000000000000L)? 15: 16;
+        // if val ==  70,368,744,177,664, log2floor = 45, log10floor = 15
+        // if val == 140,737,488,355,328, log2floor = 46, log10floor = 15
+        // if val == 281,474,976,710,656, log2floor = 47, log10floor = 15
+        return (val < 10000000000000L)? 15: 16;
       case 16:
-	// This and following cases not fully analyzed.  Assume the pattern
-	// continues as established above.  At worse, I am off-by-one
-	// in the tabulation of String data elements allocated.
-	return (val < 100000000000000L)? 16: 17;
+        // This and following cases not fully analyzed.  Assume the pattern
+        // continues as established above.  At worse, I am off-by-one
+        // in the tabulation of String data elements allocated.
+        return (val < 100000000000000L)? 16: 17;
       case 17:
-	return (val < 1000000000000000L)? 17: 18;
+        return (val < 1000000000000000L)? 17: 18;
       case 18:
-	return (val < 10000000000000000L)? 18: 19;
+        return (val < 10000000000000000L)? 18: 19;
       case 19:
-	return (val < 10000000000000000L)? 19: 20;
+        return (val < 10000000000000000L)? 19: 20;
       case 20:
-	return (val < 100000000000000000L)? 20: 21;
+        return (val < 100000000000000000L)? 20: 21;
       case 21:
-	return (val < 1000000000000000000L)? 21: 22;
+        return (val < 1000000000000000000L)? 21: 22;
       default:
-	return 22;
+        return 22;
     }
   }
 
   static void abandonNonEphemeralString(ExtrememThread t,
-					LifeSpan ls, int len) {
+                                        LifeSpan ls, int len) {
     MemoryLog garbage = t.garbageLog();
 
     garbage.accumulate(ls, MemoryFlavor.StringObject, Polarity.Expand, 1);
@@ -674,22 +674,22 @@ class Util {
   static void ephemeralString(ExtrememThread t, int len) {
     MemoryLog log = t.memoryLog();
     log.accumulate(LifeSpan.Ephemeral,
-		   MemoryFlavor.StringObject, Polarity.Expand, 1);
+                   MemoryFlavor.StringObject, Polarity.Expand, 1);
     log.accumulate(LifeSpan.Ephemeral,
-		   MemoryFlavor.ArrayObject, Polarity.Expand, 1);
+                   MemoryFlavor.ArrayObject, Polarity.Expand, 1);
     log.accumulate(LifeSpan.Ephemeral,
-		   MemoryFlavor.StringData, Polarity.Expand, len);
+                   MemoryFlavor.StringData, Polarity.Expand, len);
   }
 
   /* Move accounting of Ephemeral String of length len to category ls. */
   static void convertEphemeralString(ExtrememThread t, LifeSpan ls, int len) {
     MemoryLog log = t.memoryLog();
     log.accumulate(LifeSpan.Ephemeral,
-		   MemoryFlavor.StringObject, Polarity.Shrink, 1);
+                   MemoryFlavor.StringObject, Polarity.Shrink, 1);
     log.accumulate(LifeSpan.Ephemeral,
-		   MemoryFlavor.ArrayObject, Polarity.Shrink, 1);
+                   MemoryFlavor.ArrayObject, Polarity.Shrink, 1);
     log.accumulate(LifeSpan.Ephemeral,
-		   MemoryFlavor.StringData, Polarity.Shrink, len);
+                   MemoryFlavor.StringData, Polarity.Shrink, len);
 
     log.accumulate(ls, MemoryFlavor.StringObject, Polarity.Expand, 1);
     log.accumulate(ls, MemoryFlavor.ArrayObject, Polarity.Expand, 1);
@@ -700,46 +700,46 @@ class Util {
     MemoryLog garbage = t.garbageLog();
 
     garbage.accumulate(LifeSpan.Ephemeral,
-		       MemoryFlavor.StringObject, Polarity.Expand, 1);
+                       MemoryFlavor.StringObject, Polarity.Expand, 1);
     garbage.accumulate(LifeSpan.Ephemeral,
-		       MemoryFlavor.ArrayObject, Polarity.Expand, 1);
+                       MemoryFlavor.ArrayObject, Polarity.Expand, 1);
     garbage.accumulate(LifeSpan.Ephemeral,
-		       MemoryFlavor.StringData, Polarity.Expand, len);
+                       MemoryFlavor.StringData, Polarity.Expand, len);
   }
 
   static void abandonEphemeralString(ExtrememThread t, String s) {
     MemoryLog garbage = t.garbageLog();
     int len = s.length();
     garbage.accumulate(LifeSpan.Ephemeral,
-		       MemoryFlavor.StringObject, Polarity.Expand, 1);
+                       MemoryFlavor.StringObject, Polarity.Expand, 1);
     garbage.accumulate(LifeSpan.Ephemeral,
-		       MemoryFlavor.ArrayObject, Polarity.Expand, 1);
+                       MemoryFlavor.ArrayObject, Polarity.Expand, 1);
     garbage.accumulate(LifeSpan.Ephemeral,
-		       MemoryFlavor.StringData, Polarity.Expand, len);
+                       MemoryFlavor.StringData, Polarity.Expand, len);
   }
 
   static void abandonEphemeralStrings(ExtrememThread t,
-				      int num_strings, int cumulative_len) {
+                                      int num_strings, int cumulative_len) {
     MemoryLog garbage = t.garbageLog();
 
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.StringObject,
-		       Polarity.Expand, num_strings);
+                       Polarity.Expand, num_strings);
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
-		       Polarity.Expand, num_strings);
+                       Polarity.Expand, num_strings);
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.StringData,
-		       Polarity.Expand, cumulative_len);
+                       Polarity.Expand, cumulative_len);
   }
 
   static void abandonIdenticalEphemeralStrings(ExtrememThread t,
-					       int num_strings, int len) {
+                                               int num_strings, int len) {
     MemoryLog garbage = t.garbageLog();
 
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.StringObject,
-		       Polarity.Expand, num_strings);
+                       Polarity.Expand, num_strings);
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
-		       Polarity.Expand, num_strings);
+                       Polarity.Expand, num_strings);
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.StringData,
-		       Polarity.Expand, num_strings * len);
+                       Polarity.Expand, num_strings * len);
   }
 
   static void tallyString(MemoryLog log, LifeSpan ls, Polarity p, int len) {
@@ -749,7 +749,7 @@ class Util {
   }
 
   static void tallyStrings(MemoryLog log, LifeSpan ls, Polarity p,
-			   int string_count, long cumulative_len) {
+                           int string_count, long cumulative_len) {
     log.accumulate(ls, MemoryFlavor.StringObject, p, string_count);
     log.accumulate(ls, MemoryFlavor.ArrayObject, p, string_count);
     log.accumulate(ls, MemoryFlavor.StringData, p, cumulative_len);

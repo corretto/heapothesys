@@ -48,7 +48,7 @@ class Trace {
   }
 
   private static synchronized void output(String s1, String s2,
-					  String s3, String s4) {
+                                          String s3, String s4) {
     err.print(s1);
     err.print(s2);
     err.print(s3);
@@ -56,7 +56,7 @@ class Trace {
   }
 
   private static synchronized void output(String s1, String s2, String s3,
-					  String s4, String s5) {
+                                          String s4, String s5) {
     err.print(s1);
     err.print(s2);
     err.print(s3);
@@ -65,7 +65,7 @@ class Trace {
   }
 
   private static synchronized void output(String s1, String s2, String s3,
-					  String s4, String s5, String s6) {
+                                          String s4, String s5, String s6) {
     err.print(s1);
     err.print(s2);
     err.print(s3);
@@ -76,7 +76,7 @@ class Trace {
 
   private static synchronized void
   output(String s1,
-	 String s2, String s3, String s4, String s5, String s6, String s7) {
+         String s2, String s3, String s4, String s5, String s6, String s7) {
     err.print(s1);
     err.print(s2);
     err.print(s3);
@@ -88,7 +88,7 @@ class Trace {
 
   private static synchronized void
   output(String s1, String s2, String s3, String s4, String s5, String s6,
-	 String s7, String s8, String s9) {
+         String s7, String s8, String s9) {
     err.print(s1);
     err.print(s2);
     err.print(s3);
@@ -102,7 +102,7 @@ class Trace {
 
   private static synchronized void
   output(String s1, String s2, String s3, String s4, String s5, String s6,
-	 String s7, String s8, String s9, String s10, String s11, String s12) {
+         String s7, String s8, String s9, String s10, String s11, String s12) {
     err.print(s1);
     err.print(s2);
     err.print(s3);
@@ -119,8 +119,8 @@ class Trace {
 
   private static synchronized void
   output(String s1, String s2, String s3, String s4, String s5, String s6,
-	 String s7, String s8, String s9, String s10, String s11, String s12,
-	 String s13, String s14) {
+         String s7, String s8, String s9, String s10, String s11, String s12,
+         String s13, String s14) {
     err.print(s1);
     err.print(s2);
     err.print(s3);
@@ -139,9 +139,9 @@ class Trace {
 
   private static synchronized void
   output(String s1, String s2, String s3, String s4, String s5, String s6,
-	 String s7, String s8, String s9, String s10, String s11,
-	 String s12, String s13, String s14, String s15, String s16,
-	 String s17, String s18, String s19, String s20, String s21) {
+         String s7, String s8, String s9, String s10, String s11,
+         String s12, String s13, String s14, String s15, String s16,
+         String s17, String s18, String s19, String s20, String s21) {
     err.print(s1);
     err.print(s2);
     err.print(s3);
@@ -167,7 +167,7 @@ class Trace {
 
   private static synchronized void
   outputNoLine(String s1, String s2,
-	       String s3, String s4, String s5, String s6, String s7) {
+               String s3, String s4, String s5, String s6, String s7) {
     err.print(s1);
     err.print(s2);
     err.print(s3);
@@ -209,37 +209,37 @@ class Trace {
 
   // debug statements always output, regardless of verbosity value
   static void debug(String s1, String s2, String s3, String s4, String s5,
-		    String s6) {
+                    String s6) {
     output(s1, s2, s3, s4, s5, s6);
   }
 
   // debug statements always output, regardless of verbosity value
   static void debug(String s1, String s2, String s3, String s4, String s5,
-		    String s6, String s7) {
+                    String s6, String s7) {
     output(s1, s2, s3, s4, s5, s6, s7);
   }
 
   // debug statements always output, regardless of verbosity value
   static void debug(String s1, String s2, String s3, String s4, String s5,
-		    String s6, String s7, String s8, String s9) {
+                    String s6, String s7, String s8, String s9) {
     output(s1, s2, s3, s4, s5, s6, s7, s8, s9);
   }
 
   // debug statements always output, regardless of verbosity value
   static void debug(String s1, String s2, String s3, String s4, String s5,
-		    String s6, String s7, String s8, String s9, String s10,
-		    String s11, String s12) {
+                    String s6, String s7, String s8, String s9, String s10,
+                    String s11, String s12) {
     output(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12);
   }
 
   // debug statements always output, regardless of verbosity value
   static void debug(String s1, String s2, String s3, String s4, String s5,
-		    String s6, String s7, String s8, String s9, String s10,
-		    String s11, String s12, String s13, String s14,
-		    String s15, String s16, String s17, String s18,
-		    String s19, String s20, String s21) {
+                    String s6, String s7, String s8, String s9, String s10,
+                    String s11, String s12, String s13, String s14,
+                    String s15, String s16, String s17, String s18,
+                    String s19, String s20, String s21) {
     output(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14,
-	   s15, s16, s17, s18, s19, s20, s21);
+           s15, s16, s17, s18, s19, s20, s21);
   }
 
   static void msg(int level, String s1) {
@@ -263,36 +263,36 @@ class Trace {
   }
 
   static void msg(int level, String s1, String s2, String s3,
-		  String s4, String s5) {
+                  String s4, String s5) {
     if (level <= verbosity)
       output(s1, s2, s3, s4, s5);
 
   }
 
   static void msg(int level, String s1, String s2, String s3,
-		  String s4, String s5, String s6) {
+                  String s4, String s5, String s6) {
     if (level <= verbosity)
       output(s1, s2, s3, s4, s5, s6);
 
   }
 
   static void msg(int level, String s1, String s2, String s3,
-		  String s4, String s5, String s6, String s7) {
+                  String s4, String s5, String s6, String s7) {
     if (level <= verbosity)
       output(s1, s2, s3, s4, s5, s6, s7);
 
   }
 
   static void msg(int level, String s1, String s2, String s3,
-		  String s4, String s5, String s6, String s7,
-		  String s8, String s9, String s10, String s11,
-		  String s12, String s13, String s14) {
+                  String s4, String s5, String s6, String s7,
+                  String s8, String s9, String s10, String s11,
+                  String s12, String s13, String s14) {
     if (level <= verbosity)
       output(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14);
   }
 
   static void msgNoLine(int level, String s1, String s2, String s3,
-			String s4, String s5, String s6, String s7) {
+                        String s4, String s5, String s6, String s7) {
     if (level <= verbosity)
       outputNoLine(s1, s2, s3, s4, s5, s6, s7);
 

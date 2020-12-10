@@ -17,12 +17,12 @@ class BrowsingHistory extends ExtrememObject {
 
   // Leave this as package access so BrowsingHistoryQueue can manipulate.
   private final BrowsingHistoryQueue my_queue;
-  BrowsingHistory next;		// next Product interest for same Customer
-  BrowsingHistory prev;		// prev Product interest for same Customer
+  BrowsingHistory next;         // next Product interest for same Customer
+  BrowsingHistory prev;         // prev Product interest for same Customer
   
   BrowsingHistory(ExtrememThread t, LifeSpan ls, Customer customer,
-		  Product product, AbsoluteTime expiration,
-		  BrowsingHistoryQueue bhq) {
+                  Product product, AbsoluteTime expiration,
+                  BrowsingHistoryQueue bhq) {
     super(t, ls);
     this.customer = customer;
     this.product = product;
@@ -33,7 +33,7 @@ class BrowsingHistory extends ExtrememObject {
     this.prev = this.next = null;
     // Account for customer, product, expiration, my_queue, next, prev fields.
     t.memoryLog().accumulate(ls,
-			     MemoryFlavor.ObjectReference, Polarity.Expand, 6);
+                             MemoryFlavor.ObjectReference, Polarity.Expand, 6);
   }
 
   AbsoluteTime expirationTime() {

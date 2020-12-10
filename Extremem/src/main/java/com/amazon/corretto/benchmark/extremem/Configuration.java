@@ -151,7 +151,7 @@ class Configuration {
     MemoryLog log = t.memoryLog();
     // Account for this object
     log.accumulate(LifeSpan.NearlyForever, MemoryFlavor.PlainObject,
-		   Polarity.Expand, 1);
+                   Polarity.Expand, 1);
 
     // Account for 16 int fields: DictionarySize, MaxArrayLength,
     // NumCustomers, NumProducts,
@@ -163,22 +163,22 @@ class Configuration {
     // SaveForLaterThreshold; 2 boolean fields:
     // ReportIndividualThreads, ReportCSV
     log.accumulate(LifeSpan.NearlyForever, MemoryFlavor.ObjectRSB,
-		   Polarity.Expand, 15 * Util.SizeOfInt +
-		   2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
+                   Polarity.Expand, 15 * Util.SizeOfInt +
+                   2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
     // Account for 11 reference fields: args, dictionary,
     // DictionaryFile, InitializationDelay, SimulationDuration,
     // CustomerPeriod, CustomerThinkTime, ServerPeriod, BrowsingExpiration,
     // CustomerReplacementPeriod, ProductReplacementPeriod.
     log.accumulate(LifeSpan.NearlyForever,
-		   MemoryFlavor.ObjectReference, Polarity.Expand, 11);
+                   MemoryFlavor.ObjectReference, Polarity.Expand, 11);
 
     ReportIndividualThreads = DefaultReportIndividualThreads;
     ReportCSV = DefaultReportCSV;
     DictionarySize = DefaultDictionarySize;
     DictionaryFile = new String(DefaultDictionaryFile);
     Util.tallyString(t.memoryLog(), LifeSpan.NearlyForever,
-		     Polarity.Expand, DictionaryFile.length());
+                     Polarity.Expand, DictionaryFile.length());
 
     MaxArrayLength = DefaultMaxArrayLength;
     NumCustomers = DefaultNumCustomers;
@@ -193,7 +193,7 @@ class Configuration {
 
     InitializationDelay = (
       new RelativeTime(t, DefaultInitializationDelayMillis / 1000, (int)
-		       (DefaultInitializationDelayMillis % 1000) * 1000000));
+                       (DefaultInitializationDelayMillis % 1000) * 1000000));
     InitializationDelay.changeLifeSpan(t, LifeSpan.NearlyForever);
 
     RelativeTime rt = new RelativeTime(t);
@@ -239,7 +239,7 @@ class Configuration {
     assureConfiguration(t);
     t.replaceSeed(RandomSeed);
     dictionary = new Words(t, DictionaryFile, LifeSpan.NearlyForever,
-			   DictionarySize, MaxArrayLength);
+                           DictionarySize, MaxArrayLength);
   }
 
   private static String[] boolean_patterns = {
@@ -314,19 +314,19 @@ class Configuration {
   }
 
   void doNameArg(ExtrememThread t,
-		 int index, String keyword, String nameString) {
+                 int index, String keyword, String nameString) {
     switch (index) {
       case 0:
-	if (keyword.equals("DictionaryFile")) {
-	  Util.tallyString(t.garbageLog(), LifeSpan.NearlyForever,
-			   Polarity.Expand, DictionaryFile.length());
-	  DictionaryFile = nameString;
-	  Util.tallyString(t.memoryLog(), LifeSpan.NearlyForever,
-			   Polarity.Expand, DictionaryFile.length());
-	  break;
-	}
+        if (keyword.equals("DictionaryFile")) {
+          Util.tallyString(t.garbageLog(), LifeSpan.NearlyForever,
+                           Polarity.Expand, DictionaryFile.length());
+          DictionaryFile = nameString;
+          Util.tallyString(t.memoryLog(), LifeSpan.NearlyForever,
+                           Polarity.Expand, DictionaryFile.length());
+          break;
+        }
       default:
-	usage("Unexpected internal error in doNameArg");
+        usage("Unexpected internal error in doNameArg");
     }
   }
 
@@ -338,21 +338,21 @@ class Configuration {
       b = true;
     else
       usage("boolean command-line option requires"
-	    + " either \"true\" or \"false\"");
+            + " either \"true\" or \"false\"");
 
     switch (index) {
       case 0:
-	if (keyword.equals("ReportCSV")) {
-	  ReportCSV = b;
-	  break;
-	}
+        if (keyword.equals("ReportCSV")) {
+          ReportCSV = b;
+          break;
+        }
       case 1:
-	if (keyword.equals("ReportIndividualThreads")) {
-	  ReportIndividualThreads = b;
-	  break;
-	}
+        if (keyword.equals("ReportIndividualThreads")) {
+          ReportIndividualThreads = b;
+          break;
+        }
       default:
-	usage("Unexpected internal error in doBooleanArg");
+        usage("Unexpected internal error in doBooleanArg");
     }
   }
 
@@ -361,93 +361,93 @@ class Configuration {
     for (int i = 0; i < uintString.length(); i++) {
       char c = uintString.charAt(i);
       if (!Character.isDigit(c))
-	usage("Unexpected character in unsigned int encoding");
+        usage("Unexpected character in unsigned int encoding");
       u = u * 10 + Character.digit(c, 10);
     }
 
     switch (index) {
       case 0:
-	if (keyword.equals("BrowsingHistoryQueueCount")) {
-	  BrowsingHistoryQueueCount = u;
-	  break;
-	}
+        if (keyword.equals("BrowsingHistoryQueueCount")) {
+          BrowsingHistoryQueueCount = u;
+          break;
+        }
       case 1:
-	if (keyword.equals("CustomerReplacementCount")) {
-	  CustomerReplacementCount = u;
-	  break;
-	}
+        if (keyword.equals("CustomerReplacementCount")) {
+          CustomerReplacementCount = u;
+          break;
+        }
       case 2:
-	if (keyword.equals("CustomerThreads")) {
-	  CustomerThreads = u;
-	  break;
-	}
+        if (keyword.equals("CustomerThreads")) {
+          CustomerThreads = u;
+          break;
+        }
       case 3:
-	if (keyword.equals("DictionarySize")) {
-	  DictionarySize = u;
-	  break;
-	}
+        if (keyword.equals("DictionarySize")) {
+          DictionarySize = u;
+          break;
+        }
       case 4:
-	if (keyword.equals("KeywordSearchCount")) {
-	  KeywordSearchCount = u;
-	  break;
-	}
+        if (keyword.equals("KeywordSearchCount")) {
+          KeywordSearchCount = u;
+          break;
+        }
       case 5:
-	if (keyword.equals("MaxArrayLength")) {
-	  MaxArrayLength = u;
-	  break;
-	}
+        if (keyword.equals("MaxArrayLength")) {
+          MaxArrayLength = u;
+          break;
+        }
       case 6:
-	if (keyword.equals("NumCustomers")) {
-	  NumCustomers = u;
-	  break;
-	}
+        if (keyword.equals("NumCustomers")) {
+          NumCustomers = u;
+          break;
+        }
       case 7:
-	if (keyword.equals("NumProducts")) {
-	  NumProducts = u;
-	  break;
-	}
+        if (keyword.equals("NumProducts")) {
+          NumProducts = u;
+          break;
+        }
       case 8:
-	if (keyword.equals("ProductDescriptionLength")) {
-	  ProductDescriptionLength = u;
-	  break;
-	}
+        if (keyword.equals("ProductDescriptionLength")) {
+          ProductDescriptionLength = u;
+          break;
+        }
       case 9:
-	if (keyword.equals("ProductNameLength")) {
-	  ProductNameLength = u;
-	  break;
-	}
+        if (keyword.equals("ProductNameLength")) {
+          ProductNameLength = u;
+          break;
+        }
       case 10:
-	if (keyword.equals("ProductReplacementCount")) {
-	  ProductReplacementCount = u;
-	  break;
-	}
+        if (keyword.equals("ProductReplacementCount")) {
+          ProductReplacementCount = u;
+          break;
+        }
       case 11:
-	if (keyword.equals("ProductReviewLength")) {
-	  ProductReviewLength = u;
-	  break;
-	}
+        if (keyword.equals("ProductReviewLength")) {
+          ProductReviewLength = u;
+          break;
+        }
       case 12:
-	if (keyword.equals("RandomSeed")) {
-	  RandomSeed = u;
-	  break;
-	}
+        if (keyword.equals("RandomSeed")) {
+          RandomSeed = u;
+          break;
+        }
       case 13:
-	if (keyword.equals("SalesTransactionQueueCount")) {
-	  SalesTransactionQueueCount = u;
-	  break;
-	}
+        if (keyword.equals("SalesTransactionQueueCount")) {
+          SalesTransactionQueueCount = u;
+          break;
+        }
       case 14:
-	if (keyword.equals("SelectionCriteriaCount")) {
-	  SelectionCriteriaCount = u;
-	  break;
-	}
+        if (keyword.equals("SelectionCriteriaCount")) {
+          SelectionCriteriaCount = u;
+          break;
+        }
       case 15:
-	if (keyword.equals("ServerThreads")) {
-	  ServerThreads = u;
-	  break;
-	}
+        if (keyword.equals("ServerThreads")) {
+          ServerThreads = u;
+          break;
+        }
       default:
-	usage("Unexpected internal error in doUintArg");
+        usage("Unexpected internal error in doUintArg");
     }
   }
 
@@ -459,62 +459,62 @@ class Configuration {
     for (int i = 2; i < floatString.length(); i++) {
       char c = floatString.charAt(i);
       if (!Character.isDigit(c))
-	usage("Unexpected character in float encoding");
+        usage("Unexpected character in float encoding");
       f += Character.digit(c, 10) * multiplier;
       multiplier /= 10.0f;
     }
 
     switch (index) {
       case 0:
-	if (keyword.equals("BuyThreshold")) {
-	  BuyThreshold = f;
-	  break;
-	}
+        if (keyword.equals("BuyThreshold")) {
+          BuyThreshold = f;
+          break;
+        }
       case 1:
-	if (keyword.equals("SaveForLaterThreshold")) {
-	  SaveForLaterThreshold = f;
-	  break;
-	}
+        if (keyword.equals("SaveForLaterThreshold")) {
+          SaveForLaterThreshold = f;
+          break;
+        }
       default:
-	usage("Unexpected internal error in doFloattArg");
+        usage("Unexpected internal error in doFloattArg");
     }
   }
 
   void doTimeArg(ExtrememThread t,
-		 int index, String keyword, String timeString) {
+                 int index, String keyword, String timeString) {
     MemoryLog log = t.memoryLog();
     MemoryLog garbage = t.garbageLog();
     long u = 0;
     int i;
     for (i = 0;
-	 i < timeString.length() && Character.isDigit(timeString.charAt(i));
-	 i++) {
+         i < timeString.length() && Character.isDigit(timeString.charAt(i));
+         i++) {
       char c = timeString.charAt(i);
       if (!Character.isDigit(c))
-	usage("Unexpected character in time encoding");
+        usage("Unexpected character in time encoding");
       u = u * 10 + Character.digit(c, 10);
     }
     char unit_selector = '$';
     if (i + 1 == timeString.length())
       unit_selector = timeString.charAt(i);
     else if ((i + 2 == timeString.length()) &&
-	     (timeString.charAt(i) == 'm') && (timeString.charAt(i+1) == 's'))
+             (timeString.charAt(i) == 'm') && (timeString.charAt(i+1) == 's'))
       unit_selector = '@';
       
     switch (unit_selector) {
       case 'd':
-	u *= 24;		// convert days to hours
+        u *= 24;                // convert days to hours
       case 'h':
-	u *= 60;		// convert hours to minutes
+        u *= 60;                // convert hours to minutes
       case 'm':
-	u *= 60;		// convert minutes to seconds
+        u *= 60;                // convert minutes to seconds
       case 's':
-	u *= 1000;		// convert seconds to ms
+        u *= 1000;              // convert seconds to ms
       case '@':
-	break;
+        break;
       case '$':
       default:
-	usage("Time suffix must be ms, s, m, h, or d");
+        usage("Time suffix must be ms, s, m, h, or d");
     }
 
     long secs;
@@ -525,81 +525,81 @@ class Configuration {
 
     switch (index) {
       case 0:
-	if (keyword.equals("BrowsingExpiration")) {
-	  BrowsingExpiration.garbageFootprint(t);
-	  BrowsingExpiration = new RelativeTime(t, secs, nanos);
-	  BrowsingExpiration.changeLifeSpan(t, LifeSpan.NearlyForever);
-	  break;
-	}
+        if (keyword.equals("BrowsingExpiration")) {
+          BrowsingExpiration.garbageFootprint(t);
+          BrowsingExpiration = new RelativeTime(t, secs, nanos);
+          BrowsingExpiration.changeLifeSpan(t, LifeSpan.NearlyForever);
+          break;
+        }
       case 1:
-	if (keyword.equals("CustomerPeriod")) {
-	  CustomerPeriod.garbageFootprint(t);
-	  CustomerPeriod = new RelativeTime(t, secs, nanos);
-	  CustomerPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
-	  break;
-	}
+        if (keyword.equals("CustomerPeriod")) {
+          CustomerPeriod.garbageFootprint(t);
+          CustomerPeriod = new RelativeTime(t, secs, nanos);
+          CustomerPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
+          break;
+        }
       case 2:
-	if (keyword.equals("CustomerReplacementPeriod")) {
-	  CustomerReplacementPeriod.garbageFootprint(t);
-	  CustomerReplacementPeriod = new RelativeTime(t, secs, nanos);
-	  CustomerReplacementPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
-	  break;
-	}
+        if (keyword.equals("CustomerReplacementPeriod")) {
+          CustomerReplacementPeriod.garbageFootprint(t);
+          CustomerReplacementPeriod = new RelativeTime(t, secs, nanos);
+          CustomerReplacementPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
+          break;
+        }
       case 3:
-	if (keyword.equals("CustomerThinkTime")) {
-	  CustomerThinkTime.garbageFootprint(t);
-	  CustomerThinkTime = new RelativeTime(t, secs, nanos);
-	  CustomerThinkTime.changeLifeSpan(t, LifeSpan.NearlyForever);
-	  break;
-	}
+        if (keyword.equals("CustomerThinkTime")) {
+          CustomerThinkTime.garbageFootprint(t);
+          CustomerThinkTime = new RelativeTime(t, secs, nanos);
+          CustomerThinkTime.changeLifeSpan(t, LifeSpan.NearlyForever);
+          break;
+        }
       case 4:
-	if (keyword.equals("InitializationDelay")) {
-	  InitializationDelay.garbageFootprint(t);
-	  InitializationDelay = new RelativeTime(t, secs, nanos);
-	  InitializationDelay.changeLifeSpan(t, LifeSpan.NearlyForever);
-	  break;
-	}
+        if (keyword.equals("InitializationDelay")) {
+          InitializationDelay.garbageFootprint(t);
+          InitializationDelay = new RelativeTime(t, secs, nanos);
+          InitializationDelay.changeLifeSpan(t, LifeSpan.NearlyForever);
+          break;
+        }
       case 5:
-	if (keyword.equals("ProductReplacementPeriod")) {
-	  ProductReplacementPeriod.garbageFootprint(t);
-	  ProductReplacementPeriod = new RelativeTime(t, secs, nanos);
-	  ProductReplacementPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
-	  break;
-	}
+        if (keyword.equals("ProductReplacementPeriod")) {
+          ProductReplacementPeriod.garbageFootprint(t);
+          ProductReplacementPeriod = new RelativeTime(t, secs, nanos);
+          ProductReplacementPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
+          break;
+        }
       case 6:
-	if (keyword.equals("ServerPeriod")) {
-	  ServerPeriod.garbageFootprint(t);
-	  ServerPeriod = new RelativeTime(t, secs, nanos);
-	  ServerPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
-	  break;
-	}
+        if (keyword.equals("ServerPeriod")) {
+          ServerPeriod.garbageFootprint(t);
+          ServerPeriod = new RelativeTime(t, secs, nanos);
+          ServerPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
+          break;
+        }
       case 7:
-	if (keyword.equals("SimulationDuration")) {
-	  SimulationDuration.garbageFootprint(t);
-	  SimulationDuration = new RelativeTime(t, secs, nanos);
-	  SimulationDuration.changeLifeSpan(t, LifeSpan.NearlyForever);
-	  break;
-	}
+        if (keyword.equals("SimulationDuration")) {
+          SimulationDuration.garbageFootprint(t);
+          SimulationDuration = new RelativeTime(t, secs, nanos);
+          SimulationDuration.changeLifeSpan(t, LifeSpan.NearlyForever);
+          break;
+        }
       default:
-	usage("Unexpected internal error in doTimeArg");
+        usage("Unexpected internal error in doTimeArg");
     }
   }
 
   private int searchPatterns(String[] patterns, String keyword) {
     for (int i = 0; i < patterns.length; i++) {
       if (keyword.equals(patterns[i]))
-	return i;
+        return i;
     }
     return -1;
   }
 
   private boolean sufficientVocabulary(int vocab_size, int num_words,
-				       int unique_ids) {
+                                       int unique_ids) {
     long possible_ids = 1;
     while (num_words-- > 0) {
       possible_ids *= vocab_size;
       if (possible_ids > unique_ids)
-	return true;
+        return true;
     }
     return false;
   }
@@ -633,71 +633,71 @@ class Configuration {
       ServerPeriod.multiplyBy(t, ServerThread.TotalAttentionPoints));
     if (product.compare(CustomerReplacementPeriod) >= 0)
       usage("ServerPeriod multiplied by " + ServerThread.TotalAttentionPoints
-	    + " must be no longer than CustomerReplacementPeriod");
+            + " must be no longer than CustomerReplacementPeriod");
     product.garbageFootprint(t);
 
     product = ServerPeriod.multiplyBy(t, ServerThread.TotalAttentionPoints);
     if (product.compare(ProductReplacementPeriod) >= 0)
       usage("ServerPeriod multiplied by " + ServerThread.TotalAttentionPoints
-	    + " must be no longer than ProductReplacementPeriod");
+            + " must be no longer than ProductReplacementPeriod");
     product.garbageFootprint(t);
 
     if (BrowsingHistoryQueueCount > CustomerThreads)
       usage("CustomerThreads must be greater or equal to " +
-	    "BrowsingHistoryQueueCount");
+            "BrowsingHistoryQueueCount");
 
     if (BrowsingHistoryQueueCount > ServerThreads)
       usage("ServerThreads must be greater or equal to " +
-	    "BrowsingHistoryQueueCount");
+            "BrowsingHistoryQueueCount");
 
     if (SalesTransactionQueueCount > CustomerThreads)
       usage("CustomerThreads must be greater or equal to " +
-	    "SalesTransactionQueueCount");
+            "SalesTransactionQueueCount");
 
     if (SalesTransactionQueueCount > ServerThreads)
       usage("ServerThreads must be greater or equal to " +
-	    "SalesTransactionQueueCount");
+            "SalesTransactionQueueCount");
   }
 
   private void parseArguments(ExtrememThread t, String[] args) {
     for (int i = 0; i < args.length; i++) {
       String arg = args[i];
       if (arg.startsWith("-d")) {
-	arg = arg.substring(2);
+        arg = arg.substring(2);
 
-	// Account for arg created by substring
-	int len = arg.length();
-	Util.ephemeralString(t, len);
+        // Account for arg created by substring
+        int len = arg.length();
+        Util.ephemeralString(t, len);
 
-	int eokw = arg.indexOf("=");
-	if (eokw < 0)
-	  usage("Command-line arguments must include \"=\"");
-	String keyword = arg.substring(0, eokw);
-	String value = arg.substring(eokw + 1);
+        int eokw = arg.indexOf("=");
+        if (eokw < 0)
+          usage("Command-line arguments must include \"=\"");
+        String keyword = arg.substring(0, eokw);
+        String value = arg.substring(eokw + 1);
 
-	// Account for creation of keyword and value
-	Util.ephemeralString(t, keyword.length());
-	Util.ephemeralString(t, value.length());
+        // Account for creation of keyword and value
+        Util.ephemeralString(t, keyword.length());
+        Util.ephemeralString(t, value.length());
 
-	int match;
-	if ((match = searchPatterns(boolean_patterns, keyword)) >= 0)
-	  doBooleanArg(match, keyword, value);
-	else if ((match = searchPatterns(uint_patterns, keyword)) >= 0)
-	  doUintArg(match, keyword, value);
-	else if ((match = searchPatterns(float_patterns, keyword)) >= 0)
-	  doFloatArg(match, keyword, value);
-	else if ((match = searchPatterns(time_patterns, keyword)) >= 0)
-	  doTimeArg(t, match, keyword, value);
-	else if ((match = searchPatterns(name_patterns, keyword)) >= 0)
-	  doNameArg(t, match, keyword, value);
-	else
-	  usage("Unrecognized option name: " + keyword);
+        int match;
+        if ((match = searchPatterns(boolean_patterns, keyword)) >= 0)
+          doBooleanArg(match, keyword, value);
+        else if ((match = searchPatterns(uint_patterns, keyword)) >= 0)
+          doUintArg(match, keyword, value);
+        else if ((match = searchPatterns(float_patterns, keyword)) >= 0)
+          doFloatArg(match, keyword, value);
+        else if ((match = searchPatterns(time_patterns, keyword)) >= 0)
+          doTimeArg(t, match, keyword, value);
+        else if ((match = searchPatterns(name_patterns, keyword)) >= 0)
+          doNameArg(t, match, keyword, value);
+        else
+          usage("Unrecognized option name: " + keyword);
 
-	// Account for garbage of arg, keyword, value.  Keyword and value
-	// sum to one less than length of arg because '=' is excluded.
-	Util.abandonEphemeralStrings(t, 3, len + (len - 1));
+        // Account for garbage of arg, keyword, value.  Keyword and value
+        // sum to one less than length of arg because '=' is excluded.
+        Util.abandonEphemeralStrings(t, 3, len + (len - 1));
       } else
-	usage("Command-line arguments must begin with -d");
+        usage("Command-line arguments must begin with -d");
     }
   }
 
@@ -837,7 +837,7 @@ class Configuration {
 
     Report.output();
     Report.output("ReportIndividualThreads,",
-		  ReportIndividualThreads? "true": "false");
+                  ReportIndividualThreads? "true": "false");
     Report.output("ReportCSV,", ReportCSV? "true": "false");
 
     Report.output();
@@ -1035,9 +1035,9 @@ class Configuration {
 
     Report.output();
     Report.output("Individual thread report (ReportIndividualThreads): ",
-		  ReportIndividualThreads? "true": "false");
+                  ReportIndividualThreads? "true": "false");
     Report.output("                    Exporting to Excel (ReportCSV): ",
-		  ReportCSV? "true": "false");
+                  ReportCSV? "true": "false");
 
     Report.output();
     Report.output("Simulation configuration");
@@ -1218,7 +1218,7 @@ class Configuration {
 
     // Account for my self object
     garbage.accumulate(LifeSpan.NearlyForever, MemoryFlavor.PlainObject,
-		       Grow, 1);
+                       Grow, 1);
 
     // Account for 16 int fields: DictionarySize, MaximumArrayLength,
     // NumCustomers, NumProducts,
@@ -1230,18 +1230,18 @@ class Configuration {
     // SaveForLaterThreshold; 2 boolean fields:
     // ReportIndividualThreads, ReportCSV.
     garbage.accumulate(LifeSpan.NearlyForever, MemoryFlavor.ObjectRSB,
-		       Grow, 15 * Util.SizeOfInt +
-		       2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
+                       Grow, 15 * Util.SizeOfInt +
+                       2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
     // Account for 11 reference fields: args, dictionary, DictionaryFile
     // InitializationDelay, SimulationDuration, CustomerPeriod,
     // CustomerThinkTime, ServerPeriod, BrowsingExpiration,
     // CustomerReplacementPeriod, ProductReplacementPeriod 
     garbage.accumulate(LifeSpan.NearlyForever,
-		       MemoryFlavor.ObjectReference, Polarity.Expand, 11);
+                       MemoryFlavor.ObjectReference, Polarity.Expand, 11);
 
     Util.tallyString(t.garbageLog(), LifeSpan.NearlyForever,
-		     Polarity.Expand, DictionaryFile.length());
+                     Polarity.Expand, DictionaryFile.length());
     InitializationDelay.garbageFootprint(t);
     SimulationDuration.garbageFootprint(t);
     CustomerPeriod.garbageFootprint(t);

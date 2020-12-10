@@ -21,99 +21,99 @@ class Products extends ExtrememObject {
    *  implemented by cc.
    */
 
-  private long pncl;		// product name cumulative length: The sum
-				// of all product name string lengths.
-				// Except for brief moments of transition
-				// that are protected by the mutual
-				// exclusion write lock, the number of
-				// products is config.NumProducts().
+  private long pncl;            // product name cumulative length: The sum
+                                // of all product name string lengths.
+                                // Except for brief moments of transition
+                                // that are protected by the mutual
+                                // exclusion write lock, the number of
+                                // products is config.NumProducts().
   
-  private long pdcl;	        // product description cumulative
-				// length: The sum of all product
-				// description string lengths.
-				// Except for brief moments of transition
-				// that are protected by the mutual
-				// exclusion write lock, the number of
-				// products is config.NumProducts().
+  private long pdcl;            // product description cumulative
+                                // length: The sum of all product
+                                // description string lengths.
+                                // Except for brief moments of transition
+                                // that are protected by the mutual
+                                // exclusion write lock, the number of
+                                // products is config.NumProducts().
   
-  private int nie;		// name_index entries: This is the
-				// number of entries in the
-				// name_index, aka the number of
-				// unique words ever apearing in any
-				// product name.  (Index entries are
-				// never removed after they have been
-				// inserted into the name_index,
-				// though the size of the associated
-				// HashSet may shrink to zero.)
+  private int nie;              // name_index entries: This is the
+                                // number of entries in the
+                                // name_index, aka the number of
+                                // unique words ever apearing in any
+                                // product name.  (Index entries are
+                                // never removed after they have been
+                                // inserted into the name_index,
+                                // though the size of the associated
+                                // HashSet may shrink to zero.)
 
-  private long nicl;		// name_index cumulative length: This 
-				// is the combined length of all nie
-				// strings that comprise the name
-				// index.  Though these strings are a
-				// subset of strings contained in the
-				// Configuration dictionary, they are
-				// independently constructed for
-				// purposes of building the index so
-				// are accounted separately. 
+  private long nicl;            // name_index cumulative length: This 
+                                // is the combined length of all nie
+                                // strings that comprise the name
+                                // index.  Though these strings are a
+                                // subset of strings contained in the
+                                // Configuration dictionary, they are
+                                // independently constructed for
+                                // purposes of building the index so
+                                // are accounted separately. 
 
-  private int nip;		// name_index products: This is
-				// the total number of product entries
-				// represented within the HashSet
-				// content entries of name_index.
-				// Note that many products appear
-				// multiple times within name_index,
-				// each appearance associated with a
-				// different name keyword.  For this
-				// reason, nip is typically greater
-				// than config.NumProducts(). 
+  private int nip;              // name_index products: This is
+                                // the total number of product entries
+                                // represented within the HashSet
+                                // content entries of name_index.
+                                // Note that many products appear
+                                // multiple times within name_index,
+                                // each appearance associated with a
+                                // different name keyword.  For this
+                                // reason, nip is typically greater
+                                // than config.NumProducts(). 
 
-  private long nihacl;		// name_index hash array cumulative
-				// length: cumulative length of all
-				// arrays associated with instances of
-				// HashSet<Long> which are the content
-				// of name_index.
+  private long nihacl;          // name_index hash array cumulative
+                                // length: cumulative length of all
+                                // arrays associated with instances of
+                                // HashSet<Long> which are the content
+                                // of name_index.
 
-  private int die;		// description_index entries: This is
-				// the number of entries in the
-				// description_index, aka the number
-				// of unique words appearing in all
-				// product descriptions.  (Index entries
-				// are never removed after they have
-				// been inserted into description_index,
-				// though the size of the associated
-				// HashSet may shrink to zero.)
+  private int die;              // description_index entries: This is
+                                // the number of entries in the
+                                // description_index, aka the number
+                                // of unique words appearing in all
+                                // product descriptions.  (Index entries
+                                // are never removed after they have
+                                // been inserted into description_index,
+                                // though the size of the associated
+                                // HashSet may shrink to zero.)
 
-  private long dicl;		// description_index cumulative length:
-				// This is the combined length of all
-				// die strings that comprise the
-				// description index.  Though these
-				// strings are a subset of strings
-				// contained in the Configuration
-				// dictionary, they are independently
-				// constructed for purposes of
-				// building the index so are accounted
-				// separately. 
+  private long dicl;            // description_index cumulative length:
+                                // This is the combined length of all
+                                // die strings that comprise the
+                                // description index.  Though these
+                                // strings are a subset of strings
+                                // contained in the Configuration
+                                // dictionary, they are independently
+                                // constructed for purposes of
+                                // building the index so are accounted
+                                // separately. 
 
-  private int dip;		// description_index products: This is
-				// the total number of product entries
-				// represented within the HashSet
-				// content entries of description_index.
-				// Note that many products appear
-				// multiple times within
-				// description_index, each appearance
-				// associated with a different
-				// description keyword.  For this
-				// reason, dip is typically greater
-				// than config.NumProducts().
+  private int dip;              // description_index products: This is
+                                // the total number of product entries
+                                // represented within the HashSet
+                                // content entries of description_index.
+                                // Note that many products appear
+                                // multiple times within
+                                // description_index, each appearance
+                                // associated with a different
+                                // description keyword.  For this
+                                // reason, dip is typically greater
+                                // than config.NumProducts().
   
-  private long dihacl;		// description_index hash array
-				// cumulative length: cumulative
-				// length of all arrays associated
-				// with instances of HashSet<Long>
-				// which are the content of the
-				// description index.
+  private long dihacl;          // description_index hash array
+                                // cumulative length: cumulative
+                                // length of all arrays associated
+                                // with instances of HashSet<Long>
+                                // which are the content of the
+                                // description index.
 
-  private long npi;		// next product id
+  private long npi;             // next product id
 
   // was private long[] product_ids;
   private ArrayletOflong product_ids;
@@ -138,7 +138,7 @@ class Products extends ExtrememObject {
 
     this.config = config;
     product_ids = new ArrayletOflong(t, ls,
-				     config.MaxArrayLength(), num_products);
+                                     config.MaxArrayLength(), num_products);
     product_map = new TreeMap<Long, Product>();
     name_index = new TreeMap<String, ExtrememHashSet<Long>>();
     description_index = new TreeMap<String, ExtrememHashSet<Long>>();
@@ -160,7 +160,7 @@ class Products extends ExtrememObject {
       // Product's memory is reclaimed).  Do not reclaim their memory
       // here. 
       Product new_product = new Product(t, LifeSpan.NearlyForever,
-					npi, name, description);
+                                        npi, name, description);
       long id = npi++;
       product_ids.set(i, id);
       // id is autoboxed to Long below.  Accounting for this Long is
@@ -172,7 +172,7 @@ class Products extends ExtrememObject {
     // Account for 4 int fields: nie, nip, die, dip;
     // 7 long fields: pncl, nicl, pdcl, dicl, npi, nihacl, dihacl.
     log.accumulate(ls, MemoryFlavor.ObjectRSB, Grow,
-		   7 * Util.SizeOfLong + 4 * Util.SizeOfInt);
+                   7 * Util.SizeOfLong + 4 * Util.SizeOfInt);
 
     // Account for 6 reference fields: product_ids, cc, config, product_map,
     // name_index, description_index.
@@ -186,7 +186,7 @@ class Products extends ExtrememObject {
     // Each key within product_map is a Long object, with a single long field
     log.accumulate(ls, MemoryFlavor.PlainObject, Grow, num_products);
     log.accumulate(ls, MemoryFlavor.ObjectRSB, Grow,
-		   num_products * Util.SizeOfLong);
+                   num_products * Util.SizeOfLong);
     // The content of each product_map entry is a Product object,
     // memory for which is already accounted for.
 
@@ -222,7 +222,7 @@ class Products extends ExtrememObject {
   }
 
   Product replaceArbitraryProduct(ExtrememThread t,
-				  Product product) {
+                                  Product product) {
     ProductReplacer pr = new ProductReplacer(t, this, product);
     cc.actAsWriter (pr);
     pr.garbageFootprint(t);
@@ -230,7 +230,7 @@ class Products extends ExtrememObject {
   }
 
   Product controlledReplaceArbitraryProduct (ExtrememThread t,
-					     Product product) {
+                                             Product product) {
     int index = t.randomUnsignedInt() % product_ids.length();
     long old_id = product_ids.get(index);
     product_ids.set(index, product.id());
@@ -269,11 +269,11 @@ class Products extends ExtrememObject {
     String description = randomDescription(t);
     long new_id = nextUniqId ();
     Product new_product = new Product(t, LifeSpan.NearlyForever,
-				      new_id, name, description);
+                                      new_id, name, description);
     Product old_product = replaceArbitraryProduct (t, new_product);
 
     Trace.msg(4, "old product: ", old_product.name(),
-	      " replaced with new product: ", new_product.name());
+              " replaced with new product: ", new_product.name());
 
     // Note that there is a race between when keyword searches are
     // performed and when products are looked up.  For example, a
@@ -284,7 +284,7 @@ class Products extends ExtrememObject {
   }
 
   Product[] lookupProductsMatchingAll(ExtrememThread t,
-				      String [] keywords) {
+                                      String [] keywords) {
     SearchNamesAll sna = new SearchNamesAll(t, keywords, this);
     cc.actAsReader(sna);
     sna.garbageFootprint(t);
@@ -292,7 +292,7 @@ class Products extends ExtrememObject {
   }
 
   Product[] lookupProductsMatchingAny(ExtrememThread t,
-				      String [] keywords) {
+                                      String [] keywords) {
     SearchNamesAny sna = new SearchNamesAny(t, keywords, this);
     cc.actAsReader(sna);
     sna.garbageFootprint(t);
@@ -315,7 +315,7 @@ class Products extends ExtrememObject {
     // Account for 4 int fields: nie, nip, die, dip;
     // 7 long fields: pncl, nicl, pdcl, dicl, npi, nihacl, dihacl.
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-		   7 * Util.SizeOfLong + 4 * Util.SizeOfInt);
+                   7 * Util.SizeOfLong + 4 * Util.SizeOfInt);
 
     // Account for 6 reference fields: product_ids, cc, config,
     // product_map, name_index, description_index.  
@@ -330,7 +330,7 @@ class Products extends ExtrememObject {
     // Each key within product_map is a Long object, with a single long field
     log.accumulate(ls, MemoryFlavor.PlainObject, p, num_products);
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-		   num_products * Util.SizeOfLong);
+                   num_products * Util.SizeOfLong);
 
     // Account for the content of product_map.  Each content entry is
     // a Product.  First account for num_products instances of
@@ -343,11 +343,11 @@ class Products extends ExtrememObject {
       doVariableTally(t, log, ls, p);
     } else
       Util.internalError(
-	"Only ExtrememThread instances may invoke Products.tallyMemory");
+        "Only ExtrememThread instances may invoke Products.tallyMemory");
   }
 
   private void doVariableTally(ExtrememThread t, MemoryLog log,
-			       LifeSpan ls, Polarity p) {
+                               LifeSpan ls, Polarity p) {
     BeanCounter bc = new BeanCounter(t, this, log, ls, p);
     cc.actAsReader(bc);
     bc.garbageFootprint(t);
@@ -400,8 +400,8 @@ class Products extends ExtrememObject {
   // The accumulator argument is presumed to be thread-local, for the
   // purposes of preparing a response to a customer inquiry.
   private void addToSetIfAvailable(ExtrememThread t,
-				   ExtrememHashSet<Product> accumulator,
-				   Long id) {
+                                   ExtrememHashSet<Product> accumulator,
+                                   Long id) {
     Product p = product_map.get(id);
     if ((p != null) && p.available())
       accumulator.add(t, p);
@@ -410,7 +410,7 @@ class Products extends ExtrememObject {
   // Return an ephemeral array representing Products that match any of
   // keywords.
   private Product [] controlledSearchAny (String [] keywords,
-					  ExtrememThread t) {
+                                          ExtrememThread t) {
     int i;
     ExtrememHashSet<Product> accumulator = (
       new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral));
@@ -418,17 +418,17 @@ class Products extends ExtrememObject {
       String keyword = keywords[i];
       ExtrememHashSet<Long> matched_ids = name_index.get(keyword);
       if (matched_ids != null) {
-	Util.createEphemeralHashSetIterator(t);
-	for (Long id: matched_ids)
-	  addToSetIfAvailable(t, accumulator, id);
-	Util.abandonEphemeralHashSetIterator(t);
+        Util.createEphemeralHashSetIterator(t);
+        for (Long id: matched_ids)
+          addToSetIfAvailable(t, accumulator, id);
+        Util.abandonEphemeralHashSetIterator(t);
       }
       matched_ids = description_index.get(keyword);
       if (matched_ids != null) {
-	Util.createEphemeralHashSetIterator(t);
-	for (Long id: matched_ids)
-	  addToSetIfAvailable(t, accumulator, id);
-	Util.abandonEphemeralHashSetIterator(t);
+        Util.createEphemeralHashSetIterator(t);
+        for (Long id: matched_ids)
+          addToSetIfAvailable(t, accumulator, id);
+        Util.abandonEphemeralHashSetIterator(t);
       }
     }
     int result_length = accumulator.size();
@@ -447,63 +447,63 @@ class Products extends ExtrememObject {
   }
 
   private Product[] controlledSearchAll(String[] keywords,
-					ExtrememThread t) {
+                                        ExtrememThread t) {
     ExtrememHashSet<Product> intersection = (
       new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral));
     for (int i = 0; i < keywords.length; i++) {
       if (i == 0) {
-	String keyword = keywords[i];
-	ExtrememHashSet<Long> matched_ids = name_index.get(keyword);
-	if (matched_ids != null) {
-	  Util.createEphemeralHashSetIterator(t);
-	  for (Long id: matched_ids)
-	    addToSetIfAvailable(t, intersection, id);
-	  Util.abandonEphemeralHashSetIterator(t);
-	}
-	matched_ids = description_index.get(keyword);
-	if (matched_ids != null) {
-	  Util.createEphemeralHashSetIterator(t);
-	  for (Long id: matched_ids)
-	    addToSetIfAvailable(t, intersection, id);
-	  Util.abandonEphemeralHashSetIterator(t);
-	}
+        String keyword = keywords[i];
+        ExtrememHashSet<Long> matched_ids = name_index.get(keyword);
+        if (matched_ids != null) {
+          Util.createEphemeralHashSetIterator(t);
+          for (Long id: matched_ids)
+            addToSetIfAvailable(t, intersection, id);
+          Util.abandonEphemeralHashSetIterator(t);
+        }
+        matched_ids = description_index.get(keyword);
+        if (matched_ids != null) {
+          Util.createEphemeralHashSetIterator(t);
+          for (Long id: matched_ids)
+            addToSetIfAvailable(t, intersection, id);
+          Util.abandonEphemeralHashSetIterator(t);
+        }
       } else {
-	ExtrememHashSet<Product> new_matches = (
-	  new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral));
-	String keyword = keywords[i];
-	ExtrememHashSet<Long> matched_ids = name_index.get(keyword);
-	if (matched_ids != null) {
-	  Util.createEphemeralHashSetIterator(t);
-	  for (Long id: matched_ids)
-	    addToSetIfAvailable(t, new_matches, id);
-	  Util.abandonEphemeralHashSetIterator(t);
-	}
-	matched_ids = description_index.get(keyword);
-	if (matched_ids != null) {
-	  Util.createEphemeralHashSetIterator(t);
-	  for (Long id: matched_ids)
-	    addToSetIfAvailable(t, new_matches, id);
-	  Util.abandonEphemeralHashSetIterator(t);
-	}
-	ExtrememHashSet<Product> remove_set = (
-	  new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral));
-	Util.createEphemeralHashSetIterator(t);
-	for (Product p: intersection) {
-	  if (!new_matches.contains(p))
-	    remove_set.add(t, p);
-	}
-	Util.abandonEphemeralHashSetIterator(t);
-	new_matches.garbageFootprint(t);
+        ExtrememHashSet<Product> new_matches = (
+          new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral));
+        String keyword = keywords[i];
+        ExtrememHashSet<Long> matched_ids = name_index.get(keyword);
+        if (matched_ids != null) {
+          Util.createEphemeralHashSetIterator(t);
+          for (Long id: matched_ids)
+            addToSetIfAvailable(t, new_matches, id);
+          Util.abandonEphemeralHashSetIterator(t);
+        }
+        matched_ids = description_index.get(keyword);
+        if (matched_ids != null) {
+          Util.createEphemeralHashSetIterator(t);
+          for (Long id: matched_ids)
+            addToSetIfAvailable(t, new_matches, id);
+          Util.abandonEphemeralHashSetIterator(t);
+        }
+        ExtrememHashSet<Product> remove_set = (
+          new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral));
+        Util.createEphemeralHashSetIterator(t);
+        for (Product p: intersection) {
+          if (!new_matches.contains(p))
+            remove_set.add(t, p);
+        }
+        Util.abandonEphemeralHashSetIterator(t);
+        new_matches.garbageFootprint(t);
 
-	Util.createEphemeralHashSetIterator(t);
-	for (Product p: remove_set)
-	  intersection.remove(t, p);
-	Util.abandonEphemeralHashSetIterator(t);
-	remove_set.garbageFootprint(t);
+        Util.createEphemeralHashSetIterator(t);
+        for (Product p: remove_set)
+          intersection.remove(t, p);
+        Util.abandonEphemeralHashSetIterator(t);
+        remove_set.garbageFootprint(t);
       }
       if (intersection.size() == 0) {
-	Util.ephemeralReferenceArray(t, 0);
-	return new Product[0];
+        Util.ephemeralReferenceArray(t, 0);
+        return new Product[0];
       }
     }
     Product[] result = new Product[intersection.size()];
@@ -569,13 +569,13 @@ class Products extends ExtrememObject {
       Util.convertEphemeralString(t, ls, word_length);
 
       if (is_name_index) {
-	nie++;
-	nicl += word.length();
-	nihacl += set.capacity();
+        nie++;
+        nicl += word.length();
+        nihacl += set.capacity();
       } else {
-	die++;
-	dicl += word.length();
-	dihacl += set.capacity();
+        die++;
+        dicl += word.length();
+        dihacl += set.capacity();
       }
     } else {
       // Indicate that word has become garbage.
@@ -589,8 +589,8 @@ class Products extends ExtrememObject {
   // create or expand the ExtrememHashSet<Long>, as appropriate.
   private void
   addStringToIndex(ExtrememThread t, long id,
-		   boolean is_name_index, String s,
-		   TreeMap <String, ExtrememHashSet<Long>> index) {
+                   boolean is_name_index, String s,
+                   TreeMap <String, ExtrememHashSet<Long>> index) {
     MemoryLog log = t.memoryLog();
     LifeSpan ls = this.intendedLifeSpan();
     Polarity Grow = Polarity.Expand;
@@ -609,19 +609,19 @@ class Products extends ExtrememObject {
       // id gets auto-boxed to Long
       long orig_capacity = set.capacity();
       if (set.add(t, id)) {
-	// Account for autoboxing of id to Long
-	Util.nonEphemeralLong(t, ls);
-	if (is_name_index) {
-	  nihacl += set.capacity() - orig_capacity;
-	  nip++;
-	} else {
-	  dip++;
-	  dihacl += set.capacity() - orig_capacity;
-	}
+        // Account for autoboxing of id to Long
+        Util.nonEphemeralLong(t, ls);
+        if (is_name_index) {
+          nihacl += set.capacity() - orig_capacity;
+          nip++;
+        } else {
+          dip++;
+          dihacl += set.capacity() - orig_capacity;
+        }
       } else {
-	// The autoboxed id is Ephemeral, then becomes garbage.
-	Util.ephemeralLong(t);
-	Util.abandonEphemeralLong(t);
+        // The autoboxed id is Ephemeral, then becomes garbage.
+        Util.ephemeralLong(t);
+        Util.abandonEphemeralLong(t);
       }
     }
   }
@@ -637,8 +637,8 @@ class Products extends ExtrememObject {
 
   // Precondition: thread holds the exclusion lock
   private void rmStringFromIndex(ExtrememThread t, long id,
-				 boolean is_name_index, String s,
-				 TreeMap <String, ExtrememHashSet<Long>> index) {
+                                 boolean is_name_index, String s,
+                                 TreeMap <String, ExtrememHashSet<Long>> index) {
     LifeSpan ls = this.intendedLifeSpan();
     // Assume first characters of s not equal to space
     for (int start = 0; start < s.length (); start = skipSpaces(s, start)) {
@@ -650,21 +650,21 @@ class Products extends ExtrememObject {
       ExtrememHashSet<Long> set = index.get(word);
       Util.abandonEphemeralString(t, word_length);
       if (set != null) {
-	Polarity Grow = Polarity.Expand;
-	MemoryLog garbage = t.garbageLog();
-	// Even if the set size is decreased to zero, we do not destroy
-	// the set, nor do we reclaim the String that keys to this set.
-	// id gets autoboxed to Long and immediately abandoned.
-	Util.ephemeralLong(t);
-	Util.abandonEphemeralLong(t);
-	if (set.remove(t, id)) {
-	  // Abandon the value removed from the set
-	  Util.abandonNonEphemeralLong(t, ls);
-	  if (is_name_index)
-	    nip--;
-	  else
-	    dip--;
-	}
+        Polarity Grow = Polarity.Expand;
+        MemoryLog garbage = t.garbageLog();
+        // Even if the set size is decreased to zero, we do not destroy
+        // the set, nor do we reclaim the String that keys to this set.
+        // id gets autoboxed to Long and immediately abandoned.
+        Util.ephemeralLong(t);
+        Util.abandonEphemeralLong(t);
+        if (set.remove(t, id)) {
+          // Abandon the value removed from the set
+          Util.abandonNonEphemeralLong(t, ls);
+          if (is_name_index)
+            nip--;
+          else
+            dip--;
+        }
       }  // else, shouldn't happen.
     }
   }
@@ -731,12 +731,12 @@ class Products extends ExtrememObject {
     // of "counting the beans".  Normally, log is also associated with
     // the currently running thread, but not necessarily.
     BeanCounter(ExtrememThread t, Products p,
-		MemoryLog log, LifeSpan ls, Polarity polarity) {
+                MemoryLog log, LifeSpan ls, Polarity polarity) {
       super(t, LifeSpan.Ephemeral);
       MemoryLog thread_log = t.memoryLog();
       // Account for thread, products, log, ls, polarity
       thread_log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ObjectReference,
-		     Polarity.Expand, 5);
+                     Polarity.Expand, 5);
       this.thread = t;
       this.products = p;
       this.log = log;
@@ -767,7 +767,7 @@ class Products extends ExtrememObject {
       MemoryLog log = t.memoryLog();
       // Account for t, products, keywords, results
       log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ObjectReference,
-		     Polarity.Expand, 4);
+                     Polarity.Expand, 4);
       this.keywords = keywords;
       this.t = t;
       this.products = products;
@@ -795,7 +795,7 @@ class Products extends ExtrememObject {
       MemoryLog log = t.memoryLog();
       // Account for t, products
       log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ObjectReference,
-		     Polarity.Expand, 2);
+                     Polarity.Expand, 2);
       this.t = t;
       this.products = p;
       this.reportCSV = reportCSV;
@@ -827,10 +827,10 @@ class Products extends ExtrememObject {
       MemoryLog log = t.memoryLog();
       // Account for t, products, result
       log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ObjectReference,
-		     Polarity.Expand, 3);
+                     Polarity.Expand, 3);
       // Accoun for index
       log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ObjectRSB,
-		     Polarity.Expand, Util.SizeOfInt);
+                     Polarity.Expand, Util.SizeOfInt);
       this.index = index;
       this.t = t;
       this.products = p;
@@ -862,7 +862,7 @@ class Products extends ExtrememObject {
       // Account for t, all_products, product, removed_product
       MemoryLog log = t.memoryLog();
       log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ObjectReference,
-		     Polarity.Expand, 4);
+                     Polarity.Expand, 4);
       this.t = t;
       this.all_products = all_products;
       this.product = product;

@@ -12,12 +12,12 @@ import java.io.*;
 class Words extends ExtrememObject {
   private final static int Stride = 59;
 
-  // was String [] known_words;	// may be humongous object
+  // was String [] known_words; // may be humongous object
   Arraylet<String> known_words;
-  long twl;			// cumulative length of all words
+  long twl;                     // cumulative length of all words
 
   Words(ExtrememThread t, String file_name, LifeSpan ls,
-	int num_words, int max_array_length) {
+        int num_words, int max_array_length) {
     super(t, ls);
 
     // Account for twl and known_words fields.
@@ -44,49 +44,49 @@ class Words extends ExtrememObject {
       int front_skip = 0;
 
       do {
-	fr = new FileReader(file);
-	br = new BufferedReader(fr);
-	front_skip = skip(t, front_skip, br);
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        front_skip = skip(t, front_skip, br);
       } while (front_skip < 0);
       for (int i = 0; i < num_words; i++) {
-	while (true) {
-	  String w = br.readLine ();
-	  if (w == null) {
-	    br.close();
-	    fr.close();
-	    do {
-	      fr = new FileReader(file);
-	      br = new BufferedReader(fr);
-	      front_skip = skip(t, front_skip, br);
-	    } while (front_skip < 0);
-	  } else {
-	    int len = w.length();
-	    twl += len;
-	    known_words.set(i, w);
-	    // Account for new word added to dictionary.
-	    Util.ephemeralString(t, len);
-	    Util.convertEphemeralString(t, ls, len);
-	    break;
-	  }
-	}
+        while (true) {
+          String w = br.readLine ();
+          if (w == null) {
+            br.close();
+            fr.close();
+            do {
+              fr = new FileReader(file);
+              br = new BufferedReader(fr);
+              front_skip = skip(t, front_skip, br);
+            } while (front_skip < 0);
+          } else {
+            int len = w.length();
+            twl += len;
+            known_words.set(i, w);
+            // Account for new word added to dictionary.
+            Util.ephemeralString(t, len);
+            Util.convertEphemeralString(t, ls, len);
+            break;
+          }
+        }
 
-	for (int j = 1; j < Stride; j++) {
-	  String w = br.readLine();
-	  if (w == null) {
-	    br.close();
-	    fr.close();
-	    do {
-	      fr = new FileReader(file);
-	      br = new BufferedReader(fr);
-	      front_skip = skip(t, front_skip, br);
-	    } while (front_skip < 0);
-	    j--;
-	  } else {
-	    int len = w.length();
-	    Util.ephemeralString(t, len);
-	    Util.abandonEphemeralString(t, len);
-	  }
-	}
+        for (int j = 1; j < Stride; j++) {
+          String w = br.readLine();
+          if (w == null) {
+            br.close();
+            fr.close();
+            do {
+              fr = new FileReader(file);
+              br = new BufferedReader(fr);
+              front_skip = skip(t, front_skip, br);
+            } while (front_skip < 0);
+            j--;
+          } else {
+            int len = w.length();
+            Util.ephemeralString(t, len);
+            Util.abandonEphemeralString(t, len);
+          }
+        }
       }
       br.close ();
       fr.close ();
@@ -98,12 +98,12 @@ class Words extends ExtrememObject {
   private static int skip(ExtrememThread t, int count, BufferedReader br) {
     try {
       for (int i = 0; i < count; i++) {
-	String w = br.readLine();
-	if (w == null)
-	  return -1;
-	int len = w.length();
-	Util.ephemeralString(t, len);
-	Util.abandonEphemeralString(t, len);
+        String w = br.readLine();
+        if (w == null)
+          return -1;
+        int len = w.length();
+        Util.ephemeralString(t, len);
+        Util.abandonEphemeralString(t, len);
       }
     } catch (Exception x) {
       Util.internalError("Unable to skip over words in dictionary file");

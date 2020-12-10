@@ -28,13 +28,13 @@ public class Bootstrap extends ExtrememThread {
     all_threads_accumulator.memoryFootprint(this);
       
     Trace.msg(1, "@ ",
-	      Integer.toString(memory.hashCode()),
-	      ": Bootstrap.memoryLog()");
+              Integer.toString(memory.hashCode()),
+              ": Bootstrap.memoryLog()");
     Trace.msg(1, "@ ",
-	      Integer.toString(garbage.hashCode()),
-	      ": Bootstrap.garbageLog()");
+              Integer.toString(garbage.hashCode()),
+              ": Bootstrap.garbageLog()");
     Trace.msg(1, "@ ", Integer.toString(all_threads_accumulator.hashCode()),
-	      ": Bootstrap.all_threads_accumulator");
+              ": Bootstrap.all_threads_accumulator");
       
     // config.initialize() replaces the random number generation seed
     // of this before generating the dictionary.
@@ -52,38 +52,38 @@ public class Bootstrap extends ExtrememThread {
     MemoryLog server_alloc_accumulator, server_garbage_accumulator;
     if (!config.ReportIndividualThreads()) {
       customer_accumulator = (
-	new CustomerLogAccumulator(this, LifeSpan.NearlyForever));
-	
+        new CustomerLogAccumulator(this, LifeSpan.NearlyForever));
+        
       customer_alloc_accumulator = new MemoryLog(LifeSpan.NearlyForever);
       customer_alloc_accumulator.memoryFootprint(this);
-	
+        
       Trace.msg(1, "@ ",
-		Integer.toString(customer_alloc_accumulator.hashCode()),
-		": Bootstrap.customer_alloc_accumulator");
-	
+                Integer.toString(customer_alloc_accumulator.hashCode()),
+                ": Bootstrap.customer_alloc_accumulator");
+        
       customer_garbage_accumulator = new MemoryLog(LifeSpan.NearlyForever);
       customer_garbage_accumulator.memoryFootprint(this);
-	
+        
       Trace.msg(1, "@ ",
-		Integer.toString(customer_garbage_accumulator.hashCode()),
-		": Bootstrap.customer_garbage_accumulator");
-	
+                Integer.toString(customer_garbage_accumulator.hashCode()),
+                ": Bootstrap.customer_garbage_accumulator");
+        
       server_accumulator = new ServerLogAccumulator(this,
-						    LifeSpan.NearlyForever);
-	
+                                                    LifeSpan.NearlyForever);
+        
       server_alloc_accumulator = new MemoryLog(LifeSpan.NearlyForever);
       server_alloc_accumulator.memoryFootprint(this);
-	
+        
       Trace.msg(1, "@ ",
-		Integer.toString(server_alloc_accumulator.hashCode()),
-		": Bootstrap.server_alloc_accumulator");
-	
+                Integer.toString(server_alloc_accumulator.hashCode()),
+                ": Bootstrap.server_alloc_accumulator");
+        
       server_garbage_accumulator = new MemoryLog(LifeSpan.NearlyForever);
       server_garbage_accumulator.memoryFootprint(this);
-	
+        
       Trace.msg(1, "@ ",
-		Integer.toString(server_garbage_accumulator.hashCode()),
-		": Bootstrap.server_garbage__accumulator");
+                Integer.toString(server_garbage_accumulator.hashCode()),
+                ": Bootstrap.server_garbage__accumulator");
     } else {
       customer_accumulator = null;
       customer_alloc_accumulator = null;
@@ -96,24 +96,24 @@ public class Bootstrap extends ExtrememThread {
     SalesTransactionQueue[] sales_queues = (
       new SalesTransactionQueue[config.SalesTransactionQueueCount()]);
     Util.referenceArray(this, LifeSpan.NearlyForever,
-			config.SalesTransactionQueueCount());
+                        config.SalesTransactionQueueCount());
     for (int i = 0; i < config.SalesTransactionQueueCount(); i++)
       sales_queues[i] = new SalesTransactionQueue(this,
-						  LifeSpan.NearlyForever);
+                                                  LifeSpan.NearlyForever);
     BrowsingHistoryQueue[] browsing_queues = (
       new BrowsingHistoryQueue[config.BrowsingHistoryQueueCount()]);
     Util.referenceArray(this, LifeSpan.NearlyForever,
-			config.BrowsingHistoryQueueCount());
+                        config.BrowsingHistoryQueueCount());
     for (int i = 0; i < config.BrowsingHistoryQueueCount(); i++)
       browsing_queues[i] = new BrowsingHistoryQueue(this,
-						    LifeSpan.NearlyForever);
+                                                    LifeSpan.NearlyForever);
     Trace.msg(4, "browsing_queues and sales_queues established");
       
     Products all_products = (
       new Products(this, LifeSpan.NearlyForever, config));
     Trace.msg(4, "all_products established");
     Customers all_customers = new Customers(this, LifeSpan.NearlyForever,
-					    config);
+                                            config);
     Trace.msg(4, "all_customers established");
       
     if (config.CustomerThreads() > 0) {
@@ -121,13 +121,13 @@ public class Bootstrap extends ExtrememThread {
       // the same moment in time.
       RelativeTime period = config.CustomerPeriod();
       long period_ns = (
-	period.nanoseconds() +
-	(config.CustomerPeriod().seconds() * NanosPerSecond));
+        period.nanoseconds() +
+        (config.CustomerPeriod().seconds() * NanosPerSecond));
       long stagger = period_ns / config.CustomerThreads();
       customer_stagger = new RelativeTime(this, stagger / NanosPerSecond,
-					  (int) (stagger % NanosPerSecond));
+                                          (int) (stagger % NanosPerSecond));
       Trace.msg(3, "Customer stagger set to: ",
-		customer_stagger.toString(this));
+                customer_stagger.toString(this));
     }
       
     RelativeTime customer_replacement_stagger = null;
@@ -138,16 +138,16 @@ public class Bootstrap extends ExtrememThread {
       // same moment in time.
       RelativeTime period = config.ServerPeriod();
       long period_ns = (period.nanoseconds() +
-			(config.ServerPeriod().seconds() * NanosPerSecond));
+                        (config.ServerPeriod().seconds() * NanosPerSecond));
       long stagger = period_ns / config.ServerThreads();
       server_stagger = new RelativeTime(this, stagger / NanosPerSecond,
-					(int) (stagger % NanosPerSecond));
+                                        (int) (stagger % NanosPerSecond));
       customer_replacement_stagger = (
-	config.CustomerReplacementPeriod().divideBy(this,
-						    config.ServerThreads()));
+        config.CustomerReplacementPeriod().divideBy(this,
+                                                    config.ServerThreads()));
       product_replacement_stagger = (
-	config.ProductReplacementPeriod().divideBy(this,
-						   config.ServerThreads()));
+        config.ProductReplacementPeriod().divideBy(this,
+                                                   config.ServerThreads()));
       Trace.msg(3, "Server stagger set to: ", server_stagger.toString(this));
     }
       
@@ -157,7 +157,7 @@ public class Bootstrap extends ExtrememThread {
       (config.CustomerThreads() + config.ServerThreads()) / 2);
       
     RelativeTime start_delay = (config.InitializationDelay().
-				addMillis(this, start_delay_milliseconds));
+                                addMillis(this, start_delay_milliseconds));
       
     String s = start_delay.toString(this);
     Trace.msg(3, "");
@@ -205,29 +205,29 @@ public class Bootstrap extends ExtrememThread {
     Util.abandonEphemeralString(this, s);
       
     Trace.msg(2, "starting up CustomerThreads: ",
-	      Integer.toString(config.CustomerThreads()));
+              Integer.toString(config.CustomerThreads()));
       
     // Initialize and startup all of the threads as specified in
     // config.
     customer_threads = new CustomerThread[config.CustomerThreads()];
     Util.referenceArray(this, LifeSpan.NearlyForever,
-			config.CustomerThreads());
+                        config.CustomerThreads());
       
     AbsoluteTime staggered_start = start_time.addMinutes(this, 0);
     int bq_no = config.BrowsingHistoryQueueCount() - 1;
     int sq_no = config.SalesTransactionQueueCount() - 1;
     for (int i = 0; i < config.CustomerThreads(); i++) {
       customer_threads[i] = (
-	new CustomerThread(config, randomLong(), i, all_products,
-			   all_customers, browsing_queues[bq_no],
-			   sales_queues[sq_no], customer_accumulator,
-			   customer_alloc_accumulator,
-			   customer_garbage_accumulator, staggered_start,
-			   end_time));
+        new CustomerThread(config, randomLong(), i, all_products,
+                           all_customers, browsing_queues[bq_no],
+                           sales_queues[sq_no], customer_accumulator,
+                           customer_alloc_accumulator,
+                           customer_garbage_accumulator, staggered_start,
+                           end_time));
       if (bq_no-- == 0)
-	bq_no = config.BrowsingHistoryQueueCount() - 1;
+        bq_no = config.BrowsingHistoryQueueCount() - 1;
       if (sq_no-- == 0)
-	sq_no = config.SalesTransactionQueueCount() - 1;
+        sq_no = config.SalesTransactionQueueCount() - 1;
       staggered_start.garbageFootprint(this);
       staggered_start = staggered_start.addRelative(this, customer_stagger);
       customer_threads[i].start(); // will wait for first release
@@ -237,11 +237,11 @@ public class Bootstrap extends ExtrememThread {
       customer_stagger.garbageFootprint(this);
       
     Trace.msg(2, "starting up ServerThreads: ",
-	      Integer.toString(config.ServerThreads()));
+              Integer.toString(config.ServerThreads()));
       
     server_threads = new ServerThread[config.ServerThreads()];
     Util.referenceArray(this,
-			LifeSpan.NearlyForever, config.ServerThreads());
+                        LifeSpan.NearlyForever, config.ServerThreads());
       
     staggered_start = start_time.addMinutes(this, 0);
       
@@ -249,27 +249,27 @@ public class Bootstrap extends ExtrememThread {
     sq_no = config.SalesTransactionQueueCount() - 1;
     for (int i = 0; i < config.ServerThreads(); i++) {
       server_threads[i] = (
-	new ServerThread(config,
-			 randomLong(), i, all_products, all_customers,
-			 browsing_queues[bq_no], sales_queues[sq_no],
-			 server_accumulator, server_alloc_accumulator,
-			 server_garbage_accumulator, staggered_start,
-			 staggered_customer_replacement,
-			 staggered_product_replacement, end_time));
+        new ServerThread(config,
+                         randomLong(), i, all_products, all_customers,
+                         browsing_queues[bq_no], sales_queues[sq_no],
+                         server_accumulator, server_alloc_accumulator,
+                         server_garbage_accumulator, staggered_start,
+                         staggered_customer_replacement,
+                         staggered_product_replacement, end_time));
       if (bq_no-- == 0)
-	bq_no = config.BrowsingHistoryQueueCount() - 1;
+        bq_no = config.BrowsingHistoryQueueCount() - 1;
       if (sq_no-- == 0)
-	sq_no = config.SalesTransactionQueueCount() - 1;
+        sq_no = config.SalesTransactionQueueCount() - 1;
       staggered_start.garbageFootprint(this);
       staggered_start = staggered_start.addRelative(this, server_stagger);
       staggered_customer_replacement.garbageFootprint(this);
       staggered_customer_replacement = (
-	staggered_customer_replacement
-	.addRelative(this, customer_replacement_stagger));
+        staggered_customer_replacement
+        .addRelative(this, customer_replacement_stagger));
       staggered_product_replacement.garbageFootprint(this);
       staggered_product_replacement = (
-	staggered_product_replacement
-	.addRelative(this, product_replacement_stagger));
+        staggered_product_replacement
+        .addRelative(this, product_replacement_stagger));
       server_threads[i].start(); // will wait for first release
     }
     staggered_start.garbageFootprint(this);
@@ -305,7 +305,7 @@ public class Bootstrap extends ExtrememThread {
 
     if (now.compare(start_time) > 0) {
       Configuration.usage("Initialization must complete before start."
-			  + "  Increase InitializationDelay.");
+                          + "  Increase InitializationDelay.");
       // Does not return.
     }
     start_time.garbageFootprint(this);
@@ -319,9 +319,9 @@ public class Bootstrap extends ExtrememThread {
     // Each thread will terminate when the end_time is reached.
     for (int i = 0; i < config.CustomerThreads(); i++) {
       try {
-	customer_threads[i].join();
+        customer_threads[i].join();
       } catch (InterruptedException x) {
-	i--;			// just try it again
+        i--;                    // just try it again
       }
     }
       
@@ -329,9 +329,9 @@ public class Bootstrap extends ExtrememThread {
       
     for (int i = 0; i < config.ServerThreads(); i++) {
       try {
-	server_threads[i].join();
+        server_threads[i].join();
       } catch (InterruptedException x) {
-	i--;			// just try it again
+        i--;                    // just try it again
       }
     }
       
@@ -339,43 +339,43 @@ public class Bootstrap extends ExtrememThread {
     all_products.report(this);
     all_customers.report(this);
     if (!config.ReportIndividualThreads()) {
-	
+        
       Report.acquireReportLock();
       customer_accumulator.report(this, "(all customer threads)",
-				  config.ReportCSV());
+                                  config.ReportCSV());
       MemoryLog.report(this, config.ReportCSV(), customer_alloc_accumulator,
-		       customer_garbage_accumulator);
-	
+                       customer_garbage_accumulator);
+        
       Report.output("");
       Report.output("Bootstrap thread after reporting customer accumulator");
       MemoryLog.report(this, config.ReportCSV(), memory, garbage);
-	
+        
       server_accumulator.report(this, "(all server threads)",
-				config.ReportCSV());
+                                config.ReportCSV());
       MemoryLog.report(this, config.ReportCSV(), server_alloc_accumulator,
-		       server_garbage_accumulator);
-	
+                       server_garbage_accumulator);
+        
       customer_alloc_accumulator.foldInto(server_alloc_accumulator);
       customer_alloc_accumulator.foldOutof(customer_garbage_accumulator);
       customer_alloc_accumulator.foldOutof(server_garbage_accumulator);
-	
+        
       all_threads_accumulator.foldInto(customer_alloc_accumulator);
-	
+        
       Report.output();
       Report.output("Customer/Server thread Net Allocation (expect zero)");
       MemoryLog.reportCumulative(this, config.ReportCSV(),
-				 customer_alloc_accumulator);
+                                 customer_alloc_accumulator);
 
       Report.releaseReportLock();
     } else {
       // Individual threads have printed their individual reports.
       for (int i = 0; i < config.CustomerThreads(); i++) {
-	all_threads_accumulator.foldInto(customer_threads[i].memoryLog());
-	all_threads_accumulator.foldOutof(customer_threads[i].garbageLog());
+        all_threads_accumulator.foldInto(customer_threads[i].memoryLog());
+        all_threads_accumulator.foldOutof(customer_threads[i].garbageLog());
       }
       for (int i = 0; i < config.ServerThreads(); i++) {
-	all_threads_accumulator.foldInto(server_threads[i].memoryLog());
-	all_threads_accumulator.foldOutof(server_threads[i].garbageLog());
+        all_threads_accumulator.foldInto(server_threads[i].memoryLog());
+        all_threads_accumulator.foldOutof(server_threads[i].garbageLog());
       }
     }
       
@@ -383,13 +383,13 @@ public class Bootstrap extends ExtrememThread {
       server_threads[i].garbageFootprint(this);
     server_threads = null;
     Util.abandonReferenceArray(this, LifeSpan.NearlyForever,
-			       config.ServerThreads());
+                               config.ServerThreads());
       
     for (int i = 0; i < config.CustomerThreads(); i++)
       customer_threads[i].garbageFootprint(this);
     customer_threads = null;
     Util.abandonReferenceArray(this, LifeSpan.NearlyForever,
-			       config.CustomerThreads());
+                               config.CustomerThreads());
       
     end_time.garbageFootprint(this);
     end_time = null;
@@ -408,7 +408,7 @@ public class Bootstrap extends ExtrememThread {
       browsing_queues[i] = null;
     }
     Util.abandonReferenceArray(this, LifeSpan.NearlyForever,
-			       config.BrowsingHistoryQueueCount());
+                               config.BrowsingHistoryQueueCount());
     browsing_queues = null;
       
     for (int i = 0; i < config.SalesTransactionQueueCount(); i++) {
@@ -416,7 +416,7 @@ public class Bootstrap extends ExtrememThread {
       sales_queues[i] = null;
     }
     Util.abandonReferenceArray(this, LifeSpan.NearlyForever,
-			       config.SalesTransactionQueueCount());
+                               config.SalesTransactionQueueCount());
     sales_queues = null;
       
     // While these objects may not be garbage quite yet, treat them as
@@ -447,7 +447,7 @@ public class Bootstrap extends ExtrememThread {
     Report.output();
     Report.output("Net allocation for all threads (should be zero)");
     MemoryLog.reportCumulative(this, config.ReportCSV(),
-			       all_threads_accumulator);
+                               all_threads_accumulator);
     all_threads_accumulator = null;
     Report.releaseReportLock();
       

@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package com.amazon.corretto.benchmark.extremem;
 
 /* The memory accounting for ServerLogAccumulator is the same as for
@@ -50,7 +53,7 @@ class ServerLogAccumulator extends ServerLog {
   }
 
   public synchronized void report(ExtrememThread t,
-				  String label, boolean reportCSV) {
+                                  String label, boolean reportCSV) {
     super.report(t, label, reportCSV);
   }
 }

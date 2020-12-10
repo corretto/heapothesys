@@ -28,17 +28,17 @@ package com.amazon.corretto.benchmark.extremem;
  */
 enum MemoryFlavor {
   
-  StringBuilder,	     // StringBuilder instances
-  StringBuilderData,	     // "Characters" of StringBuilder data
-  StringObject,		     // String instances
-  StringData,		     // "Characters" of String data
-  ArrayObject,		     // Array instances
-  ArrayRSB,		     // Bytes of raw seething bits array data
-  ArrayReference,	     // References within arrays
-  PlainObject,		     // Object instances, excluding Array,
-			     //    String, StringBuilder)
-  ObjectRSB,		     // Bytes of raw seething bits within objects
-  ObjectReference;	     // References within objects
+  StringBuilder,             // StringBuilder instances
+  StringBuilderData,         // "Characters" of StringBuilder data
+  StringObject,              // String instances
+  StringData,                // "Characters" of String data
+  ArrayObject,               // Array instances
+  ArrayRSB,                  // Bytes of raw seething bits array data
+  ArrayReference,            // References within arrays
+  PlainObject,               // Object instances, excluding Array,
+                             //    String, StringBuilder)
+  ObjectRSB,                 // Bytes of raw seething bits within objects
+  ObjectReference;           // References within objects
   
   final static int OrdinalCount = ObjectReference.ordinal () + 1;
 }

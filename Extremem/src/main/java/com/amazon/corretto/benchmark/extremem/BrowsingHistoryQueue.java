@@ -75,15 +75,15 @@ class BrowsingHistoryQueue extends ExtrememObject {
     else {
       BrowsingHistory candidate = expiration_queue;
       if (candidate.expirationTime().compare(now) > 0)
-	return null;
+        return null;
       else if (candidate.next == candidate) {
-	expiration_queue = null;
-	candidate.next = candidate.prev = null;
+        expiration_queue = null;
+        candidate.next = candidate.prev = null;
       } else {
-	expiration_queue = expiration_queue.next;
-	expiration_queue.prev = candidate.prev;
-	expiration_queue.prev.next = expiration_queue;
-	expiration_queue.next.prev = expiration_queue;
+        expiration_queue = expiration_queue.next;
+        expiration_queue.prev = candidate.prev;
+        expiration_queue.prev.next = expiration_queue;
+        expiration_queue.next.prev = expiration_queue;
       }
       return candidate;
     }
@@ -97,7 +97,7 @@ class BrowsingHistoryQueue extends ExtrememObject {
       remove_me.next.prev = remove_me.prev;
       remove_me.prev.next = remove_me.next;
       if (expiration_queue == remove_me)
-	expiration_queue = remove_me.next;
+        expiration_queue = remove_me.next;
       remove_me.next = remove_me.prev = null;
     }
   }

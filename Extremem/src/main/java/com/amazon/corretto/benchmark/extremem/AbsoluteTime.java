@@ -92,24 +92,24 @@ class AbsoluteTime extends HighResolutionTime {
       RelativeTime delay = this.difference(t, original_now);
       delay.garbageFootprint(t);
       if (!delay.isNegative()) {
-	try {
-	  // I have confirmed through instrumentation that Thread.sleep()
-	  // sometimes delays less that the intended amount of time.  This
-	  // can result in certain latency measurements being reported as
-	  // negative.  Since I can't "FIX" the implementation of
-	  // Thread.sleep(), I'll instead round any negative latency
-	  // measurements up to zero whenever a negative latency is added to
-	  // a RelativeTimeMetrics log.
-	  Thread.sleep(delay.s * 1000 + delay.ns / 1000000,
-			delay.ns % 1000000);
-	  original_now.garbageFootprint(t);
-	  return new AbsoluteTime(t, this);
-	} catch (InterruptedException x) {
-	  original_now.garbageFootprint(t);
-	  original_now = AbsoluteTime.now (t);		// try it again
-	}
+        try {
+          // I have confirmed through instrumentation that Thread.sleep()
+          // sometimes delays less that the intended amount of time.  This
+          // can result in certain latency measurements being reported as
+          // negative.  Since I can't "FIX" the implementation of
+          // Thread.sleep(), I'll instead round any negative latency
+          // measurements up to zero whenever a negative latency is added to
+          // a RelativeTimeMetrics log.
+          Thread.sleep(delay.s * 1000 + delay.ns / 1000000,
+                        delay.ns % 1000000);
+          original_now.garbageFootprint(t);
+          return new AbsoluteTime(t, this);
+        } catch (InterruptedException x) {
+          original_now.garbageFootprint(t);
+          original_now = AbsoluteTime.now (t);          // try it again
+        }
       } else 
-	return original_now;
+        return original_now;
     }
   }
 
@@ -243,8 +243,8 @@ class AbsoluteTime extends HighResolutionTime {
    */
   AbsoluteTime addMicros(ExtrememThread t, int us) {
     int ns = (this.ns +
-	       ((us % HighResolutionTime.MicrosPerSecond)
-		* HighResolutionTime.NanosPerMicro));
+               ((us % HighResolutionTime.MicrosPerSecond)
+                * HighResolutionTime.NanosPerMicro));
     long s = this.s + us / HighResolutionTime.MicrosPerSecond;
     return new AbsoluteTime(t, s, ns);
   }
@@ -296,7 +296,7 @@ class AbsoluteTime extends HighResolutionTime {
 
     int capacity = Util.ephemeralStringBuilder(t, part1_len);
     capacity = Util.ephemeralStringBuilderAppend(t, part1_len,
-						 capacity, part2_len);
+                                                 capacity, part2_len);
     Util.ephemeralStringBuilderToString(t, part1_len + part2_len, capacity);
     result = part1 + part2;
     Util.abandonEphemeralString(t, part2_len);

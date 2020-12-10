@@ -35,24 +35,24 @@ class CustomerThread extends ExtrememThread {
    * garbage.
    */
   CustomerThread (Configuration config, long random_seed, int sequence_no,
-		  Products all_products, Customers all_customers,
-		  BrowsingHistoryQueue browsing_queue,
-		  SalesTransactionQueue sales_queue,
-		  CustomerLogAccumulator accumulator,
-		  MemoryLog alloc_accumulator,
-		  MemoryLog garbage_accumulator,
-		  AbsoluteTime first_release, AbsoluteTime end_simulation) {
+                  Products all_products, Customers all_customers,
+                  BrowsingHistoryQueue browsing_queue,
+                  SalesTransactionQueue sales_queue,
+                  CustomerLogAccumulator accumulator,
+                  MemoryLog alloc_accumulator,
+                  MemoryLog garbage_accumulator,
+                  AbsoluteTime first_release, AbsoluteTime end_simulation) {
     super (config, random_seed);
     MemoryLog log = this.memoryLog();
     MemoryLog garbage = this.garbageLog();
     label = Util.i2s(this, sequence_no);
     
     Trace.msg(1, "@ ",
-	      Integer.toString(log.hashCode()),
-	      ": CustomerThread[", label, "].memoryLog()");
+              Integer.toString(log.hashCode()),
+              ": CustomerThread[", label, "].memoryLog()");
     Trace.msg(1, "@ ",
-	      Integer.toString(garbage.hashCode()),
-	      ": CustomerThread[", label, "].garbageLog()");
+              Integer.toString(garbage.hashCode()),
+              ": CustomerThread[", label, "].garbageLog()");
     
     Util.convertEphemeralString(this, LifeSpan.NearlyForever, label.length());
     this.all_customers = all_customers;
@@ -93,11 +93,11 @@ class CustomerThread extends ExtrememThread {
       // hopelessly behind schedule, the thread takes "forever" to
       // terminate.
       if (now.compare(end_simulation_time) >= 0)
-	break;
+        break;
 
       Trace.msg(4, "CustomerThread ", label,
-		", random customer: ", customer.name(),
-		", id: ", Long.toString(customer.id()));
+                ", random customer: ", customer.name(),
+                ", id: ", Long.toString(customer.id()));
 
       // keywords, all, any are all treated as Ephemeral.
       String[] keywords = randomKeywords(config.KeywordSearchCount());
@@ -108,15 +108,15 @@ class CustomerThread extends ExtrememThread {
       int any_count = any.length;
 
       if (Trace.enabled(3)) {
-	for (int i = 0; i < keywords.length; i++)
-	  Trace.msg(4, "CustomerThread ", label,
-		    " looking for keyword: ", keywords[i]);
-	for (int i = 0; i < all.length; i++)
-	  Trace.msg(4, "CustomerThread ", label,
-		    " matched all: ", all[i].name());
-	for (int i = 0; i < any.length; i++)
-	  Trace.msg(4, "CustomerThread ", label,
-		    " matched any: ", any[i].name());
+        for (int i = 0; i < keywords.length; i++)
+          Trace.msg(4, "CustomerThread ", label,
+                    " looking for keyword: ", keywords[i]);
+        for (int i = 0; i < all.length; i++)
+          Trace.msg(4, "CustomerThread ", label,
+                    " matched all: ", all[i].name());
+        for (int i = 0; i < any.length; i++)
+          Trace.msg(4, "CustomerThread ", label,
+                    " matched any: ", any[i].name());
       }
 
       // keywords array is now garbage
@@ -124,11 +124,11 @@ class CustomerThread extends ExtrememThread {
 
       Product[] scrutinize_list, garbage_list;
       if (all_count > 0) {
-	scrutinize_list = all;
-	garbage_list = any;
+        scrutinize_list = all;
+        garbage_list = any;
       } else {
-	scrutinize_list = any;
-	garbage_list = all;
+        scrutinize_list = any;
+        garbage_list = all;
       }
       all = any = null;
       // garbage_list is now garbage
@@ -137,160 +137,160 @@ class CustomerThread extends ExtrememThread {
       int candidate_cnt = scrutinize_list.length;
       // saved4laters is Ephemeral
       Product[] saved4laters = (
-	customer.getAllSavedForLater(this, LifeSpan.Ephemeral));
+        customer.getAllSavedForLater(this, LifeSpan.Ephemeral));
       
       int saved_count = saved4laters.length;
       Product[] candidates;
       if (saved_count > 0) {
-	int i;
-	candidates = new Product[candidate_cnt + saved_count];
-	Util.ephemeralReferenceArray(this, candidate_cnt + saved_count);
-	for (i = 0; i < candidate_cnt; i++) 
-	  candidates[i] = scrutinize_list[i];
-	for (int j = 0; j < saved_count; j++)
-	  candidates[i++] = saved4laters[j];
-	candidate_cnt += saved_count;
-	// scrutinize_list is now garbage.
-	Util.abandonEphemeralReferenceArray(this, scrutinize_list.length);
+        int i;
+        candidates = new Product[candidate_cnt + saved_count];
+        Util.ephemeralReferenceArray(this, candidate_cnt + saved_count);
+        for (i = 0; i < candidate_cnt; i++) 
+          candidates[i] = scrutinize_list[i];
+        for (int j = 0; j < saved_count; j++)
+          candidates[i++] = saved4laters[j];
+        candidate_cnt += saved_count;
+        // scrutinize_list is now garbage.
+        Util.abandonEphemeralReferenceArray(this, scrutinize_list.length);
       } else
-	candidates = scrutinize_list;
+        candidates = scrutinize_list;
       // saved4laters is now garbage.
       Util.abandonEphemeralReferenceArray(this, saved_count);
       
       // candidate_cnt represents length of candidates array.
       if (candidate_cnt > 0) {
-	SalesTransaction[] prospects = new SalesTransaction[candidate_cnt];
-	Util.referenceArray(this, LifeSpan.TransientShort, candidate_cnt);
-	
-	for (int i = 0; i < candidate_cnt; i++)
-	  prospects[i] = new SalesTransaction(this, LifeSpan.TransientShort,
-					      config, candidates[i],
-					      customer);
-	// candidates is now garbage.
-	Util.abandonEphemeralReferenceArray(this, prospects.length);
+        SalesTransaction[] prospects = new SalesTransaction[candidate_cnt];
+        Util.referenceArray(this, LifeSpan.TransientShort, candidate_cnt);
+        
+        for (int i = 0; i < candidate_cnt; i++)
+          prospects[i] = new SalesTransaction(this, LifeSpan.TransientShort,
+                                              config, candidates[i],
+                                              customer);
+        // candidates is now garbage.
+        Util.abandonEphemeralReferenceArray(this, prospects.length);
 
-	String[] selectors = randomKeywords(config.SelectionCriteriaCount());
-	Util.convertStringArray(this, LifeSpan.TransientShort,
-				selectors.length);
+        String[] selectors = randomKeywords(config.SelectionCriteriaCount());
+        Util.convertStringArray(this, LifeSpan.TransientShort,
+                                selectors.length);
 
-	AbsoluteTime end_think = (
-	  next_release_time.addRelative(this, config.CustomerThinkTime()));
-	end_think.changeLifeSpan(this, LifeSpan.TransientShort);
-	history.logPrepareToThink(this, next_release_time,
-				  all_count, any_count, saved_count);
-	end_think.sleep(this);
-	end_think.garbageFootprint(this);
+        AbsoluteTime end_think = (
+          next_release_time.addRelative(this, config.CustomerThinkTime()));
+        end_think.changeLifeSpan(this, LifeSpan.TransientShort);
+        history.logPrepareToThink(this, next_release_time,
+                                  all_count, any_count, saved_count);
+        end_think.sleep(this);
+        end_think.garbageFootprint(this);
 
-	Trace.msg(4, "Customer Thread ", label,
-		  ", woke from thinking @ ", end_think.toString(this),
-		  ", candidates:");
-	if (Trace.enabled(3)) {
-	  for (int i = 0; i < candidate_cnt; i++) {
-	    Trace.msg(4, " product id: ",
-		      Long.toString(prospects[i].product().id()),
-		      ", name: ", prospects[i].product().name());
-	  }
-	}
+        Trace.msg(4, "Customer Thread ", label,
+                  ", woke from thinking @ ", end_think.toString(this),
+                  ", candidates:");
+        if (Trace.enabled(3)) {
+          for (int i = 0; i < candidate_cnt; i++) {
+            Trace.msg(4, " product id: ",
+                      Long.toString(prospects[i].product().id()),
+                      ", name: ", prospects[i].product().name());
+          }
+        }
 
-	// rankings is ephemeral.
-	float[] rankings = rankFuzzyMatches(selectors, prospects);
-	int best_index = 0;
-	float best_match = rankings [0];
-	for (int i = 1; i < rankings.length; i++) {
-	  if (rankings [i] > best_match) {
-	    best_match = rankings [i];
-	    best_index = i;
-	  }
-	}
-	// Abandon rankings.
-	Util.abandonEphemeralRSBArray(this,
-				      rankings.length, Util.SizeOfFloat);
+        // rankings is ephemeral.
+        float[] rankings = rankFuzzyMatches(selectors, prospects);
+        int best_index = 0;
+        float best_match = rankings [0];
+        for (int i = 1; i < rankings.length; i++) {
+          if (rankings [i] > best_match) {
+            best_match = rankings [i];
+            best_index = i;
+          }
+        }
+        // Abandon rankings.
+        Util.abandonEphemeralRSBArray(this,
+                                      rankings.length, Util.SizeOfFloat);
 
-	Trace.msg(4, "Customer Thread ", label, ", selected option ",
-		  Integer.toString(best_index));
+        Trace.msg(4, "Customer Thread ", label, ", selected option ",
+                  Integer.toString(best_index));
 
-	SalesTransaction selected = prospects[best_index];
-	// Other SalesTransactions and selection_criteria are now all garbage
-	// (Some compilers/collectors may be better at discovering
-	// this than others.)
+        SalesTransaction selected = prospects[best_index];
+        // Other SalesTransactions and selection_criteria are now all garbage
+        // (Some compilers/collectors may be better at discovering
+        // this than others.)
 
-	for (int i = 0; i < prospects.length; i++)
-	  if (i != best_index) prospects[i].garbageFootprint(this);
-	// prospects is now garbage.
-	Util.abandonReferenceArray(this, LifeSpan.TransientShort,
-				   prospects.length);
-	// selectors is now garbage.
-	Util.abandonStringArray(this,
-				LifeSpan.TransientShort, selectors.length);
+        for (int i = 0; i < prospects.length; i++)
+          if (i != best_index) prospects[i].garbageFootprint(this);
+        // prospects is now garbage.
+        Util.abandonReferenceArray(this, LifeSpan.TransientShort,
+                                   prospects.length);
+        // selectors is now garbage.
+        Util.abandonStringArray(this,
+                                LifeSpan.TransientShort, selectors.length);
 
-	float coin = this.randomFloat();
-	switch (interpretCoinToss(coin)) {
+        float coin = this.randomFloat();
+        switch (interpretCoinToss(coin)) {
 
-	  case BuyProduct:
-	    Trace.msg(4, "Customer Thread ", label, ", chose buy");
-	    sales_queue.enqueue(selected);
-	    selected.changeLifeSpan(this, LifeSpan.TransientIntermediate);
-	    // Garbage collection of the selected object is the
-	    // "responsibility" of the ServerThread.  After the
-	    // ServerThread transacts a sale, it marks the selected
-	    // SalesTransaction object as garbage.  This is the same
-	    // process used even if the associated customer or product
-	    // becomes decommissioned before the sale is transacted.
-	    history.logPurchase(this, end_think);
-	    break;
+          case BuyProduct:
+            Trace.msg(4, "Customer Thread ", label, ", chose buy");
+            sales_queue.enqueue(selected);
+            selected.changeLifeSpan(this, LifeSpan.TransientIntermediate);
+            // Garbage collection of the selected object is the
+            // "responsibility" of the ServerThread.  After the
+            // ServerThread transacts a sale, it marks the selected
+            // SalesTransaction object as garbage.  This is the same
+            // process used even if the associated customer or product
+            // becomes decommissioned before the sale is transacted.
+            history.logPurchase(this, end_think);
+            break;
 
-	  case SaveProductForLater:
-	    Trace.msg(4,
-		      "Customer Thread ", label, ", chose save for later");
-	    Customer c = selected.customer();
-	    Product p = selected.product();
-	    // selected is now garbage.
-	    selected.garbageFootprint(this);
+          case SaveProductForLater:
+            Trace.msg(4,
+                      "Customer Thread ", label, ", chose save for later");
+            Customer c = selected.customer();
+            Product p = selected.product();
+            // selected is now garbage.
+            selected.garbageFootprint(this);
 
-	    AbsoluteTime expiration = AbsoluteTime.now(this);
-	    expiration.garbageFootprint(this);
-	    expiration = expiration.addRelative(this,
-						config.BrowsingExpiration());
-	    BrowsingHistory h = new BrowsingHistory(this,
-						    LifeSpan.
-						    TransientLingering,
-						    c, p, expiration,
-						    browsing_queue);
-	    expiration.garbageFootprint(this);
-	    all_customers.addSaveForLater(c, this, h);
-	    browsing_queue.enqueue(h);
-	    // Garbage collection of the h BrowsingHistory object is
-	    // the "responsibility" of the ServerThread.  After the
-	    // ServerThread expires h because its expiration time has
-	    // been reached, it object h is marked as eligible for
-	    // garbage collection.  In the rare case that customer c
-	    // is decommissioned before BrowsingHistory h's expiration
-	    // has been reached, the memory belong to h will be marked
-	    // as eligible for garbage collection by the
-	    // Customer.prepareForDemise() method that executes when
-	    // the customer is decommissioned.
-	    history.log4Later(this, end_think);
-	    break;
-	    
-	  case AbandonProduct:
-	    // selected is garbage.
-	    selected.garbageFootprint(this);
+            AbsoluteTime expiration = AbsoluteTime.now(this);
+            expiration.garbageFootprint(this);
+            expiration = expiration.addRelative(this,
+                                                config.BrowsingExpiration());
+            BrowsingHistory h = new BrowsingHistory(this,
+                                                    LifeSpan.
+                                                    TransientLingering,
+                                                    c, p, expiration,
+                                                    browsing_queue);
+            expiration.garbageFootprint(this);
+            all_customers.addSaveForLater(c, this, h);
+            browsing_queue.enqueue(h);
+            // Garbage collection of the h BrowsingHistory object is
+            // the "responsibility" of the ServerThread.  After the
+            // ServerThread expires h because its expiration time has
+            // been reached, it object h is marked as eligible for
+            // garbage collection.  In the rare case that customer c
+            // is decommissioned before BrowsingHistory h's expiration
+            // has been reached, the memory belong to h will be marked
+            // as eligible for garbage collection by the
+            // Customer.prepareForDemise() method that executes when
+            // the customer is decommissioned.
+            history.log4Later(this, end_think);
+            break;
+            
+          case AbandonProduct:
+            // selected is garbage.
+            selected.garbageFootprint(this);
 
-	    Trace.msg(4, "Customer Thread ", label, ", chose abandon");
-	    history.logAbandonment(this, end_think);
-	}
+            Trace.msg(4, "Customer Thread ", label, ", chose abandon");
+            history.logAbandonment(this, end_think);
+        }
       } else {
-	// candidates, known to have length 0, is now garbage.
-	Util.abandonEphemeralReferenceArray(this, 0);
-	
-	// else, search came up empty.  wait for next period.
-	Trace.msg(4, "Customer Thread ", label, " matched no customers");
-	history.logNoChoice(this, next_release_time);
+        // candidates, known to have length 0, is now garbage.
+        Util.abandonEphemeralReferenceArray(this, 0);
+        
+        // else, search came up empty.  wait for next period.
+        Trace.msg(4, "Customer Thread ", label, " matched no customers");
+        history.logNoChoice(this, next_release_time);
       }
       next_release_time.garbageFootprint(this);
       next_release_time = next_release_time.addRelative(this,
-							config.
-							CustomerPeriod());
+                                                        config.
+                                                        CustomerPeriod());
     }
     Trace.msg(2, "Customer thread ", label, " terminating.  Time is up.");
 
@@ -332,15 +332,15 @@ class CustomerThread extends ExtrememThread {
     float penalize = scale;
     boolean found_match = false;
     for (int sub_length = keyword.length();
-	 !found_match && (sub_length > 0); sub_length--) {
+         !found_match && (sub_length > 0); sub_length--) {
       for (int start = 0;
-	   !found_match && (start + sub_length <= keyword.length()); start++) {
-	String trial = keyword.substring (start, start + sub_length);
-	int index = text.indexOf(trial);
-	if (text.indexOf(trial) < 0)
-	  similarity *= penalize;
-	else
-	  found_match = true;
+           !found_match && (start + sub_length <= keyword.length()); start++) {
+        String trial = keyword.substring (start, start + sub_length);
+        int index = text.indexOf(trial);
+        if (text.indexOf(trial) < 0)
+          similarity *= penalize;
+        else
+          found_match = true;
       }
       penalize *= scale;
     }
@@ -357,7 +357,7 @@ class CustomerThread extends ExtrememThread {
 
   // Returned array allocated in Ephemeral memory.
   float[] rankFuzzyMatches (String[] criteria,
-			    SalesTransaction[] prospects) {
+                            SalesTransaction[] prospects) {
     int len = prospects.length;
     float[] results = new float[len];
     Util.ephemeralRSBArray(this, len, Util.SizeOfFloat);

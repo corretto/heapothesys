@@ -40,10 +40,10 @@ abstract class HighResolutionTime extends ExtrememObject {
       ns -= negative_seconds * NanosPerSecond;
 
       if (ns < 0) {
-	// Due to round-down in division above, ns might still be < 0,
-	//  but will not be less than -NanosPerSecond.
-	s--;
-	ns += NanosPerSecond;
+        // Due to round-down in division above, ns might still be < 0,
+        //  but will not be less than -NanosPerSecond.
+        s--;
+        ns += NanosPerSecond;
       }
     } else if (ns > NanosPerSecond) {
       s += ns / NanosPerSecond;
@@ -54,7 +54,7 @@ abstract class HighResolutionTime extends ExtrememObject {
 
     MemoryLog log = t.memoryLog ();
     log.accumulate (LifeSpan.Ephemeral, MemoryFlavor.ObjectRSB,
-		    Polarity.Expand, Util.SizeOfLong + Util.SizeOfInt);
+                    Polarity.Expand, Util.SizeOfLong + Util.SizeOfInt);
   }
 
   long seconds() {
@@ -79,7 +79,7 @@ abstract class HighResolutionTime extends ExtrememObject {
 
     // Account for s and ns fields.
     log.accumulate (ls, MemoryFlavor.ObjectRSB, p,
-		    Util.SizeOfInt + Util.SizeOfLong);
+                    Util.SizeOfInt + Util.SizeOfLong);
   }
 
   /**
@@ -119,12 +119,12 @@ abstract class HighResolutionTime extends ExtrememObject {
       seconds %= SecondsPerHour;
       int digits = Util.decimalDigits(hours);
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
 
       result = result + hours + "h ";
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 2);
+                                                      sb_capacity, 2);
       sb_length += 2;
     }
     if (seconds >= SecondsPerMinute) {
@@ -134,10 +134,10 @@ abstract class HighResolutionTime extends ExtrememObject {
       seconds %= SecondsPerMinute;
       
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 2);
+                                                      sb_capacity, 2);
       sb_length += 2;
     }
     if (seconds > 0) {
@@ -145,10 +145,10 @@ abstract class HighResolutionTime extends ExtrememObject {
       result = result + seconds + "s ";
 
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 2);
+                                                      sb_capacity, 2);
       sb_length += 2;
     }
 
@@ -160,10 +160,10 @@ abstract class HighResolutionTime extends ExtrememObject {
       nanos %= NanosPerMilliseconds;
       
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 3);
+                                                      sb_capacity, 3);
       sb_length += 3;
     }
     if (nanos >= NanosPerMicroseconds) {
@@ -173,10 +173,10 @@ abstract class HighResolutionTime extends ExtrememObject {
       nanos %= NanosPerMicroseconds;
 
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 3);
+                                                      sb_capacity, 3);
       sb_length += 3;
     }
     if (nanos > 0) {
@@ -184,10 +184,10 @@ abstract class HighResolutionTime extends ExtrememObject {
       result = result + nanos + "ns ";
 
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 3);
+                                                      sb_capacity, 3);
       sb_length += 3;
     }
 

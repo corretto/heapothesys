@@ -62,12 +62,12 @@ class ExtrememHashSet<E> extends HashSet<E> {
     // (float) plus associated HashMap object's 3 int fields and 1
     // float field.
     log.accumulate(ls, MemoryFlavor.ObjectRSB, Grow, Util.SizeOfLong
-		   + 3 * Util.SizeOfInt + 2 * Util.SizeOfFloat);
+                   + 3 * Util.SizeOfInt + 2 * Util.SizeOfFloat);
 
     // Account for the referenced array.
     log.accumulate(ls, MemoryFlavor.ArrayObject, Grow, 1);
     log.accumulate(ls, MemoryFlavor.ArrayReference,
-		   Grow, simulated_capacity);
+                   Grow, simulated_capacity);
 
     // Initial size known to equal 0, so no need to account for Hash nodes.
   }
@@ -81,9 +81,9 @@ class ExtrememHashSet<E> extends HashSet<E> {
     if (super.add(e)) {
       Util.createHashNode(t, ls);
       if (size() > simulated_capacity * simulated_loadfactor) {
-	Util.abandonReferenceArray(t, ls, simulated_capacity);
-	simulated_capacity *= 2;
-	Util.referenceArray(t, ls, simulated_capacity);
+        Util.abandonReferenceArray(t, ls, simulated_capacity);
+        simulated_capacity *= 2;
+        Util.referenceArray(t, ls, simulated_capacity);
       }
       return true;
     } else
@@ -110,8 +110,8 @@ class ExtrememHashSet<E> extends HashSet<E> {
   // Account for num_sets instances of HashSet with combined size as
   // denoted by cumulative_entries and cumulative_array_lengths.
   static void tallyMemory(MemoryLog log, LifeSpan ls, Polarity p,
-			  int num_sets, int cumulative_entries,
-			  long cumulative_array_lengths) {
+                          int num_sets, int cumulative_entries,
+                          long cumulative_array_lengths) {
 
     // Account for this object and for referenced HashMap object.
     log.accumulate (ls, MemoryFlavor.PlainObject, p, num_sets * 2);
@@ -123,13 +123,13 @@ class ExtrememHashSet<E> extends HashSet<E> {
     // (float) plus associated HashMap object's 3 int fields and 1
     // float field.
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p, num_sets *
-		   (Util.SizeOfLong + 3 * Util.SizeOfInt
-		    + 2 * Util.SizeOfFloat));
+                   (Util.SizeOfLong + 3 * Util.SizeOfInt
+                    + 2 * Util.SizeOfFloat));
 
     // Account for the referenced arrays.
     log.accumulate(ls, MemoryFlavor.ArrayObject, p, num_sets);
     log.accumulate(ls, MemoryFlavor.ArrayReference,
-		   p, cumulative_array_lengths);
+                   p, cumulative_array_lengths);
 
     // Each value stored into the HashMap is represented by a Node
     // object.  Each Node object consists of a key, content, and next
@@ -156,7 +156,7 @@ class ExtrememHashSet<E> extends HashSet<E> {
     // (float) plus associated HashMap object's 3 int fields and 1
     // float field.
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p, Util.SizeOfLong
-		   + 3 * Util.SizeOfInt + 2 * Util.SizeOfFloat);
+                   + 3 * Util.SizeOfInt + 2 * Util.SizeOfFloat);
 
     // Account for the referenced array.
     log.accumulate(ls, MemoryFlavor.ArrayObject, p, 1);

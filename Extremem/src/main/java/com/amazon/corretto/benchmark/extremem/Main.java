@@ -16,10 +16,10 @@ public class Main {
     // This thread goes to sleep until the workload has finished.
     for (boolean joined = false; !joined; ) {
       try {
-	booter.join();
-	joined = true;
+        booter.join();
+        joined = true;
       } catch (InterruptedException x) {
-	;			// try it again
+        ;                       // try it again
       }
     }
   }

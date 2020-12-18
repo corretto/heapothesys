@@ -12,11 +12,11 @@ package com.amazon.corretto.benchmark.extremem;
  */
 
 class ArrayletOflong extends ExtrememObject {
-  private final int length;	    // Number of elements in Arraylet
+  private final int length;         // Number of elements in Arraylet
   private final int max_length;     // Max array length
-  private final int num_tiers;	    // How may levels in fan-out structure?
+  private final int num_tiers;      // How may levels in fan-out structure?
   private final int top_entry_span; // Each element of root spans this many
-  private final Object[] root;	    // Root of fan-out structure
+  private final Object[] root;      // Root of fan-out structure
   private int total_arrays;
   private int total_array_ref_elements;
   private int total_array_long_elements;
@@ -46,8 +46,8 @@ class ArrayletOflong extends ExtrememObject {
       // many ArrayLet elements.
       int span_of_entry = max_length;
       while (span_of_entry * max_length < length) {
-	num_tiers++;
-	span_of_entry *= max_length;
+        num_tiers++;
+        span_of_entry *= max_length;
       }
       this.num_tiers = num_tiers;
       this.top_entry_span = span_of_entry;
@@ -57,36 +57,36 @@ class ArrayletOflong extends ExtrememObject {
 
       memory.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject, Grow, 2);
       memory.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayRSB,
-			Grow, num_tiers * Util.SizeOfInt);
+                        Grow, num_tiers * Util.SizeOfInt);
       memory.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayReference,
-			Grow, num_tiers);
+                        Grow, num_tiers);
 
       for (int i = 0; i < num_tiers; i++) {
-	arrays[i] = new Object[max_length];
-	this.total_arrays++;
-	this.total_array_ref_elements += max_length;
-	if (i > 0) {
-	  arrays[i-1][0] = arrays[i];
-	  counts[i-1] = 1;
-	}
+        arrays[i] = new Object[max_length];
+        this.total_arrays++;
+        this.total_array_ref_elements += max_length;
+        if (i > 0) {
+          arrays[i-1][0] = arrays[i];
+          counts[i-1] = 1;
+        }
       }
       this.root = arrays[0];
       int num_leaf_arrays = (length + max_length - 1) / max_length;
       for (int i = 0; i < num_leaf_arrays; i++) {
-	long[] element_array = new long[max_length];
-	this.total_arrays++;
-	this.total_array_long_elements += max_length;
-	adjustForNewLeaf(counts, arrays);
-	arrays[num_tiers-1][counts[num_tiers-1]-1] = (Object) element_array;
+        long[] element_array = new long[max_length];
+        this.total_arrays++;
+        this.total_array_long_elements += max_length;
+        adjustForNewLeaf(counts, arrays);
+        arrays[num_tiers-1][counts[num_tiers-1]-1] = (Object) element_array;
       }
 
       MemoryLog garbage = t.garbageLog();
       garbage.accumulate(LifeSpan.Ephemeral,
-			 MemoryFlavor.ArrayObject, Grow, 2);
+                         MemoryFlavor.ArrayObject, Grow, 2);
       garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayRSB,
-			 Grow, num_tiers * Util.SizeOfInt);
+                         Grow, num_tiers * Util.SizeOfInt);
       garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayReference,
-			 Grow, num_tiers);
+                         Grow, num_tiers);
     }
     // Account for 7 ints: length, max_length, num_tiers, top_entry_span,
     // total_arrays, total_array_ref_elements, total_array_long_elements
@@ -97,9 +97,9 @@ class ArrayletOflong extends ExtrememObject {
 
     memory.accumulate(ls, MemoryFlavor.ArrayObject, Grow, total_arrays);
     memory.accumulate(ls, MemoryFlavor.ArrayReference,
-		      Grow, total_array_ref_elements);
+                      Grow, total_array_ref_elements);
     memory.accumulate(ls, MemoryFlavor.ArrayRSB, Grow,
-		      this.total_array_long_elements * Util.SizeOfLong);
+                      this.total_array_long_elements * Util.SizeOfLong);
   }
 
   private final void adjustForNewLeaf(int[] counts, Object[][] arrays) {
@@ -108,17 +108,17 @@ class ArrayletOflong extends ExtrememObject {
       counts[focus_level]++;
     } else {
       while ((focus_level > 0) && (counts[focus_level] >= max_length)) {
-	arrays[focus_level] = new Object[max_length];
-	this.total_arrays++;
-	this.total_array_ref_elements += max_length;
-	counts[focus_level] = 1;
-	if (focus_level < num_tiers - 1)
-	  arrays[focus_level][0] = arrays[focus_level+1];
-	focus_level--;
+        arrays[focus_level] = new Object[max_length];
+        this.total_arrays++;
+        this.total_array_ref_elements += max_length;
+        counts[focus_level] = 1;
+        if (focus_level < num_tiers - 1)
+          arrays[focus_level][0] = arrays[focus_level+1];
+        focus_level--;
       }
       if (focus_level < num_tiers - 1) {
-	arrays[focus_level][counts[focus_level]] = arrays[focus_level+1];
-	counts[focus_level]++;
+        arrays[focus_level][counts[focus_level]] = arrays[focus_level+1];
+        counts[focus_level]++;
       }
     }
   }
@@ -170,9 +170,9 @@ class ArrayletOflong extends ExtrememObject {
 
     log.accumulate(ls, MemoryFlavor.ArrayObject, p, this.total_arrays);
     log.accumulate(ls, MemoryFlavor.ArrayReference,
-		   p, this.total_array_ref_elements);
+                   p, this.total_array_ref_elements);
     log.accumulate(ls, MemoryFlavor.ArrayRSB,
-		   p, this.total_array_long_elements);
+                   p, this.total_array_long_elements);
   }
 
   public static void main(String args[]) {
@@ -186,12 +186,12 @@ class ArrayletOflong extends ExtrememObject {
     try {
       a = new ArrayletOflong(t, LifeSpan.Ephemeral, 4, 56);
       for (int i = 0; i < 56; i++)
-	a.set(i, -10 * i);
+        a.set(i, -10 * i);
       for (int i = 55; i >= 0; i--) {
-	long l = a.get(i);
-	String s1 = Integer.toString(i);
-	String s2 = Long.toString(l);
-	Trace.debug("Array element[", s1, "] holds ", s2);
+        long l = a.get(i);
+        String s1 = Integer.toString(i);
+        String s2 = Long.toString(l);
+        Trace.debug("Array element[", s1, "] holds ", s2);
       }
     } catch (Exception x) {
       Trace.debug("caught exception during first batch");
@@ -201,12 +201,12 @@ class ArrayletOflong extends ExtrememObject {
     try {
       a = new ArrayletOflong(t, LifeSpan.Ephemeral, 7, 61);
       for (int i = 0; i < 61; i++)
-	a.set(i, -10 * i);
+        a.set(i, -10 * i);
       for (int i = 60; i >= 0; i--) {
-	Long l = a.get(i);
-	String s1 = Integer.toString(i);
-	String s2 = Long.toString(l);
-	Trace.debug("Array element[", s1, "] holds ", s2);
+        Long l = a.get(i);
+        String s1 = Integer.toString(i);
+        String s2 = Long.toString(l);
+        Trace.debug("Array element[", s1, "] holds ", s2);
       }
     } catch (Exception x) {
       Trace.debug("caught exception during second batch");
@@ -216,12 +216,12 @@ class ArrayletOflong extends ExtrememObject {
     try {
       a = new ArrayletOflong(t, LifeSpan.Ephemeral, 0, 61);
       for (int i = 0; i < 61; i++)
-	a.set(i, -10 * i);
+        a.set(i, -10 * i);
       for (int i = 60; i >= 0; i--) {
-	long l = a.get(i);
-	String s1 = Integer.toString(i);
-	String s2 = Long.toString(l);
-	Trace.debug("Array element[", s1, "] holds ", s2);
+        long l = a.get(i);
+        String s1 = Integer.toString(i);
+        String s2 = Long.toString(l);
+        Trace.debug("Array element[", s1, "] holds ", s2);
       }
     } catch (Exception x) {
       Trace.debug("caught exception during third batch");

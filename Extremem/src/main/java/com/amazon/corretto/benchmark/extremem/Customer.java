@@ -13,9 +13,9 @@ class Customer extends ExtrememObject {
   // by this customer.  
   long purchase_hash;
 
-  private int fsfl;			// first saved for later
-  private int csfl;			// count of saved for later
-  private BrowsingHistory [] sflq;	// Save for later queue
+  private int fsfl;                     // first saved for later
+  private int csfl;                     // count of saved for later
+  private BrowsingHistory [] sflq;      // Save for later queue
 
   Customer (ExtrememThread t, LifeSpan ls, String name, long uniq_id) {
     super(t, ls);
@@ -30,11 +30,11 @@ class Customer extends ExtrememObject {
     // int fsfl, csfl
     log.accumulate(ls, MemoryFlavor.ObjectReference, Grow, 2);
     log.accumulate(ls, MemoryFlavor.ObjectRSB, Grow,
-		   2 * Util.SizeOfLong + 2 * Util.SizeOfInt);
+                   2 * Util.SizeOfLong + 2 * Util.SizeOfInt);
     // account for allocated array referenced from sflq
     log.accumulate(ls, MemoryFlavor.ArrayObject, Grow, 1);
     log.accumulate(ls, MemoryFlavor.ArrayReference, Grow,
-		   InitialSaveForLaterQueueSize);
+                   InitialSaveForLaterQueueSize);
   }
 
   String name () {
@@ -50,7 +50,7 @@ class Customer extends ExtrememObject {
   }
 
   synchronized void transactSale(ExtrememThread t, AbsoluteTime release_time,
-				 SalesTransaction sale) {
+                                 SalesTransaction sale) {
     purchase_hash += sale.hash(release_time);
   }
 
@@ -58,31 +58,31 @@ class Customer extends ExtrememObject {
   // number of new slots added to this Customer's
   // BrowsingHistoryQueue.  Typical return value is zero.
   synchronized int addSaveForLater(ExtrememThread t, BrowsingHistory s4l) {
-    int bqes = 0;		// browsing queue expansion slots
-    if (csfl >= sflq.length) {	// double the size of existing queue
+    int bqes = 0;               // browsing queue expansion slots
+    if (csfl >= sflq.length) {  // double the size of existing queue
       final Polarity Grow = Polarity.Expand;
       int old_size = sflq.length;
       final MemoryLog log = t.memoryLog();
       final MemoryLog garbage = t.garbageLog();
 
       log.accumulate(LifeSpan.NearlyForever,
-		     MemoryFlavor.ArrayObject, Grow, 1);
+                     MemoryFlavor.ArrayObject, Grow, 1);
       log.accumulate(LifeSpan.NearlyForever,
-		     MemoryFlavor.ArrayReference, Grow, old_size);
+                     MemoryFlavor.ArrayReference, Grow, old_size);
 
       bqes = old_size;
       BrowsingHistory[] new_queue = new BrowsingHistory [2 * old_size];
       for (int i = 0; i < csfl; i++) {
-	new_queue [i] = sflq [fsfl++];
-	if (fsfl == old_size)
-	  fsfl = 0;
+        new_queue [i] = sflq [fsfl++];
+        if (fsfl == old_size)
+          fsfl = 0;
       }
-      sflq = new_queue;		// old queue becomes garbage
+      sflq = new_queue;         // old queue becomes garbage
 
       garbage.accumulate(LifeSpan.NearlyForever,
-			 MemoryFlavor.ArrayObject, Grow, 1);
+                         MemoryFlavor.ArrayObject, Grow, 1);
       garbage.accumulate(LifeSpan.NearlyForever,
-			 MemoryFlavor.ArrayReference, Grow, old_size);
+                         MemoryFlavor.ArrayReference, Grow, old_size);
       fsfl = 0;
     }
     int queue_length = sflq.length;
@@ -106,17 +106,17 @@ class Customer extends ExtrememObject {
     for (int i = 0; i < csfl; i++) {
       index = (fsfl + i) % sflq.length;
       if (sflq[index] == h)
-	break;
+        break;
     }
     assert (sflq[index] == h): " BrowsingHistory not in queue";
 
     if (index != fsfl) {
       do {
-	int prior_index = index - 1;
-	if (prior_index < 0)
-	  prior_index = sflq.length - 1;
-	sflq[index] = sflq[prior_index];
-	index = prior_index;
+        int prior_index = index - 1;
+        if (prior_index < 0)
+          prior_index = sflq.length - 1;
+        sflq[index] = sflq[prior_index];
+        index = prior_index;
       } while (index != fsfl);
     } // else: common case: head of saved-for-later is entry to remove
     sflq[fsfl++] = null;
@@ -142,7 +142,7 @@ class Customer extends ExtrememObject {
     for (i = 0, index = fsfl; i < csfl; i++) {
       result[i] = sflq[index++].product();
       if (index == sflq.length)
-	index = 0;
+        index = 0;
     }
     return result;
   }
@@ -169,7 +169,7 @@ class Customer extends ExtrememObject {
       h.garbageFootprint(t);
       sflq[index++] = null;
       if (index >= sflq.length)
-	index = 0;
+        index = 0;
     }
     fsfl = 0;
     csfl = 0;
@@ -179,14 +179,14 @@ class Customer extends ExtrememObject {
   // Account for count instances of Customer, excluding the
   // variable-size representations of Customer names.
   static void tallyMemory(MemoryLog log, LifeSpan ls, Polarity p,
-			  int count, int cbhs) {
+                          int count, int cbhs) {
     ExtrememObject.tallyMemory(log, ls, p, count);
     
     // Each Customer has two reference fields: name, sflq
     log.accumulate(ls, MemoryFlavor.ObjectReference, p, count * 2);
     // And two long fields: id, purchase_hash, and two int fields: fsfl, csfl
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-		   count * 2 * (Util.SizeOfLong + Util.SizeOfInt));
+                   count * 2 * (Util.SizeOfLong + Util.SizeOfInt));
 
     // account for the accumulation of allocated arrays referenced
     // from each Customer's sflq field.
@@ -202,7 +202,7 @@ class Customer extends ExtrememObject {
     // int fsfl, csfl
     log.accumulate(ls, MemoryFlavor.ObjectReference, p, 2);
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-		   2 * Util.SizeOfLong + 2 * Util.SizeOfInt);
+                   2 * Util.SizeOfLong + 2 * Util.SizeOfInt);
     // account for allocated array referenced from sflq
     log.accumulate(ls, MemoryFlavor.ArrayObject, p, 1);
     log.accumulate(ls, MemoryFlavor.ArrayReference, p, sflq.length);

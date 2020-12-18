@@ -25,11 +25,11 @@ class Report {
   static void acquireReportLock() {
     synchronized (locker) {
       while (num_writers > 0) {
-	try {
-	  locker.wait();
-	} catch (InterruptedException x) {
-	  ;			// try again
-	}
+        try {
+          locker.wait();
+        } catch (InterruptedException x) {
+          ;                     // try again
+        }
       }
       num_writers++;
     }
@@ -86,7 +86,7 @@ class Report {
   }
 
   static void output(String s1, String s2, String s3,
-		     String s4, String s5, String s6) {
+                     String s4, String s5, String s6) {
     out.print(s1);
     out.print(s2);
     out.print(s3);
@@ -96,7 +96,7 @@ class Report {
   }
 
   static void output(String s1, String s2, String s3,
-		     String s4, String s5, String s6, String s7, String s8) {
+                     String s4, String s5, String s6, String s7, String s8) {
     out.print(s1);
     out.print(s2);
     out.print(s3);
@@ -108,7 +108,7 @@ class Report {
   }
 
   static void output(String s1, String s2, String s3, String s4, String s5,
-		     String s6, String s7, String s8, String s9) {
+                     String s6, String s7, String s8, String s9) {
     out.print(s1);
     out.print(s2);
     out.print(s3);
@@ -121,9 +121,9 @@ class Report {
   }
 
   static void output(String s1, String s2, String s3, String s4, String s5,
-		     String s6, String s7, String s8, String s9, String s10,
-		     String s11, String s12, String s13, String s14,
-		     String s15) {
+                     String s6, String s7, String s8, String s9, String s10,
+                     String s11, String s12, String s13, String s14,
+                     String s15) {
     out.print(s1);
     out.print(s2);
     out.print(s3);
@@ -142,9 +142,9 @@ class Report {
   }
   
   static void output(String s1, String s2, String s3, String s4, String s5,
-		     String s6, String s7, String s8, String s9, String s10,
-		     String s11, String s12, String s13, String s14,
-		     String s15, String s16) {
+                     String s6, String s7, String s8, String s9, String s10,
+                     String s11, String s12, String s13, String s14,
+                     String s15, String s16) {
     out.print(s1);
     out.print(s2);
     out.print(s3);
@@ -164,9 +164,9 @@ class Report {
   }
   
   static void output(String s1, String s2, String s3, String s4, String s5,
-		     String s6, String s7, String s8, String s9, String s10,
-		     String s11, String s12, String s13, String s14,
-		     String s15, String s16, String s17) {
+                     String s6, String s7, String s8, String s9, String s10,
+                     String s11, String s12, String s13, String s14,
+                     String s15, String s16, String s17) {
     out.print(s1);
     out.print(s2);
     out.print(s3);
@@ -187,10 +187,10 @@ class Report {
   }
   
   static void output(String s1, String s2, String s3, String s4, String s5,
-		     String s6, String s7, String s8, String s9, String s10,
-		     String s11, String s12, String s13, String s14,
-		     String s15, String s16, String s17, String s18,
-		     String s19, String s20) {
+                     String s6, String s7, String s8, String s9, String s10,
+                     String s11, String s12, String s13, String s14,
+                     String s15, String s16, String s17, String s18,
+                     String s19, String s20) {
     out.print(s1);
     out.print(s2);
     out.print(s3);
@@ -214,10 +214,10 @@ class Report {
   }
 
   static void output(String s1, String s2, String s3, String s4, String s5,
-		     String s6, String s7, String s8, String s9, String s10,
-		     String s11, String s12, String s13, String s14,
-		     String s15, String s16, String s17, String s18,
-		     String s19, String s20, String s21) {
+                     String s6, String s7, String s8, String s9, String s10,
+                     String s11, String s12, String s13, String s14,
+                     String s15, String s16, String s17, String s18,
+                     String s19, String s20, String s21) {
     out.print(s1);
     out.print(s2);
     out.print(s3);
@@ -242,7 +242,7 @@ class Report {
   }
   
   static void outputNoLine(String s1, String s2, String s3,
-			   String s4, String s5, String s6, String s7) {
+                           String s4, String s5, String s6, String s7) {
     out.print(s1);
     out.print(s2);
     out.print(s3);

@@ -49,7 +49,7 @@ class ConcurrencyControl extends ExtrememObject {
     // long fields: total_reader_requests,
     // total_writer_requests, total_reader_waits, total_writer_waits
     log.accumulate(ls, MemoryFlavor.ObjectRSB, Polarity.Expand,
-		   8 * Util.SizeOfInt + 4 * Util.SizeOfLong);
+                   8 * Util.SizeOfInt + 4 * Util.SizeOfLong);
     // Account for String field cc_id
     log.accumulate(ls, MemoryFlavor.ObjectReference, Polarity.Expand, 1);
 
@@ -71,14 +71,14 @@ class ConcurrencyControl extends ExtrememObject {
     waiting_readers++;
     int num_waits = 0;
     Trace.msg(4, cc_id, ": acquiring read lock, contention(",
-	      Integer.toString(waiting_readers), ", ",
-	      Integer.toString(num_writers), ")");
+              Integer.toString(waiting_readers), ", ",
+              Integer.toString(num_writers), ")");
     while ((num_writers > 0) || (waiting_writers > 0)) {
       try {
-	num_waits++;
-	wait ();
+        num_waits++;
+        wait ();
       } catch (InterruptedException x) {
-	;			// ignore the interrupt, wait some more
+        ;                       // ignore the interrupt, wait some more
       }
     }
     if (num_waits < min_waits_per_read)
@@ -89,21 +89,21 @@ class ConcurrencyControl extends ExtrememObject {
     waiting_readers--;
     num_readers++;
     Trace.msg(4, cc_id, ": acquired read lock, readers: ",
-	      Integer.toString(num_readers));
+              Integer.toString(num_readers));
   }
 
   private synchronized void acquireLockForWrite () {
     waiting_writers++;
     int num_waits = 0;
     Trace.msg(4, cc_id, ": acquring write lock, contention(",
-	      Integer.toString(waiting_readers + num_readers), ", ",
-	      Integer.toString(waiting_writers + num_writers), ")");
+              Integer.toString(waiting_readers + num_readers), ", ",
+              Integer.toString(waiting_writers + num_writers), ")");
     while ((num_readers > 0) || (num_writers > 0)) {
       try {
-	num_waits++;
-	wait ();
+        num_waits++;
+        wait ();
       } catch (InterruptedException x) {
-	;			// ignore the interrupt, wait some more
+        ;                       // ignore the interrupt, wait some more
       }
     }
     if (num_waits < min_waits_per_write)
@@ -119,8 +119,8 @@ class ConcurrencyControl extends ExtrememObject {
   private synchronized void releaseReadLock () {
     num_readers--;
     Trace.msg(4, cc_id, ": releasing read lock, readers: ",
-	      Integer.toString(num_readers),
-	      ", waiting_writers: ", Integer.toString(waiting_writers));
+              Integer.toString(num_readers),
+              ", waiting_writers: ", Integer.toString(waiting_writers));
     if ((num_readers == 0) && (waiting_writers > 0))
       notifyAll();
   }
@@ -128,8 +128,8 @@ class ConcurrencyControl extends ExtrememObject {
   private synchronized void releaseWriteLock () {
     num_writers--;
     Trace.msg(4, cc_id, ": releasing write lock, contention(",
-	      Integer.toString(waiting_readers), ", ",
-	      Integer.toString(waiting_writers), ")");
+              Integer.toString(waiting_readers), ", ",
+              Integer.toString(waiting_writers), ")");
     if ((waiting_writers > 0) || (waiting_readers > 0))
       notifyAll ();
   }
@@ -166,7 +166,7 @@ class ConcurrencyControl extends ExtrememObject {
     // long fields: total_reader_requests,
     // total_writer_requests, total_reader_waits, total_writer_waits
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-		   8 * Util.SizeOfInt + 4 * Util.SizeOfLong);
+                   8 * Util.SizeOfInt + 4 * Util.SizeOfLong);
 
     Util.tallyString(log, ls, p, cc_id.length());
   }

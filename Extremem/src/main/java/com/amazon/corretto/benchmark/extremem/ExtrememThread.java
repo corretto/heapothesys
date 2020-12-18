@@ -75,11 +75,11 @@ abstract class ExtrememThread extends java.lang.Thread {
     return random.nextLong();
   }
 
-  float randomFloat() {		// Returns float between 0 and 1.0.
+  float randomFloat() {         // Returns float between 0 and 1.0.
     return random.nextFloat();
   }
 
-  double randomDouble() {		// Returns float between 0 and 1.0.
+  double randomDouble() {               // Returns float between 0 and 1.0.
     return random.nextDouble();
   }
 
@@ -90,9 +90,9 @@ abstract class ExtrememThread extends java.lang.Thread {
       result[i] = randomWord();
     }
     memory_log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
-			  Polarity.Expand, 1);
+                          Polarity.Expand, 1);
     memory_log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayReference,
-			  Polarity.Expand, count);
+                          Polarity.Expand, count);
     return result;
   }
 

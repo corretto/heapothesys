@@ -72,39 +72,39 @@ public class MemoryLog {
       Long.toString(data[MemoryFlavor.ObjectRSB.ordinal()]));
 
     Trace.debug(message, ", ", StringBuilderQty,
-		", ", StringBuilderDataQty,
-		", ", StringObjectQty,
-		", ", StringDataQty,
-		", ", ArrayObjectQty,
-		", ", ArrayReferenceQty,
-		", ", ArrayRSBQty,
-		", ", PlainObjectQty,
-		", ", ObjectReferenceQty,
-		", ", ObjectRSBQty);
+                ", ", StringBuilderDataQty,
+                ", ", StringObjectQty,
+                ", ", StringDataQty,
+                ", ", ArrayObjectQty,
+                ", ", ArrayReferenceQty,
+                ", ", ArrayRSBQty,
+                ", ", PlainObjectQty,
+                ", ", ObjectReferenceQty,
+                ", ", ObjectRSBQty);
   }
 
   final void accumulate (LifeSpan ls, MemoryFlavor mf,
-			 Polarity p, long count) {
+                         Polarity p, long count) {
     if (Trace.enabled(1)) {
       long sequence = sequenceNumber();
       Trace.msg(1, "accumulate(", ls.toString(), ", ", mf.toString(), ", ",
-		p.toString(), ", ", Long.toString(count), ")#",
-		Long.toString(sequence), " affecting ",
-		Long.toString(tallies[ls.ordinal()][mf.ordinal()]), " @ ",
-		Integer.toString(this.hashCode()));
+                p.toString(), ", ", Long.toString(count), ")#",
+                Long.toString(sequence), " affecting ",
+                Long.toString(tallies[ls.ordinal()][mf.ordinal()]), " @ ",
+                Integer.toString(this.hashCode()));
     }
     
     if (p == Polarity.Shrink)
       tallies[ls.ordinal()][mf.ordinal()] -= count;
-    else			// p == Polarity.Expand
+    else                        // p == Polarity.Expand
       tallies [ls.ordinal()][mf.ordinal()] += count;
 
     // Tallies should never go negative.  The only reason to decrement
     // a tally is to undo a previous increment.
     if (tallies[ls.ordinal()][mf.ordinal()] < 0)
       throw new IllegalStateException("Negative memory tally for [" +
-				      ls + ", " + mf + "] after count "
-				      + count + " with Polarity " + p );
+                                      ls + ", " + mf + "] after count "
+                                      + count + " with Polarity " + p );
   }
 
   void tallyMemory(MemoryLog log, LifeSpan ls, Polarity p) {
@@ -116,7 +116,7 @@ public class MemoryLog {
     log.accumulate(ls, MemoryFlavor.ArrayObject, p, 1 + LifeSpan.OrdinalCount);
     log.accumulate(ls, MemoryFlavor.ArrayReference, p, LifeSpan.OrdinalCount);
     log.accumulate(ls, MemoryFlavor.ArrayRSB, p, Util.SizeOfLong *
-		   LifeSpan.OrdinalCount * MemoryFlavor.OrdinalCount);
+                   LifeSpan.OrdinalCount * MemoryFlavor.OrdinalCount);
   }
 
   /**
@@ -125,8 +125,8 @@ public class MemoryLog {
   public synchronized void foldInto(MemoryLog other) {
     for (LifeSpan ls: LifeSpan.values())
       for (MemoryFlavor mf: MemoryFlavor.values())
-	tallies[ls.ordinal()][mf.ordinal()] += (
-	  other.tallies[ls.ordinal()][mf.ordinal()]);
+        tallies[ls.ordinal()][mf.ordinal()] += (
+          other.tallies[ls.ordinal()][mf.ordinal()]);
   }
 
   /**
@@ -137,8 +137,8 @@ public class MemoryLog {
   public synchronized void foldOutof(MemoryLog garbage) {
     for (LifeSpan ls: LifeSpan.values())
       for (MemoryFlavor mf: MemoryFlavor.values())
-	tallies[ls.ordinal()][mf.ordinal()] -= (
-	  garbage.tallies[ls.ordinal()][mf.ordinal()]);
+        tallies[ls.ordinal()][mf.ordinal()] -= (
+          garbage.tallies[ls.ordinal()][mf.ordinal()]);
   }
 
   /**
@@ -202,7 +202,7 @@ public class MemoryLog {
        return threeDigits(t, qty / 1000000) + "M";
      } else if (qty >= 1000) {
        return threeDigits(t, qty / 1000) + "K";
-     } else {			// qty < 1000
+     } else {                   // qty < 1000
        return threeDigits(t, qty) + " ";
      }
    }
@@ -223,7 +223,7 @@ public class MemoryLog {
   }
 
   private static void reportCSVOneRow(ExtrememThread t,
-				      String label, long[] deltas) {
+                                      String label, long[] deltas) {
     String StringBuilderQty = (
       Long.toString(deltas[MemoryFlavor.StringBuilder.ordinal()]));
     Util.ephemeralString(t, StringBuilderQty.length());
@@ -265,15 +265,15 @@ public class MemoryLog {
     Util.ephemeralString(t, ObjectRSBQty.length());
 
     Report.output(label, ", ", StringBuilderQty,
-		  ", ", StringBuilderDataQty,
-		  ", ", StringObjectQty,
-		  ", ", StringDataQty,
-		  ", ", ArrayObjectQty,
-		  ", ", ArrayReferenceQty,
-		  ", ", ArrayRSBQty,
-		  ", ", PlainObjectQty,
-		  ", ", ObjectReferenceQty,
-		  ", ", ObjectRSBQty);
+                  ", ", StringBuilderDataQty,
+                  ", ", StringObjectQty,
+                  ", ", StringDataQty,
+                  ", ", ArrayObjectQty,
+                  ", ", ArrayReferenceQty,
+                  ", ", ArrayRSBQty,
+                  ", ", PlainObjectQty,
+                  ", ", ObjectReferenceQty,
+                  ", ", ObjectRSBQty);
     
     Util.abandonEphemeralString(t, StringBuilderQty.length());
     Util.abandonEphemeralString(t, StringBuilderDataQty.length());
@@ -291,8 +291,8 @@ public class MemoryLog {
     long[][] delta = log.tallies;
 
     Report.output("LifeSpan, StringBuilder, StringBuilderData, StringObject, "
-		  + "StringData, ArrayObject, ArrayReference, ArrayRSB, "
-		  + "PlainObject, ObjectReference, ObjectRSB");
+                  + "StringData, ArrayObject, ArrayReference, ArrayRSB, "
+                  + "PlainObject, ObjectReference, ObjectRSB");
        
     long[] deltas = delta[LifeSpan.Ephemeral.ordinal()];
     reportCSVOneRow(t, "Ephemeral", deltas);
@@ -335,13 +335,13 @@ public class MemoryLog {
   }
 
   static void reportCumulativeOneRow(ExtrememThread t, String label1,
-				     String label2, long[] deltas) {
+                                     String label2, long[] deltas) {
     if (label2 != null) {
       Report.outputNoLine(" ", label1);
       for (int spaces = 13 - label1.length(); spaces > 0; spaces--) 
-	Report.outputNoLine(" ");
+        Report.outputNoLine(" ");
       Report.output(
-	"|       |       |       |       |       |       |       |");
+        "|       |       |       |       |       |       |       |");
     } else 
       label2 = label1;
 
@@ -362,31 +362,31 @@ public class MemoryLog {
       signedMemRep(t, deltas[MemoryFlavor.ArrayObject.ordinal()]));
     String ArrayDataQty = (
       signedMemRep(t, deltas[MemoryFlavor.ArrayReference.ordinal()]
-		   * Util.SizeOfReference
-		   + deltas[MemoryFlavor.ArrayRSB.ordinal()]));
+                   * Util.SizeOfReference
+                   + deltas[MemoryFlavor.ArrayRSB.ordinal()]));
     String PlainObjectQty = (
       signedMemRep(t, deltas[MemoryFlavor.PlainObject.ordinal()]));
     String ObjectDataQty = (
       signedMemRep(t, deltas[MemoryFlavor.ObjectReference.ordinal()]
-		   * Util.SizeOfReference
-		   + deltas[MemoryFlavor.ObjectRSB.ordinal()]));
+                   * Util.SizeOfReference
+                   + deltas[MemoryFlavor.ObjectRSB.ordinal()]));
 
     Report.output(StringBuilderQty, " | ", 
-		  StringBuilderDataQty, " | ",
-		  StringObjectQty, " | ",
-		  StringDataQty, " | ",
-		  ArrayObjectQty, " | ",
-		  ArrayDataQty, " | ",
-		  PlainObjectQty, " | ",
-		  ObjectDataQty);
+                  StringBuilderDataQty, " | ",
+                  StringObjectQty, " | ",
+                  StringDataQty, " | ",
+                  ArrayObjectQty, " | ",
+                  ArrayDataQty, " | ",
+                  PlainObjectQty, " | ",
+                  ObjectDataQty);
 
       // Reclaim memory for 8 5-character signedMemRep() results
       Util.abandonIdenticalEphemeralStrings(t, 8, 5);
   }
 
   static void reportCumulative(ExtrememThread t,
-			       boolean reportCSV, MemoryLog log) {
-			       
+                               boolean reportCSV, MemoryLog log) {
+                               
     // log is not the current thread's log, so the values being
     // reported will not be corrupted by ongoing allocations during
     // report printing.
@@ -437,33 +437,33 @@ public class MemoryLog {
       memRep(t, values[MemoryFlavor.ArrayObject.ordinal()]));
     String ArrayDataQty = (
       memRep(t, values[MemoryFlavor.ArrayReference.ordinal()]
-		   * Util.SizeOfReference
-		   + values[MemoryFlavor.ArrayRSB.ordinal()]));
+                   * Util.SizeOfReference
+                   + values[MemoryFlavor.ArrayRSB.ordinal()]));
     String PlainObjectQty = (
       memRep(t, values[MemoryFlavor.PlainObject.ordinal()]));
     String ObjectDataQty = (
       memRep(t, values[MemoryFlavor.ObjectReference.ordinal()]
-		   * Util.SizeOfReference
-		   + values[MemoryFlavor.ObjectRSB.ordinal()]));
+                   * Util.SizeOfReference
+                   + values[MemoryFlavor.ObjectRSB.ordinal()]));
 
     Report.output(StringBuilderQty, " |  ", 
-		  StringBuilderDataQty, " |  ",
-		  StringObjectQty, " |  ",
-		  StringDataQty, " |  ",
-		  ArrayObjectQty, " |  ",
-		  ArrayDataQty, " |  ",
-		  PlainObjectQty, " |  ",
-		  ObjectDataQty);
+                  StringBuilderDataQty, " |  ",
+                  StringObjectQty, " |  ",
+                  StringDataQty, " |  ",
+                  ArrayObjectQty, " |  ",
+                  ArrayDataQty, " |  ",
+                  PlainObjectQty, " |  ",
+                  ObjectDataQty);
 
       // Reclaim memory for 8 4-character memRep() results
       Util.abandonIdenticalEphemeralStrings(t, 8, 4);
   }
 
   static void reportCSV(ExtrememThread t,
-			long[][] allocs, long[][] discards, long[][] deltas) {
+                        long[][] allocs, long[][] discards, long[][] deltas) {
     Report.output("LifeSpan, StringBuilder, StringBuilderData, StringObject, "
-		  + "StringData, ArrayObject, ArrayReference, ArrayRSB, "
-		  + "PlainObject, ObjectReference, ObjectRSB");
+                  + "StringData, ArrayObject, ArrayReference, ArrayRSB, "
+                  + "PlainObject, ObjectReference, ObjectRSB");
     
     long[] a_row = allocs[LifeSpan.Ephemeral.ordinal()];
     long[] d_row = discards[LifeSpan.Ephemeral.ordinal()];
@@ -507,7 +507,7 @@ public class MemoryLog {
   }
 
   static void report(ExtrememThread t, boolean reportCSV,
-		     MemoryLog alloc_log, MemoryLog discard_log) {
+                     MemoryLog alloc_log, MemoryLog discard_log) {
        
     int lifespans = LifeSpan.OrdinalCount;
     int flavors = MemoryFlavor.OrdinalCount;
@@ -519,9 +519,9 @@ public class MemoryLog {
     long[][] deltas = new long[lifespans][flavors];
     for (int i = 0; i < LifeSpan.OrdinalCount; i++) {
       for (int j = 0; j < MemoryFlavor.OrdinalCount; j++) {
-	allocs[i][j] = alloc_log.tallies[i][j];
-	discards[i][j] = discard_log.tallies[i][j];
-	deltas[i][j] = allocs[i][j] - discards[i][j];
+        allocs[i][j] = alloc_log.tallies[i][j];
+        discards[i][j] = discard_log.tallies[i][j];
+        deltas[i][j] = allocs[i][j] - discards[i][j];
       }
     }
     // Account for three temporary arrays (allocs, discards, deltas),
@@ -530,9 +530,9 @@ public class MemoryLog {
     Polarity Grow = Polarity.Expand;
     log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject, Grow, 18);
     log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayReference,
-		   Grow, 3 * 5);
+                   Grow, 3 * 5);
     log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayRSB,
-		   Grow, 3 * 5 * 10 * Util.SizeOfLong);
+                   Grow, 3 * 5 * 10 * Util.SizeOfLong);
     
     if (reportCSV) {
       reportCSV(t, allocs, discards, deltas);
@@ -588,21 +588,21 @@ public class MemoryLog {
     // accumulate the allocs, discards, and deltas arrays, each with
     // five inner arrays.
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
-		       Grow, 18);
+                       Grow, 18);
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayReference,
-		       Grow, 3 * 5);
+                       Grow, 3 * 5);
     garbage.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayRSB,
-		       Grow, 3 * 5 * 10 * Util.SizeOfLong);
+                       Grow, 3 * 5 * 10 * Util.SizeOfLong);
   }
 
   final void report(ExtrememThread t) {
     for (LifeSpan ls: LifeSpan.values())
       for (MemoryFlavor mf: MemoryFlavor.values()) {
-	String s = Long.toString(tallies[ls.ordinal()][mf.ordinal()]);
-	int len = s.length();
-	Util.ephemeralString(t, len);
-	Report.output(ls.name(), " ", mf.name(), ": ", s);
-	Util.abandonEphemeralString(t, len);
+        String s = Long.toString(tallies[ls.ordinal()][mf.ordinal()]);
+        int len = s.length();
+        Util.ephemeralString(t, len);
+        Report.output(ls.name(), " ", mf.name(), ": ", s);
+        Util.abandonEphemeralString(t, len);
       }
     Report.output();
   }

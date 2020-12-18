@@ -10,7 +10,7 @@ package com.amazon.corretto.benchmark.extremem;
  * deallocation of objects.
  */
 abstract class ExtrememObject {
-  private LifeSpan ls;		// Default lifespan
+  private LifeSpan ls;          // Default lifespan
 
   /**
    * Allocate a new ExtrememObject, charging the memory used for its

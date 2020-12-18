@@ -54,7 +54,7 @@ class ServerLog extends ExtrememObject {
     // min_product_per_batch, max_product_per_batch, total_products,
     // total_do_nothings
     log.accumulate(ls, MemoryFlavor.ObjectRSB,
-		   Polarity.Expand, 17 * Util.SizeOfInt);
+                   Polarity.Expand, 17 * Util.SizeOfInt);
   }
 
   void logTransactions(ExtrememThread t, AbsoluteTime release, int count) {
@@ -195,7 +195,7 @@ class ServerLog extends ExtrememObject {
     else
       Report.output("average per batch: ", s);
     Util.abandonEphemeralString(t, l);
-		  
+                  
     Report.output();
     sales_xact.report(t, reportCSV);
 
@@ -238,7 +238,7 @@ class ServerLog extends ExtrememObject {
     else
       Report.output("    min per batch: ", s);
     Util.abandonEphemeralString(t, l);
-		  
+                  
     s = Integer.toString(max);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -247,7 +247,7 @@ class ServerLog extends ExtrememObject {
     else
       Report.output("    max per batch: ", s);
     Util.abandonEphemeralString(t, l);
-		  
+                  
     s = Float.toString(average);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -256,7 +256,7 @@ class ServerLog extends ExtrememObject {
     else
       Report.output("average per batch: ", s);
     Util.abandonEphemeralString(t, l);
-		  
+                  
     Report.output();
     expire_history.report(t, reportCSV);
     Report.output();
@@ -316,7 +316,7 @@ class ServerLog extends ExtrememObject {
     else
       Report.output("average per batch: ", s);
     Util.abandonEphemeralString(t, l);
-		  
+                  
     Report.output();
     replace_customers.report(t, reportCSV);
 
@@ -359,7 +359,7 @@ class ServerLog extends ExtrememObject {
     else
       Report.output("    min per batch: ", s);
     Util.abandonEphemeralString(t, l);
-		  
+                  
     s = Integer.toString(max);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -368,7 +368,7 @@ class ServerLog extends ExtrememObject {
     else
       Report.output("    max per batch: ", s);
     Util.abandonEphemeralString(t, l);
-		  
+                  
     s = Float.toString(average);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -377,7 +377,7 @@ class ServerLog extends ExtrememObject {
     else
       Report.output("average per batch: ", s);
     Util.abandonEphemeralString(t, l);
-		  
+                  
     Report.output();
     replace_products.report(t, reportCSV);
     Report.output();

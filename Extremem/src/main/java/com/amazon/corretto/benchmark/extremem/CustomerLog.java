@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package com.amazon.corretto.benchmark.extremem;
 
 /**
@@ -60,13 +63,13 @@ class CustomerLog extends ExtrememObject {
   // This information is redundant with purchaser.  I'll gather it
   // here, and ignore it when logging purchases.
   void logPrepareToThink(CustomerThread t, AbsoluteTime release,
-			 int matched_all, int matched_any, int saved4now) {
+                         int matched_all, int matched_any, int saved4now) {
     // size of selection set is saved4now +
     //  (matched_all > 0)? matched_all: matched_any
     engagements++;
 
     int selection_size = (saved4now +
-			  ((matched_all > 0)? matched_all: matched_any));
+                          ((matched_all > 0)? matched_all: matched_any));
     total_all += matched_all;
     total_any += matched_any;
     total_previously_saved += saved4now;
@@ -231,7 +234,7 @@ class CustomerLog extends ExtrememObject {
     else
       Report.output("           average: ", s);
     Util.abandonEphemeralString(t, l);
-		  
+                  
     Report.output("");
     Report.output("Products matching any criteria:");
 
@@ -365,4 +368,4 @@ class CustomerLog extends ExtrememObject {
     abandoner.tallyMemory(log, ls, p);
     loser.tallyMemory(log, ls, p);
   }
-} 
+}

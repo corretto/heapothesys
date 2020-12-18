@@ -63,31 +63,31 @@ class RelativeTimeMetrics extends ExtrememObject {
   private final static int BucketCount = 32;
   private final static long DefaultIntervalMicroseconds = 256; 
 
-  long fblb;			// first bucket low bound (in microseconds)
-  long lbhb;			// last bucket high bound (in microseconds)
+  long fblb;                    // first bucket low bound (in microseconds)
+  long lbhb;                    // last bucket high bound (in microseconds)
 
-  int fbi;			// first bucket index: buckets[fbi] holds
-				// count for first time interval
+  int fbi;                      // first bucket index: buckets[fbi] holds
+                                // count for first time interval
 
 
-  long sis;			// smallest interval seen (in microseconds)
-  long lis;			// largest interval seen (in microseconds)
+  long sis;                     // smallest interval seen (in microseconds)
+  long lis;                     // largest interval seen (in microseconds)
 
-  int biu;			// buckets in use currently
+  int biu;                      // buckets in use currently
   int [] buckets;
-  long [] bucket_bounds;	// bucket_bounds[i] holds the low
-				// bound (microseconds) for tallies
-				// accumulated in buckets[i], except
-				// for bucket_bounds[fbi], which may
-				// hold the high bound for the tallies
-				// accumulated in the last bucket.
-				// bucket_bounds[(i+1)%BucketCount]
-				// holds the high bound for tallies
-				// accumulated in bucket_bounds[i].
-  				//
-				// Accumulation of tallies uses a
-				// binary search to find the index of
-				// the bucket at which to accumulate.
+  long [] bucket_bounds;        // bucket_bounds[i] holds the low
+                                // bound (microseconds) for tallies
+                                // accumulated in buckets[i], except
+                                // for bucket_bounds[fbi], which may
+                                // hold the high bound for the tallies
+                                // accumulated in the last bucket.
+                                // bucket_bounds[(i+1)%BucketCount]
+                                // holds the high bound for tallies
+                                // accumulated in bucket_bounds[i].
+                                //
+                                // Accumulation of tallies uses a
+                                // binary search to find the index of
+                                // the bucket at which to accumulate.
   int total_entries = 0;
   long accumulated_microseconds = 0;
 
@@ -113,12 +113,12 @@ class RelativeTimeMetrics extends ExtrememObject {
     // Account for 3 int fields: fbi, biu, total_entries; and 5 long
     // fields: fblb, lbhb, sis, lis, accumulated_microseconds
     log.accumulate(ls, MemoryFlavor.ObjectRSB, Polarity.Expand,
-		   3 * Util.SizeOfInt + 5 * Util.SizeOfLong);
+                   3 * Util.SizeOfInt + 5 * Util.SizeOfLong);
 
     // Account for buckets and bucket_bounds arrays.
     log.accumulate(ls, MemoryFlavor.ArrayObject, Polarity.Expand, 2);
     log.accumulate(ls, MemoryFlavor.ArrayRSB, Polarity.Expand,
-		   BucketCount * (Util.SizeOfInt + Util.SizeOfLong));
+                   BucketCount * (Util.SizeOfInt + Util.SizeOfLong));
   }
 
   void addToLog(RelativeTimeMetrics other) {
@@ -128,22 +128,22 @@ class RelativeTimeMetrics extends ExtrememObject {
       int next_index = incrIndex(index);
       long bucket_average;
       if (!seen_sis) {
-	if (other.bucket_bounds[next_index] > other.sis) {
-	  seen_sis = true;
-	  bucket_average = (other.bucket_bounds[next_index] - other.sis) / 2;
-	  this.addToLog(other.sis);
-	  for (int j = other.buckets[index] - 1; j > 0; j--)
-	    this.addToLog(bucket_average);
-	} // else, this is an empty bucket that precedes sis
+        if (other.bucket_bounds[next_index] > other.sis) {
+          seen_sis = true;
+          bucket_average = (other.bucket_bounds[next_index] - other.sis) / 2;
+          this.addToLog(other.sis);
+          for (int j = other.buckets[index] - 1; j > 0; j--)
+            this.addToLog(bucket_average);
+        } // else, this is an empty bucket that precedes sis
       } else if (i == other.biu - 1) {
-	bucket_average = (other.lis - other.startAt(index)) / 2;
-	this.addToLog(other.lis);
-	for (int j = other.buckets[index] - 1; j > 0; j--)
-	  this.addToLog(bucket_average);
+        bucket_average = (other.lis - other.startAt(index)) / 2;
+        this.addToLog(other.lis);
+        for (int j = other.buckets[index] - 1; j > 0; j--)
+          this.addToLog(bucket_average);
       } else {
-	bucket_average = other.startAt(index) + other.spanAt(index) / 2;
-	for (int j = other.buckets[index]; j > 0; j--)
-	  this.addToLog(bucket_average);
+        bucket_average = other.startAt(index) + other.spanAt(index) / 2;
+        for (int j = other.buckets[index]; j > 0; j--)
+          this.addToLog(bucket_average);
       }
       index = next_index;
     }
@@ -160,7 +160,7 @@ class RelativeTimeMetrics extends ExtrememObject {
     Trace.msg(4, "");
     Trace.msg(4, id, ": addToLog (" + value + ")");
 
-    if (value < 0)		// workaround bug in Thread.sleep()
+    if (value < 0)              // workaround bug in Thread.sleep()
       value = 0;
 
     total_entries++;
@@ -181,17 +181,17 @@ class RelativeTimeMetrics extends ExtrememObject {
       biu = 1;
     } else {
       if (value < fblb)
-	expandLowRange(value);
+        expandLowRange(value);
       else if (value >= lbhb)
-	expandHighRange(value);
+        expandHighRange(value);
 
       if (value < sis) {
-	sis = value;
-	Trace.msg(4, id, ": sis set to ", Long.toString(sis));
+        sis = value;
+        Trace.msg(4, id, ": sis set to ", Long.toString(sis));
       }
       else if (value > lis) {
-	lis = value;
-	Trace.msg(4, id, ": lis set to ", Long.toString(lis));
+        lis = value;
+        Trace.msg(4, id, ": lis set to ", Long.toString(lis));
       }
     }
     accumulateTally (value);
@@ -212,34 +212,34 @@ class RelativeTimeMetrics extends ExtrememObject {
     if (biu > BucketCount)
       Util.internalError (id + ": accumulateTally biu > BucketCount");
 
-    int lb = 0;			// low bound
-    int ub = biu - 1;		// high bound
+    int lb = 0;                 // low bound
+    int ub = biu - 1;           // high bound
     while (true) {
       // Invariant: destination bucket's index is between lb and ub inclusive
       int probe = (ub + lb) / 2;
       int probe_index = incrIndexBy (fbi, probe);
 
       Trace.msgNoLine(4, id, ": accumulateTally, fbi: ", Integer.toString(fbi),
-		      ", lb: ", Integer.toString(lb),
-		      ", ub: ", Integer.toString(ub));
+                      ", lb: ", Integer.toString(lb),
+                      ", ub: ", Integer.toString(ub));
       Trace.msg(4, ", probe: ", Integer.toString(probe),
-		", probe_index: ", Integer.toString(probe_index));
+                ", probe_index: ", Integer.toString(probe_index));
       Trace.msg(4, id, ":  spans " + debug_us2s (spanAt (probe_index)),
-		" starting from ",
-		debug_us2s((probe > 0)? bucket_bounds [probe_index]: fblb));
+                " starting from ",
+                debug_us2s((probe > 0)? bucket_bounds [probe_index]: fblb));
 
       if (ub < lb)
-	Util.internalError ("accumulateTally bounds are inverted");
+        Util.internalError ("accumulateTally bounds are inverted");
 
       if ((probe == 0) && (value < fblb))
-	Util.internalError ("accumulating out-of-range value");
+        Util.internalError ("accumulating out-of-range value");
       else if ((probe != 0) && (value < bucket_bounds[probe_index]))
-	ub = probe - 1;
+        ub = probe - 1;
       else if (value >= bucket_bounds[incrIndex(probe_index)]) {
-	lb = probe + 1;
+        lb = probe + 1;
       } else {
-	buckets[probe_index]++;
-	break;
+        buckets[probe_index]++;
+        break;
       }
     }
   }
@@ -261,10 +261,10 @@ class RelativeTimeMetrics extends ExtrememObject {
       bucket_span *= 2;
       gap /= 2;
       while ((gap & 0x01) == 0) {
-	bucket_count++;
-	span += bucket_span;
-	bucket_span *= 2;
-	gap /= 2;
+        bucket_count++;
+        span += bucket_span;
+        bucket_span *= 2;
+        gap /= 2;
       }
       // We have just represented a gap of size 2^n with buckets of
       // size 2^(n-1), 2^(n-2), ... , 1, and 1.
@@ -273,16 +273,16 @@ class RelativeTimeMetrics extends ExtrememObject {
     }
     while (gap != 0) {
       if ((gap & 0x01) != 0) {
-	bucket_count++;
-	span += bucket_span;
+        bucket_count++;
+        span += bucket_span;
       }
       bucket_span *= 2;
       gap /= 2;
     }
 
     Trace.msg(4, id, ": bucketsToSpan (",
-	      Long.toString(gap), ") returns ",
-	      Integer.toString(bucket_count));
+              Long.toString(gap), ") returns ",
+              Integer.toString(bucket_count));
     Trace.msg(4, id, ": (  (spanning ", Long.toString(span), ")");
     span_result[0] = span;
     return bucket_count;
@@ -355,7 +355,7 @@ class RelativeTimeMetrics extends ExtrememObject {
     long required_fblb = fblb - requiredSpan;
 
     Trace.msg(4, id, ": doFold(", Long.toString(requiredSpan),
-	      ") represents new fblb: ", Long.toString(required_fblb));
+              ") represents new fblb: ", Long.toString(required_fblb));
     if (Trace.enabled(3))
       dump();
     while (span_of_buckets < requiredSpan) {
@@ -365,8 +365,8 @@ class RelativeTimeMetrics extends ExtrememObject {
     }
 
     Trace.msg(4, id, ": span_buckets: ", Integer.toString(span_buckets),
-	      ", span_of_buckets: ", Long.toString(span_of_buckets),
-	      ", largest span: ", Long.toString(span_of_largest_bucket));
+              ", span_of_buckets: ", Long.toString(span_of_buckets),
+              ", largest span: ", Long.toString(span_of_largest_bucket));
 
     // Find the desired overlap with existing contents.
     //
@@ -415,32 +415,32 @@ class RelativeTimeMetrics extends ExtrememObject {
     while (overlap_candidate < biu) {
       // Since overlap_candidate < biu, neighbor_index known to be valid.
       if ((adjusted_span_of_buckets >= adjusted_requiredSpan) &&
-	  (spanAt(neighbor_index) >= adjusted_largest_span) &&
-	  canSquash(overlap_candidate, adjusted_largest_span)) {
-	found_overlap = true;
-	break;
+          (spanAt(neighbor_index) >= adjusted_largest_span) &&
+          canSquash(overlap_candidate, adjusted_largest_span)) {
+        found_overlap = true;
+        break;
       } else if (adjusted_span_of_buckets >=
-		 adjusted_requiredSpan + spanAt(neighbor_index)) {
-	// Try the same fold at a higher overlap_candidate index
-	adjusted_requiredSpan += spanAt(neighbor_index);
-	overlap_candidate++;
-	neighbor_index = incrIndex(neighbor_index);
+                 adjusted_requiredSpan + spanAt(neighbor_index)) {
+        // Try the same fold at a higher overlap_candidate index
+        adjusted_requiredSpan += spanAt(neighbor_index);
+        overlap_candidate++;
+        neighbor_index = incrIndex(neighbor_index);
       } else {
-	// Try an expanded fold at the same overlap_candidate position
-	adjusted_largest_span *= 2;
-	adjusted_span_of_buckets += adjusted_largest_span;
-	adjusted_span_buckets++;
+        // Try an expanded fold at the same overlap_candidate position
+        adjusted_largest_span *= 2;
+        adjusted_span_of_buckets += adjusted_largest_span;
+        adjusted_span_buckets++;
       }
     }
 
     Trace.msg(4, id, ": found_overlap: ", found_overlap? "true": "false",
-	      ",: overlap_candidate: ", Integer.toString(overlap_candidate),
-	      ", adjusted_span_of_buckets: ",
-	      Long.toString(adjusted_span_of_buckets));
+              ",: overlap_candidate: ", Integer.toString(overlap_candidate),
+              ", adjusted_span_of_buckets: ",
+              Long.toString(adjusted_span_of_buckets));
     Trace.msg(4, id, ": adjusted_largest_span: ",
-	      Long.toString(adjusted_largest_span),
-	      ", adjusted_requiredSpan: ",
-	      Long.toString(adjusted_requiredSpan));
+              Long.toString(adjusted_largest_span),
+              ", adjusted_requiredSpan: ",
+              Long.toString(adjusted_requiredSpan));
 
     if (!found_overlap) {
       // Subsume everything.  For example, suppose span_of_largest_bucket
@@ -451,8 +451,8 @@ class RelativeTimeMetrics extends ExtrememObject {
       int index = fbi;
       int tally = 0;
       for (int i = 0; i < biu; i++) {
-	tally += buckets[index];
-	index = incrIndex(index);
+        tally += buckets[index];
+        index = incrIndex(index);
       }
 
       adjusted_largest_span = span_of_largest_bucket;
@@ -466,33 +466,33 @@ class RelativeTimeMetrics extends ExtrememObject {
       buckets[fbi] = tally;
 
       if ((total_span <= adjusted_largest_span) &&
-	(span_of_buckets - total_span >= requiredSpan)) {
-	// Overlap the largest span with consolidation bucket.
-	// Exercise discretion to preserve log resolution in the small
-	// time ranges.
-	long excess = (span_of_buckets - total_span) - requiredSpan;
-	// Put the excess at the high end of the consolidation
-	// bucket's span.
-	lbhb += excess;
-	bucket_bounds[incrIndex(fbi)] = lbhb;
-	fblb = lbhb - adjusted_largest_span;
+        (span_of_buckets - total_span >= requiredSpan)) {
+        // Overlap the largest span with consolidation bucket.
+        // Exercise discretion to preserve log resolution in the small
+        // time ranges.
+        long excess = (span_of_buckets - total_span) - requiredSpan;
+        // Put the excess at the high end of the consolidation
+        // bucket's span.
+        lbhb += excess;
+        bucket_bounds[incrIndex(fbi)] = lbhb;
+        fblb = lbhb - adjusted_largest_span;
 
-	adjusted_span_of_buckets -= adjusted_largest_span;
-	adjusted_span_buckets--;
-	adjusted_largest_span /= 2;
+        adjusted_span_of_buckets -= adjusted_largest_span;
+        adjusted_span_buckets--;
+        adjusted_largest_span /= 2;
 
-	overlap_candidate = 1;
+        overlap_candidate = 1;
       } else {
-	// Otherwise, logarithmic expansion precedes consolidation
-	// bucket.  The consolidation bucket is the larger of twice
-	// the span_of_largest_bucket and the first power of two size
-	// as large as total_span.
-	long consolidation_span = span_of_largest_bucket * 2;
-	while (consolidation_span < total_span)
-	  consolidation_span *= 2;
-	lbhb = fblb + consolidation_span;
-	bucket_bounds[incrIndex(fbi)] = lbhb;
-	overlap_candidate = 0;
+        // Otherwise, logarithmic expansion precedes consolidation
+        // bucket.  The consolidation bucket is the larger of twice
+        // the span_of_largest_bucket and the first power of two size
+        // as large as total_span.
+        long consolidation_span = span_of_largest_bucket * 2;
+        while (consolidation_span < total_span)
+          consolidation_span *= 2;
+        lbhb = fblb + consolidation_span;
+        bucket_bounds[incrIndex(fbi)] = lbhb;
+        overlap_candidate = 0;
       }
     } else {
       // Turn overlap_candidate tail buckets into a power-of-two sequence,
@@ -505,33 +505,33 @@ class RelativeTimeMetrics extends ExtrememObject {
       int fill_follow_index = incrIndex(fill_index);
       long end_of_fill_span = bucket_bounds[fill_follow_index];
       while (compress_count > 0) {
-	long bucket_span = adjusted_largest_span;
-	int tally = 0;
-	while ((bucket_span > 0) && (compress_count > 0)) {
-	  bucket_span -= spanAt(index);
-	  tally += buckets[index];
-	  index = decrIndex(index);
-	  compress_count--;
-	}
+        long bucket_span = adjusted_largest_span;
+        int tally = 0;
+        while ((bucket_span > 0) && (compress_count > 0)) {
+          bucket_span -= spanAt(index);
+          tally += buckets[index];
+          index = decrIndex(index);
+          compress_count--;
+        }
 
-	Trace.msg(4, id, " Filling @", Integer.toString(fill_index), " with ",
-		  Integer.toString(tally), ", spanning ",
-		  debug_us2s(adjusted_largest_span));
+        Trace.msg(4, id, " Filling @", Integer.toString(fill_index), " with ",
+                  Integer.toString(tally), ", spanning ",
+                  debug_us2s(adjusted_largest_span));
 
-	buckets[fill_index] = tally;
-	fill_count++;
-	bucket_bounds[fill_follow_index] = end_of_fill_span;
+        buckets[fill_index] = tally;
+        fill_count++;
+        bucket_bounds[fill_follow_index] = end_of_fill_span;
 
-	fblb = end_of_fill_span - adjusted_largest_span;
-	adjusted_span_of_buckets -= adjusted_largest_span;
-	adjusted_span_buckets--;
+        fblb = end_of_fill_span - adjusted_largest_span;
+        adjusted_span_of_buckets -= adjusted_largest_span;
+        adjusted_span_buckets--;
 
-	Trace.msg(4, id, " Start bound adjusted to: ", debug_us2s(fblb));
+        Trace.msg(4, id, " Start bound adjusted to: ", debug_us2s(fblb));
 
-	end_of_fill_span = fblb;
-	fill_follow_index = fill_index;
-	fill_index = decrIndex(fill_index);
-	adjusted_largest_span /= 2;
+        end_of_fill_span = fblb;
+        fill_follow_index = fill_index;
+        fill_index = decrIndex(fill_index);
+        adjusted_largest_span /= 2;
       }
       int bucket_change = overlap_candidate - fill_count;
       fbi = incrIndexBy(fbi, bucket_change);
@@ -544,11 +544,11 @@ class RelativeTimeMetrics extends ExtrememObject {
 
     Trace.msg(4, id, " After processing overlap effects");
     Trace.msg(4, id, " adjusted_span_of_buckets: ",
-	      Long.toString(adjusted_span_of_buckets),
-	      ", adjusted_largest_span: ",
-	      Long.toString(adjusted_largest_span),
-	      ", adjusted_span_buckets: ",
-	      Long.toString(adjusted_span_buckets));
+              Long.toString(adjusted_span_of_buckets),
+              ", adjusted_largest_span: ",
+              Long.toString(adjusted_largest_span),
+              ", adjusted_span_buckets: ",
+              Long.toString(adjusted_span_buckets));
 
     long overshoot = adjusted_span_of_buckets - (fblb - required_fblb);
     if (overshoot < 0)
@@ -575,23 +575,23 @@ class RelativeTimeMetrics extends ExtrememObject {
     int available_slots = BucketCount - biu;
     if (available_slots > 0) {
       while ((available_slots > 0) && (adjusted_span_of_buckets > 0)) {
-	if (overshoot > adjusted_largest_span) {
+        if (overshoot > adjusted_largest_span) {
 
-	  Trace.msg(4, id, ": skipping overshot bucket with span: ",
-		    Long.toString(adjusted_largest_span));
-	  
-	  // Skip this span, as it pushes us beyond target required_fblb.
-	  overshoot -= adjusted_largest_span;
-	} else {
-	  bucket_bounds[fbi] = fblb;
-	  biu++;
-	  fbi = decrIndex(fbi);
-	  buckets[fbi] = 0;
-	  fblb -= adjusted_largest_span;
-	  available_slots--;
-	}
-	adjusted_span_of_buckets -= adjusted_largest_span;
-	adjusted_largest_span /= 2;
+          Trace.msg(4, id, ": skipping overshot bucket with span: ",
+                    Long.toString(adjusted_largest_span));
+          
+          // Skip this span, as it pushes us beyond target required_fblb.
+          overshoot -= adjusted_largest_span;
+        } else {
+          bucket_bounds[fbi] = fblb;
+          biu++;
+          fbi = decrIndex(fbi);
+          buckets[fbi] = 0;
+          fblb -= adjusted_largest_span;
+          available_slots--;
+        }
+        adjusted_span_of_buckets -= adjusted_largest_span;
+        adjusted_largest_span /= 2;
       }
       
       // We have run out of slots before we spanned the desired range.
@@ -652,51 +652,51 @@ class RelativeTimeMetrics extends ExtrememObject {
       //      In this case, coalesce buckets at N and N-1.
 
       if (spanAt(incrIndex(fbi)) > spanAt(fbi)) {
-	Trace.msg(4, id, ": adjusted_span_of_buckets > 0, " +
-		  "spanAt(fbi) < spanAt(fbi+1)");
-	fblb -= spanAt(fbi);
+        Trace.msg(4, id, ": adjusted_span_of_buckets > 0, " +
+                  "spanAt(fbi) < spanAt(fbi+1)");
+        fblb -= spanAt(fbi);
       } else {
-	long each_span = spanAt(fbi);
-	// By test above, there are at least two buckets with same span
-	int count = 2;
-	int index = incrIndex(fbi);
-	while (count <= biu) {
-	  int last_index = index;
-	  index = incrIndex(index);
-	  if (spanAt(index) != each_span) {
-	    index = last_index;
-	    break;
-	  }
-	  count++;
-	}
-	// count is number of consecutive buckets with same span (each_span).
-	// index identifies position of last of these buckets.
-	
-	Trace.msg(4, id, ": adjusted_span_of_buckets > 0, ",
-		  Integer.toString(count), " buckets have same span");
+        long each_span = spanAt(fbi);
+        // By test above, there are at least two buckets with same span
+        int count = 2;
+        int index = incrIndex(fbi);
+        while (count <= biu) {
+          int last_index = index;
+          index = incrIndex(index);
+          if (spanAt(index) != each_span) {
+            index = last_index;
+            break;
+          }
+          count++;
+        }
+        // count is number of consecutive buckets with same span (each_span).
+        // index identifies position of last of these buckets.
+        
+        Trace.msg(4, id, ": adjusted_span_of_buckets > 0, ",
+                  Integer.toString(count), " buckets have same span");
 
-	assert (count > 1): "Expect multiple buckets to span same range";
-	int left_index = decrIndex(index);
-	// Double the span of the last of these buckets.
-	buckets[index] += buckets[left_index];
-	bucket_bounds[index] -= each_span;
-	// Slide (count - 2) buckets forward.
-	for (int i = (count -2); i > 0; i--) {
-	  index = left_index;
-	  left_index = decrIndex(left_index);
-	  buckets[index] = buckets[left_index];
-	  bucket_bounds[index] = bucket_bounds[left_index];
-	}
-	// Upon exiting loop, index points to bucket most recently
-	// initialized.  left_index points to bucket from which this
-	// most recently initialized bucket's tally was copied.
-	// left_index is same as fbi.
+        assert (count > 1): "Expect multiple buckets to span same range";
+        int left_index = decrIndex(index);
+        // Double the span of the last of these buckets.
+        buckets[index] += buckets[left_index];
+        bucket_bounds[index] -= each_span;
+        // Slide (count - 2) buckets forward.
+        for (int i = (count -2); i > 0; i--) {
+          index = left_index;
+          left_index = decrIndex(left_index);
+          buckets[index] = buckets[left_index];
+          bucket_bounds[index] = bucket_bounds[left_index];
+        }
+        // Upon exiting loop, index points to bucket most recently
+        // initialized.  left_index points to bucket from which this
+        // most recently initialized bucket's tally was copied.
+        // left_index is same as fbi.
 
-	// Initialize first bucket's tally to zero and shift its start
-	// range forward by each_span.
-	bucket_bounds[index] = fblb;
-	buckets[fbi] = 0;
-	fblb -= each_span;
+        // Initialize first bucket's tally to zero and shift its start
+        // range forward by each_span.
+        bucket_bounds[index] = fblb;
+        buckets[fbi] = 0;
+        fblb -= each_span;
       }
     }
 
@@ -720,36 +720,36 @@ class RelativeTimeMetrics extends ExtrememObject {
     // use a logarithmic tree to span the distance.
     long gap2fblb = fblb - value;
     if ((gap2fblb > (6 * DefaultIntervalMicroseconds)) &&
-	(gap2fblb > (BucketCount - biu) * DefaultIntervalMicroseconds)) {
-      doFold(gap2fblb);		// Build logarithmic tree to span gap
+        (gap2fblb > (BucketCount - biu) * DefaultIntervalMicroseconds)) {
+      doFold(gap2fblb);         // Build logarithmic tree to span gap
     }
 
     Trace.msg(4, id, ": in expandLowRange (), value: ", Long.toString(value),
-	      ", fblb: ", Long.toString(fblb));
+              ", fblb: ", Long.toString(fblb));
 
     if (value < fblb) {
       // new small bucket count
       int nsbc = (int) ((fblb - value) / DefaultIntervalMicroseconds);
 
       Trace.msg(4, id, ": nsbc: ", Long.toString(nsbc),
-		", biu: ", Integer.toString(biu));
+                ", biu: ", Integer.toString(biu));
 
       while (nsbc + biu > BucketCount) {
-	compress(nsbc);
-	nsbc = (int) ((fblb - value) / DefaultIntervalMicroseconds);
+        compress(nsbc);
+        nsbc = (int) ((fblb - value) / DefaultIntervalMicroseconds);
       }
       while (value < fblb) {
-	bucket_bounds[fbi] = fblb;
-	fblb -= DefaultIntervalMicroseconds;
-	biu++;
-	fbi = decrIndex (fbi);
-	buckets[fbi] = 0;
-	// Do not overwrite bucket_bounds[fbi] for last iteration of
-	// this loop as this slot holds the upper bound for last
-	// bucket in the case that (biu == BucketCount).  If fbi does
-	// not represent the last iteration, bucket_bounds[fbi] will
-	// be overwritten at the top of this loop on its next
-	// iteration. 
+        bucket_bounds[fbi] = fblb;
+        fblb -= DefaultIntervalMicroseconds;
+        biu++;
+        fbi = decrIndex (fbi);
+        buckets[fbi] = 0;
+        // Do not overwrite bucket_bounds[fbi] for last iteration of
+        // this loop as this slot holds the upper bound for last
+        // bucket in the case that (biu == BucketCount).  If fbi does
+        // not represent the last iteration, bucket_bounds[fbi] will
+        // be overwritten at the top of this loop on its next
+        // iteration. 
       }
     }
 
@@ -766,47 +766,47 @@ class RelativeTimeMetrics extends ExtrememObject {
     if (spanAt (incrIndexBy (fbi, biu - 1)) == DefaultIntervalMicroseconds) {
       // No exponentially sized buckets yet.
       int new_linear_buckets = 1 + (int) ((value - lbhb)
-					  / DefaultIntervalMicroseconds);
+                                          / DefaultIntervalMicroseconds);
       Trace.msg(4, id, ": new linear buckets is ",
-		Integer.toString(new_linear_buckets));
+                Integer.toString(new_linear_buckets));
       if (biu + new_linear_buckets <= BucketCount) {
-	// Make the new linear buckets and we're done.
-	for (int i = 0; i < new_linear_buckets; i++) {
-	  int expand_index = incrIndexBy (fbi, biu++);
-	  buckets [expand_index] = 0;
-	  bucket_bounds [expand_index] = lbhb;
-	  lbhb += DefaultIntervalMicroseconds;
-	}
-	bucket_bounds [incrIndexBy (fbi, biu)] = lbhb;
-	Trace.msg(4, id, ": after linear expandHighRange ()");
+        // Make the new linear buckets and we're done.
+        for (int i = 0; i < new_linear_buckets; i++) {
+          int expand_index = incrIndexBy (fbi, biu++);
+          buckets [expand_index] = 0;
+          bucket_bounds [expand_index] = lbhb;
+          lbhb += DefaultIntervalMicroseconds;
+        }
+        bucket_bounds [incrIndexBy (fbi, biu)] = lbhb;
+        Trace.msg(4, id, ": after linear expandHighRange ()");
 
-	if (Trace.enabled(3))
-	  dump();
-	
-	return;
-      }	// else, need to expand exponentially
+        if (Trace.enabled(3))
+          dump();
+        
+        return;
+      } // else, need to expand exponentially
     } 
 
     while (value >= lbhb) {
       if (biu >= 32)
-	compress(1);
+        compress(1);
 
       if (biu >= 32)
-	Util.internalError ("  expecting compress to leave biu < 32");
+        Util.internalError ("  expecting compress to leave biu < 32");
       
       if (value >= lbhb) {
-	long next_exponential_size = spanAt (incrIndexBy (fbi, biu - 1)) * 2;
-	int next_index = incrIndexBy (fbi, biu);
-	buckets [next_index] = 0;
-	lbhb += next_exponential_size;
-	bucket_bounds [incrIndex (next_index)] = lbhb;
-	biu++;
+        long next_exponential_size = spanAt (incrIndexBy (fbi, biu - 1)) * 2;
+        int next_index = incrIndexBy (fbi, biu);
+        buckets [next_index] = 0;
+        lbhb += next_exponential_size;
+        bucket_bounds [incrIndex (next_index)] = lbhb;
+        biu++;
 
-	Trace.msg(4, id, ": after compress, added slot @",
-		  Integer.toString(next_index), " of size ",
-		  debug_us2s(next_exponential_size));
-	Trace.msg(4, id, ": biu is: ", Integer.toString(biu));
-	
+        Trace.msg(4, id, ": after compress, added slot @",
+                  Integer.toString(next_index), " of size ",
+                  debug_us2s(next_exponential_size));
+        Trace.msg(4, id, ": biu is: ", Integer.toString(biu));
+        
       }
     }
 
@@ -925,72 +925,72 @@ class RelativeTimeMetrics extends ExtrememObject {
       int candidate_index = incrIndexBy (fbi, candidate_count - 1);
       long candidate_span = spanAt (candidate_index);
       // See how many buckets have the same span
-      int sscb = 1;		// same-sized consecutive buckets
+      int sscb = 1;             // same-sized consecutive buckets
 
       // neighbor_count is the number of buckets that precede the candidate
       int neighbor_count = candidate_count - 1;
 
       for (int neighbor_index = decrIndex (candidate_index);
-	   (neighbor_count > 0) && (spanAt (neighbor_index) == candidate_span);
-	   neighbor_index = decrIndex (neighbor_index)) {
-	sscb++;
-	neighbor_count--;
+           (neighbor_count > 0) && (spanAt (neighbor_index) == candidate_span);
+           neighbor_index = decrIndex (neighbor_index)) {
+        sscb++;
+        neighbor_count--;
       }
 
       Trace.msgNoLine(4, id, ": candidate_count: ",
-		      Integer.toString(candidate_count),
-		      ", candidate_index: ", Integer.toString(candidate_index),
-		      ", sscb: ", Integer.toString(sscb));
+                      Integer.toString(candidate_count),
+                      ", candidate_index: ", Integer.toString(candidate_index),
+                      ", sscb: ", Integer.toString(sscb));
       
       Trace.msg(4, ", neighbor_count: ", Integer.toString(neighbor_count));
 
       if (sscb >= 3) {
-	// Must leave at least one, possibly 2 of these uncoalesced.
-	int coalesce_count = (sscb - 1) / 2;
-	int coalesce_2nd_index = candidate_index;
-	int coalesce_1st_index = decrIndex (coalesce_2nd_index);
-	Trace.msg(4, id, ": coalescing ", Integer.toString(coalesce_count));
-	for (int i = 0; i < coalesce_count; i++) {
-	  // candidate end of span
-	  long ceos = bucket_bounds[incrIndex(candidate_index)];
-	  buckets[candidate_index] = (buckets[coalesce_1st_index] +
-				      buckets[coalesce_2nd_index]);
-	  bucket_bounds[candidate_index] = ceos - 2 * candidate_span;
+        // Must leave at least one, possibly 2 of these uncoalesced.
+        int coalesce_count = (sscb - 1) / 2;
+        int coalesce_2nd_index = candidate_index;
+        int coalesce_1st_index = decrIndex (coalesce_2nd_index);
+        Trace.msg(4, id, ": coalescing ", Integer.toString(coalesce_count));
+        for (int i = 0; i < coalesce_count; i++) {
+          // candidate end of span
+          long ceos = bucket_bounds[incrIndex(candidate_index)];
+          buckets[candidate_index] = (buckets[coalesce_1st_index] +
+                                      buckets[coalesce_2nd_index]);
+          bucket_bounds[candidate_index] = ceos - 2 * candidate_span;
 
-	  Trace.msg(4, id, ": coalescing @",
-		    Integer.toString(coalesce_1st_index),
-		    " and @", Integer.toString(coalesce_2nd_index),
-		    " onto @", Integer.toString(candidate_index));
+          Trace.msg(4, id, ": coalescing @",
+                    Integer.toString(coalesce_1st_index),
+                    " and @", Integer.toString(coalesce_2nd_index),
+                    " onto @", Integer.toString(candidate_index));
 
-	  candidate_index = decrIndex (candidate_index);
-	  coalesce_1st_index = decrIndexBy (coalesce_1st_index, 2);
-	  coalesce_2nd_index = decrIndexBy (coalesce_2nd_index, 2);
-	}
+          candidate_index = decrIndex (candidate_index);
+          coalesce_1st_index = decrIndexBy (coalesce_1st_index, 2);
+          coalesce_2nd_index = decrIndexBy (coalesce_2nd_index, 2);
+        }
 
-	Trace.msg(4, id, ": sliding ",
-		  Integer.toString(candidate_count - coalesce_count * 2),
-		  " buckets forward");
+        Trace.msg(4, id, ": sliding ",
+                  Integer.toString(candidate_count - coalesce_count * 2),
+                  " buckets forward");
 
-	// We've removed coalesce_count buckets.  Slide everything forward.
-	int source_index = decrIndexBy (candidate_index, coalesce_count);
-	for (int i = candidate_count - coalesce_count * 2; i > 0; i--) {
-	  long original_span = spanAt (source_index);
-	  long ceos = bucket_bounds[incrIndex (candidate_index)];
-	  buckets[candidate_index] = buckets[source_index];
-	  bucket_bounds[candidate_index] = ceos - original_span;
+        // We've removed coalesce_count buckets.  Slide everything forward.
+        int source_index = decrIndexBy (candidate_index, coalesce_count);
+        for (int i = candidate_count - coalesce_count * 2; i > 0; i--) {
+          long original_span = spanAt (source_index);
+          long ceos = bucket_bounds[incrIndex (candidate_index)];
+          buckets[candidate_index] = buckets[source_index];
+          bucket_bounds[candidate_index] = ceos - original_span;
 
-	  Trace.msg(4, id, ":  sliding @", Integer.toString(source_index),
-		    " onto @", Integer.toString(candidate_index));
+          Trace.msg(4, id, ":  sliding @", Integer.toString(source_index),
+                    " onto @", Integer.toString(candidate_index));
 
-	  source_index = decrIndex (source_index);
-	  candidate_index = decrIndex (candidate_index);
-	}
-	biu -= coalesce_count;
-	fbi = incrIndexBy (fbi, coalesce_count);
-	coalesced_triples = true;
-	break;			// we've done our compression
+          source_index = decrIndex (source_index);
+          candidate_index = decrIndex (candidate_index);
+        }
+        biu -= coalesce_count;
+        fbi = incrIndexBy (fbi, coalesce_count);
+        coalesced_triples = true;
+        break;                  // we've done our compression
       } else
-	candidate_count -= sscb;
+        candidate_count -= sscb;
     }
 
     if (!coalesced_triples) {
@@ -1007,90 +1007,90 @@ class RelativeTimeMetrics extends ExtrememObject {
       int i;
       for (i = 0; i < biu - 1; i++) {
 
-	Trace.msgNoLine(4, id, ": trying to coalesce @",
-			Integer.toString(second_source_index),
-			"(", Long.toString(spanAt (second_source_index)),
-			") with @", Integer.toString(first_source_index));
-	Trace.msg(4, "(", Long.toString(spanAt (first_source_index)), ")");
+        Trace.msgNoLine(4, id, ": trying to coalesce @",
+                        Integer.toString(second_source_index),
+                        "(", Long.toString(spanAt (second_source_index)),
+                        ") with @", Integer.toString(first_source_index));
+        Trace.msg(4, "(", Long.toString(spanAt (first_source_index)), ")");
 
-	if (spanAt (second_source_index) == spanAt(first_source_index)) {
-	  buckets[dest_index] = (buckets[first_source_index]
-				 + buckets[second_source_index]);
+        if (spanAt (second_source_index) == spanAt(first_source_index)) {
+          buckets[dest_index] = (buckets[first_source_index]
+                                 + buckets[second_source_index]);
 
-	  Trace.msg(4, id, ": coalescing @",
-		    Integer.toString(first_source_index),
-		    " and @", Integer.toString(second_source_index),
-		    " onto @", Integer.toString(dest_index));
+          Trace.msg(4, id, ": coalescing @",
+                    Integer.toString(first_source_index),
+                    " and @", Integer.toString(second_source_index),
+                    " onto @", Integer.toString(dest_index));
 
-	  if (first_source_index != fbi)
-	    bucket_bounds[dest_index] = bucket_bounds[first_source_index];
-	  first_source_index = decrIndexBy (first_source_index, 2);
-	  second_source_index = decrIndexBy (second_source_index, 2);
-	  coalesce_count++;
-	  i++;			// extra increment: coalesced two buckets
-	} else {
-	  if (second_source_index != dest_index) {
-	    buckets[dest_index] = buckets[second_source_index];
-	    // second_source_index known to != fbi
-	    bucket_bounds[dest_index] = bucket_bounds[second_source_index];
+          if (first_source_index != fbi)
+            bucket_bounds[dest_index] = bucket_bounds[first_source_index];
+          first_source_index = decrIndexBy (first_source_index, 2);
+          second_source_index = decrIndexBy (second_source_index, 2);
+          coalesce_count++;
+          i++;                  // extra increment: coalesced two buckets
+        } else {
+          if (second_source_index != dest_index) {
+            buckets[dest_index] = buckets[second_source_index];
+            // second_source_index known to != fbi
+            bucket_bounds[dest_index] = bucket_bounds[second_source_index];
 
-	    Trace.msg(4, id, ":  sliding @",
-		      Integer.toString(second_source_index),
-		      " onto @", Integer.toString(dest_index));
+            Trace.msg(4, id, ":  sliding @",
+                      Integer.toString(second_source_index),
+                      " onto @", Integer.toString(dest_index));
 
-	  } else
-	    Trace.msg(4, id, ":  not sliding @",
-		      Integer.toString(second_source_index),
-		      " onto @", Integer.toString(dest_index));
-	  second_source_index = first_source_index;
-	  first_source_index = decrIndex (first_source_index);
-	}
-	dest_index = decrIndex (dest_index);
+          } else
+            Trace.msg(4, id, ":  not sliding @",
+                      Integer.toString(second_source_index),
+                      " onto @", Integer.toString(dest_index));
+          second_source_index = first_source_index;
+          first_source_index = decrIndex (first_source_index);
+        }
+        dest_index = decrIndex (dest_index);
       }
       if (second_source_index == fbi)
-	buckets[dest_index] = buckets[second_source_index];
+        buckets[dest_index] = buckets[second_source_index];
 
       if (coalesce_count > 0) {
-	biu -= coalesce_count;
-	fbi = incrIndexBy (fbi, coalesce_count);
+        biu -= coalesce_count;
+        fbi = incrIndexBy (fbi, coalesce_count);
       } else {
-	// Failed to coalesce triples or doubles.  Take more radical
-	// action.  Pick an entry within the existing log.  Turn the
-	// next-smaller entry into an entry that spans the same 
-	// range as its next-larger entry.  Since there are no doubles
-	// and no triples, this has the effect of subsuming all
-	// smaller entries into the newly enlarged span.
-	if (biu == 2) {
-	  int last_index = incrIndex(fbi);
-	  long last_span = spanAt(last_index);
-	  fblb = lbhb - 2 * last_span;
-	  buckets[last_index] += buckets[fbi];
-	  fbi = incrIndex(fbi);
-	  biu--;
-	} else {
-	  int available_slots = BucketCount - biu;
-	  int discard_slots = desired_slots - available_slots;
-	  if (discard_slots >= biu)
-	    discard_slots = biu - 1;
-	  // The discard_neighbor is the bucket that will hold the
-	  // consolidation of all discarded slots.
-	  int discard_neighbor_index = incrIndexBy(fbi, discard_slots);
-	  int discard_index = decrIndex(discard_neighbor_index);
-	  // Since we know there are no doubles and no triples, we are
-	  // assured that we can double the span @ discard_neighbor_index
-	  // without making this bucket's span larger than its next
-	  // larger neighbor's span, and when we do double the size of
-	  // this bucket, the enlarged bucket span will subsume all
-	  // buckets at smaller index values.
-	  for (int k = 0; k < discard_slots; k++) {
-	    buckets[discard_neighbor_index] += buckets[discard_index];
-	    discard_index = decrIndex(discard_index);
-	  }
-	  fblb = (bucket_bounds[discard_neighbor_index]
-		  - spanAt(discard_neighbor_index));
-	  fbi = discard_neighbor_index;
-	  biu -= discard_slots;
-	}
+        // Failed to coalesce triples or doubles.  Take more radical
+        // action.  Pick an entry within the existing log.  Turn the
+        // next-smaller entry into an entry that spans the same 
+        // range as its next-larger entry.  Since there are no doubles
+        // and no triples, this has the effect of subsuming all
+        // smaller entries into the newly enlarged span.
+        if (biu == 2) {
+          int last_index = incrIndex(fbi);
+          long last_span = spanAt(last_index);
+          fblb = lbhb - 2 * last_span;
+          buckets[last_index] += buckets[fbi];
+          fbi = incrIndex(fbi);
+          biu--;
+        } else {
+          int available_slots = BucketCount - biu;
+          int discard_slots = desired_slots - available_slots;
+          if (discard_slots >= biu)
+            discard_slots = biu - 1;
+          // The discard_neighbor is the bucket that will hold the
+          // consolidation of all discarded slots.
+          int discard_neighbor_index = incrIndexBy(fbi, discard_slots);
+          int discard_index = decrIndex(discard_neighbor_index);
+          // Since we know there are no doubles and no triples, we are
+          // assured that we can double the span @ discard_neighbor_index
+          // without making this bucket's span larger than its next
+          // larger neighbor's span, and when we do double the size of
+          // this bucket, the enlarged bucket span will subsume all
+          // buckets at smaller index values.
+          for (int k = 0; k < discard_slots; k++) {
+            buckets[discard_neighbor_index] += buckets[discard_index];
+            discard_index = decrIndex(discard_index);
+          }
+          fblb = (bucket_bounds[discard_neighbor_index]
+                  - spanAt(discard_neighbor_index));
+          fbi = discard_neighbor_index;
+          biu -= discard_slots;
+        }
       }
     }
 
@@ -1129,43 +1129,125 @@ class RelativeTimeMetrics extends ExtrememObject {
     } else
       prefix = "";
 
-    if (us > (3600 * 1000000L)) {	// more than 1 hour
+    if (us > (3600 * 1000000L)) {       // more than 1 hour
       quotient = us / (3600 * 1000000L);
       us = us % (3600 * 1000000L);
       result = String.valueOf(quotient) + "h";
     } else
       result = "";
-    if (us > (60 * 1000000L)) {	// more than 1 minute
+    if (us > (60 * 1000000L)) { // more than 1 minute
       quotient = us / (60 * 1000000L);
       us = us % (60 * 1000000L);
       if (result.length() > 0)
-	result += ":" + String.valueOf(quotient) + "m";
+        result += ":" + String.valueOf(quotient) + "m";
       else
-	result += String.valueOf(quotient) + "m";
+        result += String.valueOf(quotient) + "m";
     }
-    if ((us == 0) || (us > 1000000L)) {	// more than 1 s
+    if ((us == 0) || (us > 1000000L)) { // more than 1 s
       quotient = us / (1000000L);
       us = us % (1000000L);
       if (result.length() > 0)
-	result += ":" + String.valueOf(quotient) + "s";
+        result += ":" + String.valueOf(quotient) + "s";
       else
-	result += String.valueOf(quotient) + "s";
+        result += String.valueOf(quotient) + "s";
     }
-    if (us > 1000L) {		// more than 1 ms
+    if (us > 1000L) {           // more than 1 ms
       quotient = us / 1000L;
       us = us % 1000L;
       if (result.length() > 0)
-	result += ":" + String.valueOf(quotient) + "ms";
+        result += ":" + String.valueOf(quotient) + "ms";
       else
-	result += String.valueOf(quotient) + "ms";
+        result += String.valueOf(quotient) + "ms";
     }
     if (us > 0) {
       if (result.length() > 0)
-	result += ":" + String.valueOf(us) + "us";
+        result += ":" + String.valueOf(us) + "us";
       else
-	result += String.valueOf(us) + "us";
+        result += String.valueOf(us) + "us";
     }
     return prefix + result;
+  }
+
+  /**
+   * This method, used for reporting, returns an Ephemeral
+   * String representation of this.
+   *
+   * The code that invokes toString is expected to account for the
+   * returned String object's memory eventually becoming garbage,
+   * possibly adjusting the accounting of its LifeSpan along the way
+   * to becoming garbage. 
+   */
+  static String us2decimal_ms(ExtrememThread t, long us) {
+    StringBuilder result;
+
+    if (us == 0) {
+      Util.ephemeralString(t, 3);
+      return new String("0ms");
+    } else if (us < 0) {
+      us *= -1;
+      result = new StringBuilder("-");
+    } else
+      result = new StringBuilder("");
+
+    int sb_length = result.length();
+    int sb_capacity = Util.ephemeralStringBuilder(t, sb_length);
+
+    if (us > 1000) {
+      int quotient = (int) (us / 1000);
+      int digits = Util.decimalDigits(quotient);
+
+      result.append(quotient);
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, digits);
+      sb_length += digits;
+
+      us %= 1000;
+    } else {
+      result.append("0");
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 1);
+      sb_length += 1;
+    }
+
+    if (us > 0) {
+      result.append(".");
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 1);
+      sb_length += 1;
+
+      if (us > 100) {
+        result.append(us / 100);
+        us %= 100;
+      } else
+        result.append("0");
+
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 1);
+      sb_length += 1;
+
+      if (us > 10) {
+        result.append(us / 10);
+        us %= 10;
+      } else
+        result.append("0");
+
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 1);
+      sb_length += 1;
+
+      if (us > 0)
+        result.append(us);
+      else
+        result.append("0");
+
+      sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 1);
+      sb_length += 1;
+    }
+
+    result.append("ms");
+    sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length, sb_capacity, 2);
+    sb_length += 2;
+
+    // Assume compiler optimizes this (so there's not a String
+    // followed by a substring operation).
+    Util.ephemeralStringBuilderToString(t, sb_length, sb_capacity);
+
+    return result.toString();
   }
 
   /**
@@ -1181,9 +1263,10 @@ class RelativeTimeMetrics extends ExtrememObject {
     String result;
     long quotient = 0;
 
-    if (us == 0)
-      return "0us";
-    else if (us < 0) {
+    if (us == 0) {
+      Util.ephemeralString(t, 3);
+      return new String("0us");
+    } else if (us < 0) {
       us *= -1;
       result = "-";
     } else
@@ -1192,60 +1275,60 @@ class RelativeTimeMetrics extends ExtrememObject {
     int sb_length = result.length();
     int sb_capacity = Util.ephemeralStringBuilder(t, sb_length);
 
-    if (us > (3600 * 1000000L)) {	// more than 1 hour
+    if (us > (3600 * 1000000L)) {       // more than 1 hour
       quotient = us / (3600 * 1000000L);
       us = us % (3600 * 1000000L);
       result += String.valueOf(quotient) + "h:";
       
       int digits = Util.decimalDigits(quotient);
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
 
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 2);
+                                                      sb_capacity, 2);
       sb_length += 2;
     }
-    if (us > (60 * 1000000L)) {	// more than 1 minute
+    if (us > (60 * 1000000L)) { // more than 1 minute
       quotient = us / (60 * 1000000L);
       us = us % (60 * 1000000L);
       result += String.valueOf(quotient) + "m:";
 
       int digits = Util.decimalDigits(quotient);
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
 
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 2);
+                                                      sb_capacity, 2);
       sb_length += 2;
     }
-    if ((us == 0) || us > (1000000L)) {	// more than 1 s
+    if ((us == 0) || us > (1000000L)) { // more than 1 s
       quotient = us / (1000000L);
       us = us % (1000000L);
       result += String.valueOf(quotient) + "s:";
 
       int digits = Util.decimalDigits(quotient);
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
 
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 2);
+                                                      sb_capacity, 2);
       sb_length += 2;
     }
-    if (us > 1000L) {		// more than 1 ms
+    if (us > 1000L) {           // more than 1 ms
       quotient = us / 1000L;
       us = us % 1000L;
       result += String.valueOf(quotient) + "ms:";
 
       int digits = Util.decimalDigits(quotient);
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
 
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 2);
+                                                      sb_capacity, 2);
       sb_length += 2;
     }
     if (us > 0) {
@@ -1253,11 +1336,11 @@ class RelativeTimeMetrics extends ExtrememObject {
 
       int digits = Util.decimalDigits(us);
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, digits);
+                                                      sb_capacity, digits);
       sb_length += digits;
 
       sb_capacity = Util.ephemeralStringBuilderAppend(t, sb_length,
-						      sb_capacity, 2);
+                                                      sb_capacity, 2);
       sb_length += 2;
     }
     
@@ -1403,23 +1486,24 @@ class RelativeTimeMetrics extends ExtrememObject {
           }
         }
         
-        my_slope = (right_rate - left_rate) / segment_quanta;
+        my_slope = (right_rate - left_rate) / (segment_quanta * 256);
         float midpoint_time = segment_start + segment_quanta * 128;
         my_intercept =
         ((float) bucket_tally) / segment_quanta - my_slope * midpoint_time;
         
         if (bucket_tally < segment_quanta) {
+          int pad;
           long midpoint;
           if (my_slope > 0.0) {      // fill in from high end
-            int pad = segment_quanta - bucket_tally;
+            pad = segment_quanta - bucket_tally;
             midpoint = segment_start - 128 + pad * 256;
           } else if (my_slope < 0.0) { // fill in from low end
+            pad = 0;
             midpoint = segment_start + 128;
           } else {              // fill form middle
-            int pad = (segment_quanta - bucket_tally) / 2;
-            midpoint = segment_start - 128 + pad * 256;
+            pad = (segment_quanta - bucket_tally) / 2;
+            midpoint = segment_start + 128 + pad * 256;
           }
-
           while (bucket_tally-- > 0) {
             addToReportTally(histo_columns, lb, histo_span, midpoint, 1);
             midpoint += 256;
@@ -1431,26 +1515,72 @@ class RelativeTimeMetrics extends ExtrememObject {
             // enclosing rectangle holding twice my tally.
             left_rate = 0.0F;
             right_rate = (2 * (float) bucket_tally) / segment_quanta;
-            my_slope = (right_rate - left_rate) / segment_quanta;
-            my_intercept =
-            ((float) bucket_tally) / segment_quanta - my_slope * midpoint_time;
+            my_slope = (right_rate - left_rate) / (segment_quanta * 256);
+
+            // Since y = mx + b, calculate b = y_0 - m * x_0
+            // Rectangle holds bucket_tally * 2.
+            // Width of rectangle is segment_quanta.
+            // Height of rectangle is tally * 2 / segment_quanta.
+            // height at midpoint is (tally * 2 / segment_quanta) / 2, aka (tally / segment_quanta)
+            //    y_0 is 0
+            //    x_0 is segment_start
+            my_intercept = 0.0F - my_slope * segment_start;
           } else if ((segment_start - 128 + 256 * segment_quanta) * my_slope
                      + my_intercept < 0) {
             // form a triangle that slopes downward to the right, the
             // enclosing rectangle holding twice my tally.
             left_rate = (2 * (float) bucket_tally) / segment_quanta;
             right_rate = 0.0F;
-            my_slope = (right_rate - left_rate) / segment_quanta;
-            my_intercept =
-            ((float) bucket_tally) / segment_quanta - my_slope * midpoint_time;
-          }
+            my_slope = (right_rate - left_rate) / (segment_quanta * 256);
+            // Since y = mx + b, calculate b = y_0 - m * x_0
+            //    y_0 is 0
+            //    x_0 is segment_start + segment_quanta * 256
 
-          for (int j = 0; j < segment_quanta; j++) {
-            long quanta_midpoint = segment_start + 128 + 256 * j;
-            int quanta_contribution = java.lang.Math.round(
-              my_intercept + quanta_midpoint * my_slope);
-            addToReportTally(histo_columns, lb, histo_span,
-                             quanta_midpoint, quanta_contribution);
+            my_intercept = 0.0F - my_slope * (segment_start + segment_quanta * 256);
+          }
+          if (my_slope > 0) {
+            // fill from low to high
+            for (int j = 0; j < segment_quanta; j++) {
+              long quanta_midpoint = segment_start + 128 + 256 * j;
+
+              int quanta_contribution = java.lang.Math.round(my_intercept + quanta_midpoint * my_slope);
+              if (quanta_contribution > bucket_tally) {
+                quanta_contribution = bucket_tally;
+              }
+              addToReportTally(histo_columns, lb, histo_span, quanta_midpoint, quanta_contribution);
+              bucket_tally -= quanta_contribution;
+            }
+            while (bucket_tally > 0) {
+              long midpoint = segment_start + 128;
+              for (int j = 0; j < segment_quanta; j++) {
+                addToReportTally(histo_columns, lb, histo_span, midpoint, 1);
+                midpoint += 256;
+                if (bucket_tally-- == 1)
+                  break;
+              }
+            }
+          } else {
+            // fill from high to low
+            for (int j = segment_quanta - 1; j >= 0; j--) {
+              long quanta_midpoint = segment_start + 128 + 256 * j;
+              int quanta_contribution =
+                java.lang.Math.round(my_intercept + quanta_midpoint * my_slope);
+              if (quanta_contribution > bucket_tally) {
+                quanta_contribution = bucket_tally;
+              }
+              addToReportTally(histo_columns, lb, histo_span,
+                               quanta_midpoint, quanta_contribution);
+              bucket_tally -= quanta_contribution;
+            }
+            while (bucket_tally > 0) {
+              long midpoint = segment_start - 128 + 256 * segment_quanta;
+              for (int j = 0; j < segment_quanta; j++) {
+                addToReportTally(histo_columns, lb, histo_span, midpoint, 1);
+                midpoint -= 256;
+                if (bucket_tally-- == 1)
+                  break;
+              }
+            }
           }
         }
       }
@@ -1496,24 +1626,24 @@ class RelativeTimeMetrics extends ExtrememObject {
       int entries_to_median = total_entries / 2;
       int index = fbi;
       for (int i = 0; i < biu; i++) {
-	int bucket_count = buckets[index];
-	long entry_value;
-	
-	if (sis > startAt(index))
-	  entry_value = (sis + (startAt(index) + spanAt(index))) / 2;
-	else if (lis < startAt(index) + spanAt(index))
-	  // This test handles the case that lis is spanned by other than
-	  // last bucket in use.
-	  entry_value = (startAt(index) + lis) / 2;
-	else
-	  entry_value = startAt(index) + spanAt(index) / 2;
+        int bucket_count = buckets[index];
+        long entry_value;
+        
+        if (sis > startAt(index))
+          entry_value = (sis + (startAt(index) + spanAt(index))) / 2;
+        else if (lis < startAt(index) + spanAt(index))
+          // This test handles the case that lis is spanned by other than
+          // last bucket in use.
+          entry_value = (startAt(index) + lis) / 2;
+        else
+          entry_value = startAt(index) + spanAt(index) / 2;
 
-	entries_to_median -= bucket_count;
-	if (entries_to_median <= 0) {
-	  median = entry_value;
-	  break;
-	}
-	index = incrIndex(index);
+        entries_to_median -= bucket_count;
+        if (entries_to_median <= 0) {
+          median = entry_value;
+          break;
+        }
+        index = incrIndex(index);
       }
     }
 
@@ -1591,31 +1721,31 @@ class RelativeTimeMetrics extends ExtrememObject {
       Report.output("Bucket Start,Bucket End, Bucket Tally");
       int index = fbi;
       for (int i = 0; i < biu; i++) {
-	String s1 = Long.toString(startAt(index));
-	String s2 = Long.toString(startAt(index) + spanAt(index));
-	String s3 = Integer.toString(buckets[index]);
+        String s1 = Long.toString(startAt(index));
+        String s2 = Long.toString(startAt(index) + spanAt(index));
+        String s3 = Integer.toString(buckets[index]);
 
-	Util.ephemeralString(t, s1.length());
-	Util.ephemeralString(t, s2.length());
-	Util.ephemeralString(t, s3.length());
+        Util.ephemeralString(t, s1.length());
+        Util.ephemeralString(t, s2.length());
+        Util.ephemeralString(t, s3.length());
 
-	Report.output(s1, ",", s2, ",", s3);
+        Report.output(s1, ",", s2, ",", s3);
 
-	Util.abandonEphemeralString(t, s1.length());
-	Util.abandonEphemeralString(t, s2.length());
-	Util.abandonEphemeralString(t, s3.length());
+        Util.abandonEphemeralString(t, s1.length());
+        Util.abandonEphemeralString(t, s2.length());
+        Util.abandonEphemeralString(t, s3.length());
 
-	index++;
-	if (index >= BucketCount)
-	  index = 0;
+        index++;
+        if (index >= BucketCount)
+          index = 0;
       }
     } else {
 
       // Make a histogram with 64 equal-sized buckets
       long histo_columns[] = new long[HistoColumnCount];
 
-      Trace.msg(4, id, ":Preparing histogram for ",
-		Integer.toString(total_entries));
+      Trace.msg(4, id, ":Preparing histogram with ",
+                Integer.toString(total_entries), " entries");
       Trace.msg(4, id, ":           ranging from: ", debug_us2s(sis));
       Trace.msg(4, id, ":                     to: ", debug_us2s(lis));
       Trace.msg(4, id, ":            from (fblb): ", debug_us2s(fblb));
@@ -1633,12 +1763,31 @@ class RelativeTimeMetrics extends ExtrememObject {
       int num_rows = 0;
       int two_to_rows = 1;
       while (two_to_rows < max_histo_size) {
-	num_rows++;
-	two_to_rows += two_to_rows;
+        num_rows++;
+        two_to_rows += two_to_rows;
       }
       Report.output();
-      Report.output("Logarithmic histogram (Each column's stars represent ",
-		    "a binary tally)");
+      Report.output("Logarithmic histogram (each column encoded as binary representation of tally total)");
+      Report.output();
+      Report.outputNoLine("        [");
+      int avail_space = 62;
+
+      s = us2decimal_ms(t, repack_lb);
+      l = s.length();
+      Report.outputNoLine(s);
+      avail_space -= l;
+
+      s = us2decimal_ms(t, repack_lb + HistoColumnCount * repack_bucket_span);
+      l = s.length();
+      avail_space -= l;
+      while (avail_space-- > 0)
+        Report.outputNoLine(" ");
+      Report.outputNoLine(s);
+      Report.output("]");
+
+      // all values initially empty
+      boolean[] populations = new boolean[HistoColumnCount];
+      int last_populated_column = -1;
 
       // all values of seen_star initially false
       boolean[] seen_star = new boolean[HistoColumnCount];
@@ -1649,91 +1798,90 @@ class RelativeTimeMetrics extends ExtrememObject {
           Report.outputNoLine(" ");
         Report.outputNoLine(histo_count);
         Report.outputNoLine(" ");
-	for (int col = 0; col < HistoColumnCount; col++) {
-	  if (two_to_rows <= histo_columns[col]) {
-	    Report.outputNoLine("*");
-            seen_star[col] = true;
+        for (int col = 0; col < HistoColumnCount; col++) {
+          if (two_to_rows <= histo_columns[col]) {
+            Report.outputNoLine("1");
+            populations[col] = true;
+            if (last_populated_column < col)
+              last_populated_column = col;
             histo_columns[col] -= two_to_rows;
           }
-	  else if (seen_star[col])
-	    Report.outputNoLine("0");
+          else if (populations[col])
+            Report.outputNoLine("0");
           else
-	    Report.outputNoLine(" ");
-	}
-	Report.output();
-	two_to_rows /= 2;
-	num_rows--;
+            Report.outputNoLine(" ");
+        }
+        Report.output();
+        two_to_rows /= 2;
+        num_rows--;
       }
       Report.outputNoLine("        ");
       Report.output(
-	"----------------------------------------------------------------");
+        "----------------------------------------------------------------");
       Report.outputNoLine("        ");
-      Report.output(
-	"^               ^               ^               ^              ^");
-      int available_columns = PageColumns - 3 * (HistoColumnCount / 4);
-      String last_label = us2s(t, (repack_lb +
-                                   HistoColumnCount * repack_bucket_span));
-      int last_label_length = last_label.length();
-      int pad_columns = (available_columns - last_label_length) / 2;
-      if (pad_columns < 0)
-	pad_columns = 0;
-      Report.outputNoLine("        ");
-      Report.outputNoLine(
-	"|               |               |               |");
-      for (int i = 0; i < pad_columns; i++)
-	Report.outputNoLine(" ");
-      Report.output(last_label);
-      Util.abandonEphemeralString(t, last_label_length);
-      
-      s = us2s(t, repack_lb + HistoColumnCount * repack_bucket_span *  3 / 4);
-      l = s.length();
-      Report.outputNoLine("        ");
-      Report.output(
-	"|               |               |               +--- ", s);
-      Util.abandonEphemeralString(t, l);
-      
-      s = us2s(t, repack_lb + HistoColumnCount * repack_bucket_span / 2); 
-      l = s.length();
-      Report.outputNoLine("        ");
-      Report.output(
-	"|               |               +--- ", s);
-      Util.abandonEphemeralString(t, l);
-      
-      s = us2s(t, repack_lb + HistoColumnCount * repack_bucket_span / 4); 
-      l = s.length();
-      Report.outputNoLine("        ");
-      Report.output(
-	"|               +--- ", s);
-      Util.abandonEphemeralString(t, l);
-      
-      s = us2s(t, repack_lb);
-      l = s.length();
-      Report.outputNoLine("        ");
-      Report.output(
-	"+--- ", s);
-      Util.abandonEphemeralString(t, l);
+      int penultimate_column = -1;
+      for (int i = 0; i <= last_populated_column; i++) {
+        if (populations[i])
+          Report.outputNoLine("^");
+        else
+          Report.outputNoLine(" ");
+      }
+      Report.output();
+
+      boolean non_empty_column = (last_populated_column >= 0);
+      while (last_populated_column > 0) {
+        int penultimate_populated = -1;
+        Report.outputNoLine("        ");
+        for (int i = 0; i < last_populated_column; i++) {
+          if (populations[i]) {
+            Report.outputNoLine("|");
+            penultimate_populated = i;
+          } else
+            Report.outputNoLine(" ");
+        }
+        Report.outputNoLine("+- < ");
+        long span_end = repack_lb + (last_populated_column + 1) * repack_bucket_span;
+        s = us2decimal_ms(t, span_end);
+        Report.output(s);
+        Util.abandonEphemeralString(t, s);
+        last_populated_column = penultimate_populated;
+      }
+      if (non_empty_column) {
+        Report.outputNoLine("        ");
+        for (int i = 0; i < HistoColumnCount; i++) {
+          if (populations[i]) {
+            Report.outputNoLine("+- < ");
+            long span_end = repack_lb + (i + 1) * repack_bucket_span;
+            s = us2decimal_ms(t, span_end);
+            Report.output(s);
+            Util.abandonEphemeralString(t, s);
+            break;
+          } else
+            Report.outputNoLine(" ");
+        }
+      }
     }
   }
 
   void dumpDebug() {
     // Output diagnostic information about data structure to stderr
     Trace.debug(id, ": RelativeTimeMetrics, Count: ",
-		Integer.toString(BucketCount), ", DefaultInterval: ",
-		Long.toString(DefaultIntervalMicroseconds));
+                Integer.toString(BucketCount), ", DefaultInterval: ",
+                Long.toString(DefaultIntervalMicroseconds));
     Trace.debug(id, ":  first bucket low bound: ", debug_us2s (fblb));
     Trace.debug(id, ":  last bucket high bound: ", debug_us2s (lbhb));
     Trace.debug(id, ":  first bucket index (in use): ",
-		Integer.toString(fbi), " (", Integer.toString(biu), ")");
+                Integer.toString(fbi), " (", Integer.toString(biu), ")");
     Trace.debug(id, ":  smallest interval seen: ", Long.toString(sis));
     Trace.debug(id, ":  largest interval seen: ", Long.toString(lis));
     int index = fbi;
     int total_tallies = 0;
     for (int i = 0; i < biu; i++) {
       Trace.debug(id, ":    tally for range [", Integer.toString(index),
-		  "] starting at ",
-		  debug_us2s((i == 0)? fblb: bucket_bounds[index]),
-		  " spanning ", debug_us2s(spanAt (index)),
-		  ": ", String.valueOf (buckets[index]));
+                  "] starting at ",
+                  debug_us2s((i == 0)? fblb: bucket_bounds[index]),
+                  " spanning ", debug_us2s(spanAt (index)),
+                  ": ", String.valueOf (buckets[index]));
       total_tallies += buckets[index];
       index = incrIndex (index);
     }
@@ -1744,21 +1892,21 @@ class RelativeTimeMetrics extends ExtrememObject {
   void dump() {
     // Output diagnostic information about data structure to stderr
     Trace.msg(4, id, ": RelativeTimeMetrics, Count: ",
-	      Integer.toString(BucketCount), ", DefaultInterval: ",
-	      Long.toString(DefaultIntervalMicroseconds));
+              Integer.toString(BucketCount), ", DefaultInterval: ",
+              Long.toString(DefaultIntervalMicroseconds));
     Trace.msg(4, id, ":  first bucket low bound: ", debug_us2s (fblb));
     Trace.msg(4, id, ":  last bucket high bound: ", debug_us2s (lbhb));
     Trace.msg(4, id, ":  first bucket index (in use): ",
-	      Integer.toString(fbi), " (", Integer.toString(biu), ")");
+              Integer.toString(fbi), " (", Integer.toString(biu), ")");
     Trace.msg(4, id, ":  smallest interval seen: ", Long.toString(sis));
     Trace.msg(4, id, ":  largest interval seen: ", Long.toString(lis));
     int index = fbi;
     int total_tallies = 0;
     for (int i = 0; i < biu; i++) {
       Trace.msgNoLine(4, id, ":    tally for range [", Integer.toString(index),
-		      "] starting at ",
-		      debug_us2s((i == 0)? fblb: bucket_bounds[index]),
-		      " spanning ", debug_us2s(spanAt (index)));
+                      "] starting at ",
+                      debug_us2s((i == 0)? fblb: bucket_bounds[index]),
+                      " spanning ", debug_us2s(spanAt (index)));
       Trace.msg(4, ": ", String.valueOf (buckets[index]));
       total_tallies += buckets[index];
       index = incrIndex (index);
@@ -2028,11 +2176,11 @@ class RelativeTimeMetrics extends ExtrememObject {
     // Account for 3 int fields: fbi, biu, total_entries; and 5 long
     // fields: fblb, lbhb, sis, lis, accumulated_microseconds
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-		   3 * Util.SizeOfInt + 5 * Util.SizeOfLong);
+                   3 * Util.SizeOfInt + 5 * Util.SizeOfLong);
 
     // Account for buckets and bucket_bounds arrays.
     log.accumulate(ls, MemoryFlavor.ArrayObject, p, 2);
     log.accumulate(ls, MemoryFlavor.ArrayRSB, p,
-		   BucketCount * (Util.SizeOfInt + Util.SizeOfLong));
+                   BucketCount * (Util.SizeOfInt + Util.SizeOfLong));
   }
 }

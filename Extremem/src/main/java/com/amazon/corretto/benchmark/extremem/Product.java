@@ -14,7 +14,7 @@ class Product extends ExtrememObject {
   // their memory is not reclaimed by the caller.  The Product
   // constructor converts these two strings so they have LifeSpan ls.
   Product(ExtrememThread t, LifeSpan ls,
-	  long id, String name, String description) {
+          long id, String name, String description) {
     super(t, ls);
     MemoryLog log = t.memoryLog();
     final Polarity Grow = Polarity.Expand;
@@ -23,7 +23,7 @@ class Product extends ExtrememObject {
     log.accumulate(ls, MemoryFlavor.ObjectReference, Grow, 2);
     // Account for id, available fields
     log.accumulate(ls, MemoryFlavor.ObjectRSB, Grow,
-		   Util.SizeOfLong + Util.SizeOfBoolean);
+                   Util.SizeOfLong + Util.SizeOfBoolean);
 
     Util.convertEphemeralString(t, ls, name.length());
     Util.convertEphemeralString(t, ls, description.length());
@@ -69,7 +69,7 @@ class Product extends ExtrememObject {
     log.accumulate(ls, MemoryFlavor.ObjectReference, p, count * 2);
     // Account for id, available
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-		   count * (Util.SizeOfLong + Util.SizeOfBoolean));
+                   count * (Util.SizeOfLong + Util.SizeOfBoolean));
 
   }
 
@@ -80,7 +80,7 @@ class Product extends ExtrememObject {
     log.accumulate(ls, MemoryFlavor.ObjectReference, p, 2);
     // Account for id, available
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-		   Util.SizeOfLong + Util.SizeOfBoolean);
+                   Util.SizeOfLong + Util.SizeOfBoolean);
 
     // Account for Strings referenced from name and description
     Util.tallyString(log, ls, p, name.length());

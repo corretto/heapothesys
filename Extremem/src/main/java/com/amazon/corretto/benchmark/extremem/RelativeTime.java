@@ -59,22 +59,22 @@ class RelativeTime extends HighResolutionTime {
       RelativeTime delay = awake.difference(t, now);
       delay.garbageFootprint(t);
       if (!delay.isNegative()) {
-	try {
-	  // I have confirmed through instrumentation that Thread.sleep()
-	  // sometimes delays less that the intended amount of time.  This
-	  // can result in certain latency measurements being reported as
-	  // negative.  Since I can't "FIX" the implementation of
-	  // Thread.sleep(), I'll instead round any negative latency
-	  // measurements up to zero whenever a negative latency is added to
-	  // a RelativeTimeMetrics log.
-	  Thread.sleep (delay.s * MillisPerSecond + delay.ns / NanosPerMilli,
-			delay.ns % NanosPerMilli);
-	  now.garbageFootprint(t);
-	  return awake;
-	} catch (InterruptedException x) {
-	  now.garbageFootprint(t);
-	  now = AbsoluteTime.now (t);		// try it again
-	}
+        try {
+          // I have confirmed through instrumentation that Thread.sleep()
+          // sometimes delays less that the intended amount of time.  This
+          // can result in certain latency measurements being reported as
+          // negative.  Since I can't "FIX" the implementation of
+          // Thread.sleep(), I'll instead round any negative latency
+          // measurements up to zero whenever a negative latency is added to
+          // a RelativeTimeMetrics log.
+          Thread.sleep (delay.s * MillisPerSecond + delay.ns / NanosPerMilli,
+                        delay.ns % NanosPerMilli);
+          now.garbageFootprint(t);
+          return awake;
+        } catch (InterruptedException x) {
+          now.garbageFootprint(t);
+          now = AbsoluteTime.now (t);           // try it again
+        }
       }
     }
   }
@@ -207,7 +207,7 @@ class RelativeTime extends HighResolutionTime {
   RelativeTime addMicros(ExtrememThread t, int us) {
     int ns = (
       this.ns + ((us % HighResolutionTime.MicrosPerSecond)
-		 * HighResolutionTime.NanosPerMicro));
+                 * HighResolutionTime.NanosPerMicro));
     long s = this.s + us / HighResolutionTime.MicrosPerSecond;
     return new RelativeTime(t, s, ns);
   }
@@ -291,10 +291,10 @@ class RelativeTime extends HighResolutionTime {
 
     int capacity = Util.ephemeralStringBuilder(t, part1_len);
     capacity = Util.ephemeralStringBuilderAppend(t, part1_len,
-						 capacity, part2_len);
+                                                 capacity, part2_len);
     Util.ephemeralStringBuilderToString(t, part1_len + part2_len, capacity);
     result = part1 + part2;
     Util.abandonEphemeralString(t, part2_len);
     return result;
   }
- }
+}

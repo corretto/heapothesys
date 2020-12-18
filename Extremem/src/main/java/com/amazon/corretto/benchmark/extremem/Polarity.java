@@ -15,8 +15,8 @@ package com.amazon.corretto.benchmark.extremem;
  *  it to the TransientLingering tally.
  */
 enum Polarity {
-  Expand,		       	// Add to tally
-  Shrink;		   	// Subtract from tally
+  Expand,                       // Add to tally
+  Shrink;                       // Subtract from tally
 
   final static int OrdinalCount = Shrink.ordinal () + 1;
 }

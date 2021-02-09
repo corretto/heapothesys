@@ -28,8 +28,11 @@ Command-line arguments configure Extremem to represent different combinations of
 
 It is important to complete all initialization of all global data structures before beginning to execute the experimental workload threads.  If
 initialization is still running when the workload begins to execute, the
-simulation will abort.  Increase this value if the default delays are not
-sufficient.
+simulation will abort.  This value is added to the simulation startup delay
+that is computed by multiplying the combined number of customer and server
+threads by 500 microseconds to determine the time at which the simulation
+workload begins to execute.  Increase the value of InitializationDelay if
+the default delays are not sufficient.
 
 ### *-dRandomSeed=42*
 
@@ -134,7 +137,7 @@ Each server thread replaces ProductReplacementCount products once every ProductR
 
 ### *-dSimulationDuration=10m*
 
-The simulation ends after all customer and server threads have been running for this amount of time.  The threads only begin to run after all global and thread-local data structures have been initialized.
+The simulation ends after all customer and server threads have been running for this amount of time.  The threads do not begin to run until InitializationDelay has passed since the start of execution, assuring that all global and thread-local data structures have been initialized prior to the start of the simulation run.  Thus, the true expected duration of the simulation run equals the total number of server and customer threads multiplied by 500 microseconds, plus the InitializationDelay, plus SimlationDuration, plus whatever additional time is required to produce the report that describes the performance and latency metrics for the simulated workload.  Each customer thread and each server thread terminates as soon as it confirms that the start of its next execution period would occur after the intended end of the simulation.  Thus, it is possible that the simulation will begin reporting results even before the requested end time for the simulation.
 
 ### *-dReportIndividualThreads=false*
 
@@ -164,7 +167,8 @@ java "-Xlog:gc*,gc+phases=debug" -jar src/main/java/extremem.jar
 To run a stress workload, try:
 ```
 java -jar src/main/java/extremem.jar \
-    -dDictionarySize=50000 -dCustomerThreads=20000 -dSimulationDuration=20m
+    -dDictionarySize=50000 -dCustomerThreads=1000 \
+    -dCustomerPeriod=12s -dCustomerThinkTime=8s -dSimulationDuration=20m
 ```
 
 ## Interpreting Results

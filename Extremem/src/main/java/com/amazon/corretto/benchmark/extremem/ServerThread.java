@@ -97,6 +97,11 @@ class ServerThread extends ExtrememThread {
 
   public void runExtreme() {
     while (true) {
+      // If the simulation will have ended before we wake up, don't
+      // even bother to sleep.
+      if (next_release_time.compare(end_simulation_time) >= 0)
+        break;
+
       AbsoluteTime now = next_release_time.sleep(this);
       now.garbageFootprint(this);
 

@@ -1,6 +1,6 @@
 package com.amazon.corretto.benchmark.hyperalloc;
 
-import jdk.nashorn.internal.ir.annotations.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
@@ -46,7 +46,7 @@ public class BurstyTokenBucketTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void actualRateLimiting() {
         long rate = 512 * 1024 * 1024;
         long max = 1024 * 1024 * 1024;

@@ -37,8 +37,8 @@ public class SimpleRunner extends TaskBase {
     @Override
     public void start() {
         try {
-            AllocObject.setOverhead(config.isUseCompressedOops() ? AllocObject.ObjectOverhead.CompressedOops
-                    : AllocObject.ObjectOverhead.NonCompressedOops);
+            DefaultObjectFactory.setUseCompressedOops(config.isUseCompressedOops());
+            final PlainObjectFactory objectFactory = new PlainObjectFactory();
             final ObjectStore store = new ObjectStore(config.getLongLivedInMb(), config.getPruneRatio(),
                     config.getReshuffleRatio());
             final Thread storeThread = new Thread(store);
@@ -46,7 +46,7 @@ public class SimpleRunner extends TaskBase {
             storeThread.setName("HyperAlloc-Store");
             storeThread.start();
 
-            AllocationRateLogger allocationLogger = new AllocationRateLogger(config.getAllocationLogFile());
+            AllocationRateLogger allocationLogger = new AllocationRateLogger(config.getAllocationLogFile(), objectFactory);
             allocationLogger.start();
 
             final ExecutorService executor = Executors.newFixedThreadPool(config.getNumOfThreads(), runnable -> {
@@ -56,7 +56,8 @@ public class SimpleRunner extends TaskBase {
                 return thread;
             });
 
-            final List<Future<Long>> results = executor.invokeAll(createTasks(store));
+
+            final List<Future<Long>> results = executor.invokeAll(createTasks(store, objectFactory));
 
             try {
                 for (Future<Long> r : results) {
@@ -87,7 +88,7 @@ public class SimpleRunner extends TaskBase {
                 Thread.currentThread().interrupt();
             }
             store.stopAndReturnSize();
-            printResult(AllocObject.getBytesAllocated() / 1024 / 1024 / config.getDurationInSecond());
+            printResult(objectFactory.getBytesAllocated() / 1024 / 1024 / config.getDurationInSecond());
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);
@@ -110,7 +111,7 @@ public class SimpleRunner extends TaskBase {
         }
     }
 
-    private List<Callable<Long>> createTasks(final ObjectStore store) {
+    private List<Callable<Long>> createTasks(final ObjectStore store, ObjectFactory objectFactory) {
         final int queueSize = (int) (config.getMidAgedInMb() * 1024L * 1024L * 2L
                 / (config.getMaxObjectSize() + config.getMinObjectSize())
                 / config.getNumOfThreads());
@@ -119,12 +120,12 @@ public class SimpleRunner extends TaskBase {
         long durationInMs = config.getDurationInSecond() * 1000L;
         IntFunction<Callable<Long>> factory;
         if (config.getAllocationSmoothnessFactor() == null) {
-            factory = (ignored) -> createSingle(store, allocRateMbPerThread,
+            factory = (ignored) -> createSingle(store, objectFactory, allocRateMbPerThread,
                     durationInMs, config.getMinObjectSize(),
                     config.getMaxObjectSize(), queueSize,
                     config.getRampUpSeconds());
         } else {
-            factory = (ignored) -> createBurstyAllocator(store, allocRateMbPerThread,
+            factory = (ignored) -> createBurstyAllocator(store, objectFactory, allocRateMbPerThread,
                     durationInMs, config.getAllocationSmoothnessFactor(),
                     config.getMinObjectSize(), config.getMaxObjectSize(),
                     queueSize);
@@ -140,9 +141,11 @@ public class SimpleRunner extends TaskBase {
         volatile boolean shouldRun = true;
         private final Thread allocationLoggerThread;
         private final String allocationLogFile;
+        private final PlainObjectFactory objectFactory;
 
-        public AllocationRateLogger(String allocationLogFile) {
+        public AllocationRateLogger(String allocationLogFile, PlainObjectFactory objectFactory) {
             this.allocationLogFile = allocationLogFile;
+            this.objectFactory = objectFactory;
             allocationLoggerThread = new Thread(this);
             allocationLoggerThread.setName("HyperAlloc-Allocations");
             allocationLoggerThread.setDaemon(true);
@@ -170,7 +173,7 @@ public class SimpleRunner extends TaskBase {
             final long MB = 1024 * 1024;
             final long NANOS = TimeUnit.SECONDS.toNanos(1);
 
-            long lastValue = AllocObject.getBytesAllocated();
+            long lastValue = objectFactory.getBytesAllocated();
             long lastTime = System.nanoTime();
             long startTime = lastTime;
 
@@ -178,7 +181,7 @@ public class SimpleRunner extends TaskBase {
                 while (shouldRun) {
                     long now = System.nanoTime();
                     long timeDeltaNs = now - lastTime;
-                    long bytesAllocated = AllocObject.getBytesAllocated();
+                    long bytesAllocated = objectFactory.getBytesAllocated();
 
                     if (timeDeltaNs > 0) {
 

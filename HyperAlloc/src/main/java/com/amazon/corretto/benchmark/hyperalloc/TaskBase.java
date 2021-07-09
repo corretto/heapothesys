@@ -40,7 +40,7 @@ public abstract class TaskBase {
      * @return A runnable that allocates objects and drives retention.
      */
     static Callable<Long> createSingle(final ObjectStore store, final long rateInMb, final long durationInMs) {
-        return createSingle(store, rateInMb, durationInMs,
+        return createSingle(store, new PlainObjectFactory(), rateInMb, durationInMs,
                 DEFAULT_MIN_OBJECT_SIZE, DEFAULT_MAX_OBJECT_SIZE, DEFAULT_SURVIVOR_QUEUE_LENGTH, 0.0);
     }
 
@@ -54,9 +54,9 @@ public abstract class TaskBase {
      * @param queueLength The queue length of mid-aged objects.
      * @return The unused allocation allowance during the run.
      */
-    static Callable<Long> createSingle(final ObjectStore store, final long rateInMb,
-                                       final long durationInMs, final int minObjectSize, final int maxObjectSize,
-                                       final int queueLength, double rampUpSeconds) {
+    static Callable<Long> createSingle(final ObjectStore store, final ObjectFactory objects,
+                                       final long rateInMb, final long durationInMs, final int minObjectSize,
+                                       final int maxObjectSize, final int queueLength, double rampUpSeconds) {
         return () -> {
             final long rate = rateInMb * 1024 * 1024;
             final ArrayDeque<AllocObject> survivorQueue = new ArrayDeque<>();
@@ -87,7 +87,7 @@ public abstract class TaskBase {
                     }
 
                     if (!throughput.isThrottled()) {
-                        final AllocObject obj = AllocObject.create(minObjectSize, maxObjectSize, null);
+                        final AllocObject obj = objects.create(minObjectSize, maxObjectSize);
                         throughput.deduct(obj.getRealSize());
                         wave += obj.getRealSize();
                         survivorQueue.addLast(obj);
@@ -119,7 +119,7 @@ public abstract class TaskBase {
     }
 
 
-    static Callable<Long> createBurstyAllocator(final ObjectStore store, final long rateInMb, final long durationInMs,
+    static Callable<Long> createBurstyAllocator(final ObjectStore store, ObjectFactory objects, final long rateInMb, final long durationInMs,
                                                 final double allocSmoothnessFactor, final int minObjectSize,
                                                 final int maxObjectSize, final int queueLength) {
         return () -> {
@@ -150,11 +150,12 @@ public abstract class TaskBase {
             long nanosPerMilli = TimeUnit.MILLISECONDS.toNanos(1);
 
             while (System.nanoTime() < end) {
-                long size = AllocObject.getRandomSize(minObjectSize, maxObjectSize);
+                long size = DefaultObjectFactory.getRandomSize(minObjectSize, maxObjectSize);
                 long allowed = throughput.take(size, minObjectSize);
                 if (allowed >= minObjectSize) {
                     long start = System.nanoTime();
-                    final AllocObject obj = AllocObject.create((int)allowed);
+                    // TODO: This is a hack. If we use create(size) directly it will bypass allocation tracing.
+                    final AllocObject obj = objects.create((int)allowed, (int)allowed);
                     long elapsed = start - System.nanoTime();
                     sleepDebtNs += (allocationTargetTimeForRate - elapsed);
 

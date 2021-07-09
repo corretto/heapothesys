@@ -32,14 +32,14 @@ public class ObjectStore implements Runnable {
     // The portion of objects to leave in the incoming queue to avoid starvation. 1/100 by default.
     private static final int IN_QUEUE_RATIO = 100;
 
-    private ArrayList<List<AllocObject>> store;
+    private final ArrayList<List<AllocObject>> store;
     final ArrayBlockingQueue<AllocObject> queue;
     final long sizeLimit;
     final TokenBucket pruneRate;
     final int reshuffleRatio;
     final int maxItemInGroup;
 
-    private AtomicLong currentSize;
+    private final AtomicLong currentSize;
     private boolean running;
 
     static Logger logger = Logger.getGlobal();
@@ -208,8 +208,10 @@ public class ObjectStore implements Runnable {
         for (int i = 0; i < ((double) store.size() / shuffleRatio) && store.size() > 1; i++) {
             final int currentIndex = ThreadLocalRandom.current().nextInt(store.size() - 1);
             final List<AllocObject> current = store.get(currentIndex);
-            current.forEach(obj -> tryRef(obj, currentIndex));
-            current.forEach(AllocObject::touch);
+            current.forEach(obj -> {
+                tryRef(obj, currentIndex);
+                obj.touch();
+            });
         }
     }
 }

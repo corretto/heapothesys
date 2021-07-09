@@ -38,7 +38,7 @@ public class SimpleRunner extends TaskBase {
     public void start() {
         try {
             DefaultObjectFactory.setUseCompressedOops(config.isUseCompressedOops());
-            final PlainObjectFactory objectFactory = new PlainObjectFactory();
+            final DefaultObjectFactory objectFactory = (DefaultObjectFactory) config.getObjectFactory();
             final ObjectStore store = new ObjectStore(config.getLongLivedInMb(), config.getPruneRatio(),
                     config.getReshuffleRatio());
             final Thread storeThread = new Thread(store);
@@ -141,9 +141,9 @@ public class SimpleRunner extends TaskBase {
         volatile boolean shouldRun = true;
         private final Thread allocationLoggerThread;
         private final String allocationLogFile;
-        private final PlainObjectFactory objectFactory;
+        private final DefaultObjectFactory objectFactory;
 
-        public AllocationRateLogger(String allocationLogFile, PlainObjectFactory objectFactory) {
+        public AllocationRateLogger(String allocationLogFile, DefaultObjectFactory objectFactory) {
             this.allocationLogFile = allocationLogFile;
             this.objectFactory = objectFactory;
             allocationLoggerThread = new Thread(this);

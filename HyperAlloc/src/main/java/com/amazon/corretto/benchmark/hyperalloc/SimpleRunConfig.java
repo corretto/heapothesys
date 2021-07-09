@@ -2,10 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
+import java.util.Locale;
+
 /**
  * Class for parsing simple run parameters.
  */
 public class SimpleRunConfig {
+    private ObjectFactory objectFactory;
     private long allocRateInMbPerSecond = 1024L;
     private int durationInSecond = 60;
     private int longLivedInMb = 64;
@@ -21,6 +24,7 @@ public class SimpleRunConfig {
     private String allocationLogFile = null;
     private Double allocationSmoothnessFactor = null;
     private double rampUpSeconds = 0.0;
+
 
     /**
      * Parse input arguments from a string array.
@@ -64,10 +68,34 @@ public class SimpleRunConfig {
                 i++;
             } else if (args[i].equals("-p") || args[i].equals("--ramp-up-seconds")) {
                 rampUpSeconds = Double.parseDouble(args[++i]);
+            } else if (args[i].equals("-o") || args[i].equals("--object-type")) {
+                objectFactory = parseObjectFactory(args[++i]);
             } else {
                 usage();
                 System.exit(1);
             }
+        }
+        if (objectFactory == null) {
+            objectFactory = new PlainObjectFactory();
+        }
+    }
+
+    private ObjectFactory parseObjectFactory(String arg) {
+        switch (arg.toLowerCase()) {
+            case "p":
+            case "plain":
+                System.out.println("Using plain objects.");
+                return new PlainObjectFactory();
+            case "w":
+            case "weak":
+                System.out.println("Using weak reference objects.");
+                return new WeakObjectFactory();
+            case "f":
+            case "finalizable":
+                System.out.println("Using finalizable objects.");
+                return new FinalizableObjectFactory();
+            default:
+                throw new IllegalArgumentException("Unknown object type: " + arg);
         }
     }
 
@@ -118,6 +146,7 @@ public class SimpleRunConfig {
         this.logFile = logFile;
         this.allocationLogFile = allocationLogFile;
         this.rampUpSeconds = rampUpSeconds;
+        this.objectFactory = new PlainObjectFactory();
     }
 
     public long getAllocRateInMbPerSecond() {
@@ -178,6 +207,10 @@ public class SimpleRunConfig {
 
     public double getRampUpSeconds() {
         return rampUpSeconds;
+    }
+
+    public ObjectFactory getObjectFactory() {
+        return objectFactory;
     }
 }
 

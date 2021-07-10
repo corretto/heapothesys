@@ -14,6 +14,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ObjectStoreTest {
+    private final ObjectFactory objectFactory = new PlainObjectFactory();
+
     @Test
     void CreationTest() {
         final ObjectStore store = new ObjectStore(1);
@@ -26,7 +28,7 @@ class ObjectStoreTest {
     @Test
     void ShouldAddWhenNotFullTest() {
         final ObjectStore store = new ObjectStore(1);
-        final PlainObject obj = new PlainObject(1024, null);
+        final AllocObject obj = objectFactory.create(1024, 1024);
 
         assertTrue(store.tryAdd(obj));
 
@@ -38,37 +40,37 @@ class ObjectStoreTest {
     @Test
     void ShouldFailToAddWhenFullTest() {
         final ObjectStore store = new ObjectStore(1);
-        final PlainObject objA = new PlainObject(512 * 1024, null);
-        final PlainObject objB = new PlainObject(512 * 1024, null);
+        final AllocObject objA = objectFactory.create(512 * 1024, 512 * 1024);
+        final AllocObject objB = objectFactory.create(512 * 1024, 512 * 1024);
 
         assertTrue(store.tryAdd(objA));
         assertTrue(store.tryAdd(objB));
 
-        assertFalse(store.tryAdd(new PlainObject(128, null)));
+        assertFalse(store.tryAdd(objectFactory.create(128, 128)));
     }
 
     @Test
     void ShouldFailToAddWhenSizeIsZeroTest() {
         final ObjectStore store = new ObjectStore(0);
 
-        assertFalse(store.tryAdd(new PlainObject(64, null)));
+        assertFalse(store.tryAdd(objectFactory.create(64, 64)));
     }
 
     @Test
     void StopShouldReturnCurrentSizeTest() {
         final ObjectStore store = new ObjectStore(1);
-        final PlainObject obj = new PlainObject(1024 - DefaultObjectFactory.objectOverhead.getOverhead(), null);
+        final AllocObject obj = objectFactory.create(1024, 1024);
 
         store.tryAdd(obj);
 
-        assertThat(store.stopAndReturnSize(), is(1024L));
+        assertThat(store.stopAndReturnSize(), is(1064L));
     }
 
     @Test
     void FromQueueToStoreTest() throws InterruptedException {
         final ObjectStore store = new ObjectStore(1, 0, 0);
 
-        final PlainObject obj = new PlainObject(1024, null);
+        final AllocObject obj = objectFactory.create(1024, 1024);
 
         store.tryAdd(obj);
 
@@ -90,7 +92,7 @@ class ObjectStoreTest {
         final List<AllocObject> initial = new ArrayList<>();
 
         for (int i = 0; i < 24; i++) {
-            final AllocObject obj = new PlainObject(64 * 1024, null);
+            final AllocObject obj = objectFactory.create(64 * 1024, 64 * 1024);
             initial.add(obj);
             store.tryAdd(obj);
         }
@@ -98,7 +100,7 @@ class ObjectStoreTest {
         new Thread(store).start();
 
         for (int i = 0; i < 24; i++) {
-            final AllocObject obj = new PlainObject(64 * 1024, null);
+            final AllocObject obj = objectFactory.create(64 * 1024, 64 * 1024);
             store.tryAdd(obj);
             Thread.sleep(5);
         }
@@ -125,7 +127,7 @@ class ObjectStoreTest {
         final List<AllocObject> initial = new ArrayList<>();
 
         for (int i = 0; i < 1024; i++) {
-            final AllocObject obj = new PlainObject(1024, null);
+            final AllocObject obj = objectFactory.create(1024, 1024);
             initial.add(obj);
             store.tryAdd(obj);
         }
@@ -135,7 +137,7 @@ class ObjectStoreTest {
         assertThat(storedDataSum(store), is(0L));
 
         for (int i = 0; i < 1024; i++) {
-            final AllocObject obj = new PlainObject(1024, null);
+            final AllocObject obj = objectFactory.create(1024, 1024);
             store.tryAdd(obj);
             Thread.sleep(1);
         }

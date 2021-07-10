@@ -1,67 +1,53 @@
 package com.amazon.corretto.benchmark.hyperalloc;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.LongAdder;
 
 public abstract class DefaultObjectFactory implements ObjectFactory {
-    public static ObjectOverhead objectOverhead = ObjectOverhead.CompressedOops;
-    private final LongAdder bytesAllocated = new LongAdder();
+    private final LongAdder objectsAllocated = new LongAdder();
+    private final LongAdder threadBytesAllocated = new LongAdder();
+    private final com.sun.management.ThreadMXBean threadBean;
 
-    /**
-     * Set the object overhead. By default it assumes that compressedOops is enabled.
-     * @param overhead Object size overhead in heap.
-     */
-    static void setOverhead(final ObjectOverhead overhead) {
-        objectOverhead = overhead;
-    }
-
-    static void setUseCompressedOops(boolean compressed) {
-        objectOverhead = compressed ? ObjectOverhead.CompressedOops : ObjectOverhead.NonCompressedOops;
-    }
     static int getRandomSize(int min, int max) {
         return min == max ? min : ThreadLocalRandom.current().nextInt(max - min) + min;
     }
 
-    void addBytesAllocated(long byteCount) {
-        bytesAllocated.add(byteCount);
+    long getBytesAllocated() {
+        return threadBytesAllocated.longValue();
     }
 
-    long getBytesAllocated() {
-        return bytesAllocated.longValue();
+    DefaultObjectFactory() {
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        if (threadMXBean instanceof com.sun.management.ThreadMXBean) {
+            threadBean = (com.sun.management.ThreadMXBean) threadMXBean;
+        } else {
+            threadBean = null;
+        }
     }
 
     @Override
     public AllocObject create(int minSize, int maxSize) {
         assert maxSize >= minSize : "The max value must be greater than min";
-        assert minSize >= objectOverhead.getOverhead() : "The object size cannot be smaller than the overhead(" + objectOverhead + ").";
-
         int size = getRandomSize(minSize, maxSize);
-        addBytesAllocated(size);
-        return create(size - objectOverhead.getOverhead());
+        objectsAllocated.increment();
+
+        long before = getThreadBytesAllocated();
+        AllocObject object = create(size);
+        long after = getThreadBytesAllocated();
+
+        if (after > before) {
+            long diff = after - before;
+            object.setRealSize((int)diff);
+            threadBytesAllocated.add(diff);
+        }
+        return object;
+    }
+
+    private long getThreadBytesAllocated() {
+        return threadBean == null ? 0 : threadBean.getThreadAllocatedBytes(Thread.currentThread().getId());
     }
 
     public abstract AllocObject create(int size);
-
-    /**
-     * The enumeration to AllocObject overhead in heap.
-     */
-    enum ObjectOverhead {
-        ///  AllocObject: | header (12) | ref to next (4) | ref to array (4) | align (4) |
-        ///  Byte array:  | header (12) | length (4) |
-        CompressedOops(40),
-
-        ///  AllocObject: | header (16) | ref to next (8) | ref to array (8) |
-        ///  Byte array:  | header (16) | length (4) | align (4) |
-        NonCompressedOops(56);
-
-        private final int overhead;
-
-        ObjectOverhead(final int overhead) {
-            this.overhead = overhead;
-        }
-
-        int getOverhead() {
-            return overhead;
-        }
-    }
 }

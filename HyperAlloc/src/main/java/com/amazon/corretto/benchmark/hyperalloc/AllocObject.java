@@ -5,5 +5,7 @@ public interface AllocObject {
     AllocObject getNext();
 
     void touch();
+
     int getRealSize();
+    void setRealSize(int size);
 }

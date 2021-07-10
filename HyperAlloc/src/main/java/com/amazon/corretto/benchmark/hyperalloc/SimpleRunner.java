@@ -37,7 +37,6 @@ public class SimpleRunner extends TaskBase {
     @Override
     public void start() {
         try {
-            DefaultObjectFactory.setUseCompressedOops(config.isUseCompressedOops());
             final DefaultObjectFactory objectFactory = (DefaultObjectFactory) config.getObjectFactory();
             final ObjectStore store = new ObjectStore(config.getLongLivedInMb(), config.getPruneRatio(),
                     config.getReshuffleRatio());

@@ -2,8 +2,9 @@ package com.amazon.corretto.benchmark.hyperalloc;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-public class DataObject {
+public abstract class DataObject implements AllocObject {
     private final byte[] data;
+    private int realSize;
 
     public DataObject(final int size) {
         this.data = new byte[size];
@@ -30,6 +31,10 @@ public class DataObject {
      * @return The size of the object in heap.
      */
     public int getRealSize() {
-        return DefaultObjectFactory.objectOverhead.getOverhead() + (data.length % 8 == 0 ? data.length : (data.length / 8 + 1) * 8);
+        return realSize;
+    }
+
+    public void setRealSize(int size) {
+        realSize = size;
     }
 }

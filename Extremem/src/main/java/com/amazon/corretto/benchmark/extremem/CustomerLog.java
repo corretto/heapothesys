@@ -41,12 +41,20 @@ class CustomerLog extends ExtrememObject {
   int total_abandoned;
   int total_do_nothings;
 
-  CustomerLog(ExtrememThread t, LifeSpan ls) {
+  ResponseTimeMeasurements prepare_response_times;
+  ResponseTimeMeasurements purchase_response_times;
+  ResponseTimeMeasurements save_for_later_response_times;
+  ResponseTimeMeasurements abandonment_response_times;
+  ResponseTimeMeasurements do_nothing_response_times;
+
+  CustomerLog(ExtrememThread t, LifeSpan ls, int response_time_measurements) {
     super(t, ls);
     MemoryLog log = t.memoryLog();
     Polarity Grow = Polarity.Expand;
-    // Account for preparer, purchaser, saver, abandoner, loser
-    log.accumulate(ls, MemoryFlavor.ObjectReference, Grow, 5);
+    // Account for preparer, purchaser, saver, abandoner, loser,
+    // prepare_response_times, purchase_response_times, save_for_later_response_times,
+    // abandonment_response_times, do_nothing_response_times
+    log.accumulate(ls, MemoryFlavor.ObjectReference, Grow, 10);
     // Account for 17 int fields: engagements, min_any, max_any, total_any,
     // min_all, max_all, total_all, min_saved, max_saved,
     // total_previously_saved, min_selection, max_selection, total_selection,
@@ -58,6 +66,12 @@ class CustomerLog extends ExtrememObject {
     saver = new RelativeTimeMetrics(t, ls);
     abandoner = new RelativeTimeMetrics(t, ls);
     loser = new RelativeTimeMetrics(t, ls);
+
+    prepare_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
+    purchase_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
+    save_for_later_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
+    abandonment_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
+    do_nothing_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
   }
 
   // This information is redundant with purchaser.  I'll gather it
@@ -97,6 +111,7 @@ class CustomerLog extends ExtrememObject {
     long delta_microseconds = (
       delta.seconds() * 1000000 + delta.nanoseconds() / 1000);
     preparer.addToLog(delta_microseconds);
+    prepare_response_times.addToLog(delta_microseconds);
     now.garbageFootprint(t);
     delta.garbageFootprint(t);
   }
@@ -109,6 +124,7 @@ class CustomerLog extends ExtrememObject {
     long delta_microseconds = (
       delta.seconds() * 1000000 + delta.nanoseconds() / 1000);
     purchaser.addToLog(delta_microseconds);
+    purchase_response_times.addToLog(delta_microseconds);
     now.garbageFootprint(t);
     delta.garbageFootprint(t);
   }
@@ -121,6 +137,7 @@ class CustomerLog extends ExtrememObject {
     long delta_microseconds = (
       delta.seconds() * 1000000 + delta.nanoseconds() / 1000);
     saver.addToLog(delta_microseconds);
+    save_for_later_response_times.addToLog(delta_microseconds);
     now.garbageFootprint(t);
     delta.garbageFootprint(t);
   }
@@ -133,6 +150,7 @@ class CustomerLog extends ExtrememObject {
     long delta_microseconds = (
       delta.seconds() * 1000000 + delta.nanoseconds() / 1000);
     abandoner.addToLog(delta_microseconds);
+    abandonment_response_times.addToLog(delta_microseconds);
     now.garbageFootprint(t);
     delta.garbageFootprint(t);
   }
@@ -145,6 +163,7 @@ class CustomerLog extends ExtrememObject {
     long delta_microseconds = (
       delta.seconds() * 1000000 + delta.nanoseconds() / 1000);
     loser.addToLog(delta_microseconds);
+    do_nothing_response_times.addToLog(delta_microseconds);
     now.garbageFootprint(t);
     delta.garbageFootprint(t);
   }
@@ -355,8 +374,10 @@ class CustomerLog extends ExtrememObject {
   void tallyMemory(MemoryLog log, LifeSpan ls, Polarity p) {
     super.tallyMemory(log, ls, p);
 
-    // Account for preparer, purchaser, saver, abandoner, loser
-    log.accumulate(ls, MemoryFlavor.ObjectReference, p, 5);
+    // Account for preparer, purchaser, saver, abandoner, loser,
+    // prepare_response_times, purchase_response_times, save_for_later_response_times,
+    // abandonment_response_times, do_nothing_response_times
+    log.accumulate(ls, MemoryFlavor.ObjectReference, p, 10);
     // Account for 17 int fields:  engagements, min_any, max_any,
     // total_any, min_all, max_all, total_all, min_saved, max_saved,
     // total_previously_saved, min_selection, max_selection, total_selection,
@@ -367,5 +388,11 @@ class CustomerLog extends ExtrememObject {
     saver.tallyMemory(log, ls, p);
     abandoner.tallyMemory(log, ls, p);
     loser.tallyMemory(log, ls, p);
+
+    prepare_response_times.tallyMemory(log, ls, p);
+    purchase_response_times.tallyMemory(log, ls, p);
+    save_for_later_response_times.tallyMemory(log, ls, p);
+    abandonment_response_times.tallyMemory(log, ls, p);
+    do_nothing_response_times.tallyMemory(log, ls, p);
   }
 }

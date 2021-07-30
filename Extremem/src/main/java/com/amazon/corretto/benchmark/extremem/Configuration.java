@@ -40,6 +40,8 @@ class Configuration {
 
   static final int DefaultDictionarySize = 25000;
   static final String DefaultDictionaryFile = "/usr/share/dict/words";
+  
+  static final int DefaultResponseTimeMeasurements = 0;
 
   static final int DefaultNumProducts = 20000;
   static final int DefaultProductNameLength = 5;
@@ -79,6 +81,7 @@ class Configuration {
    * Instance fields begin here.
    */
   private int DictionarySize;
+  private int ResponseTimeMeasurements;
   private int MaxArrayLength;
   private int NumCustomers;
   private int NumProducts;
@@ -153,17 +156,22 @@ class Configuration {
     log.accumulate(LifeSpan.NearlyForever, MemoryFlavor.PlainObject,
                    Polarity.Expand, 1);
 
-    // Account for 16 int fields: DictionarySize, MaxArrayLength,
-    // NumCustomers, NumProducts,
-    // ProductNameLength, ProductDescriptionLength, ProductReviewLength,
-    // RandomSeed, KeywordSearchCount, CustomerThreads, ServerThreads,
-    // CustomerReplacementCount, ProductReplacementCount,
-    // BrowsingHistoryQueueCount, SalesTransactionQueueCount,
-    // SelectionCriteriaCount; 2 float fields: BuyThreshold,
-    // SaveForLaterThreshold; 2 boolean fields:
-    // ReportIndividualThreads, ReportCSV
+    // Account for
+    //  17 int fields: DictionarySize, ResponseTimeMeasurements,
+    //                 MaxArrayLength, NumCustomers,
+    //                 NumProducts, ProductNameLength,
+    //                 ProductDescriptionLength, ProductReviewLength,
+    //                 RandomSeed, KeywordSearchCount,
+    //                 CustomerThreads, ServerThreads, 
+    //                 CustomerReplacementCount,
+    //                 ProductReplacementCount,
+    //                 BrowsingHistoryQueueCount,
+    //                 SalesTransactionQueueCount,  
+    //                 SelectionCriteriaCount;
+    //   2 float fields: BuyThreshold, SaveForLaterThreshold;
+    //   2 boolean fields: ReportIndividualThreads, ReportCSV
     log.accumulate(LifeSpan.NearlyForever, MemoryFlavor.ObjectRSB,
-                   Polarity.Expand, 15 * Util.SizeOfInt +
+                   Polarity.Expand, 17 * Util.SizeOfInt +
                    2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
     // Account for 11 reference fields: args, dictionary,
@@ -173,6 +181,7 @@ class Configuration {
     log.accumulate(LifeSpan.NearlyForever,
                    MemoryFlavor.ObjectReference, Polarity.Expand, 11);
 
+    ResponseTimeMeasurements = DefaultResponseTimeMeasurements;
     ReportIndividualThreads = DefaultReportIndividualThreads;
     ReportCSV = DefaultReportCSV;
     DictionarySize = DefaultDictionarySize;
@@ -261,6 +270,7 @@ class Configuration {
     "ProductReplacementCount",
     "ProductReviewLength",
     "RandomSeed",
+    "ResponseTimeMeasurements",
     "SalesTransactionQueueCount",
     "SelectionCriteriaCount",
     "ServerThreads",
@@ -432,16 +442,21 @@ class Configuration {
           break;
         }
       case 13:
+        if (keyword.equals("ResponseTimeMeasurements")) {
+          ResponseTimeMeasurements = u;
+          break;
+        }
+      case 14:
         if (keyword.equals("SalesTransactionQueueCount")) {
           SalesTransactionQueueCount = u;
           break;
         }
-      case 14:
+      case 15:
         if (keyword.equals("SelectionCriteriaCount")) {
           SelectionCriteriaCount = u;
           break;
         }
-      case 15:
+      case 16:
         if (keyword.equals("ServerThreads")) {
           ServerThreads = u;
           break;
@@ -735,10 +750,14 @@ class Configuration {
 
   // In theory, we can seed with a 64-bit value, but 32 bits should
   // provide sufficient variability in workload behaviors.
-  int RandomeSeed() {
+  int RandomSeed() {
     return RandomSeed;
   }
   
+  int ResponseTimeMeasurements() {
+    return ResponseTimeMeasurements;
+  }
+
   int KeywordSearchCount() {
     return KeywordSearchCount;
   }
@@ -865,6 +884,12 @@ class Configuration {
     l = s.length();
     Util.ephemeralString(t, l);
     Report.output("MaxArrayLength,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(ResponseTimeMeasurements);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("ResponseTimeMeasurements,", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(DictionarySize);
@@ -1064,6 +1089,12 @@ class Configuration {
     Report.output("             Maximum array length (MaxArrayLength): ", s);
     Util.abandonEphemeralString(t, l);
 
+    s = Integer.toString(ResponseTimeMeasurements);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("   Remembered responses (ResponseTimeMeasurements): ", s);
+    Util.abandonEphemeralString(t, l);
+
     s = Integer.toString(DictionarySize);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -1220,17 +1251,16 @@ class Configuration {
     garbage.accumulate(LifeSpan.NearlyForever, MemoryFlavor.PlainObject,
                        Grow, 1);
 
-    // Account for 16 int fields: DictionarySize, MaximumArrayLength,
-    // NumCustomers, NumProducts,
-    // ProductNameLength, ProductDescriptionLength, ProductReviewLength,
-    // RandomSeed, KeywordSearchCount, CustomerThreads, ServerThreads,
+    // Account for 17 int fields: DictionarySize, MaximumArrayLength, NumCustomers, NumProducts,
+    // ProductNameLength, ProductDescriptionLength, ProductReviewLength, RandomSeed,
+    // ResponseTimeMeasurements, KeywordSearchCount, CustomerThreads, ServerThreads,
     // CustomerReplacementCount, ProductReplacementCount,
     // BrowsingHistoryQueueCount, SalesTransactionQueueCount,
     // SelectionCriteriaCount; 2 float fields: BuyThreshold,
     // SaveForLaterThreshold; 2 boolean fields:
     // ReportIndividualThreads, ReportCSV.
     garbage.accumulate(LifeSpan.NearlyForever, MemoryFlavor.ObjectRSB,
-                       Grow, 15 * Util.SizeOfInt +
+                       Grow, 17 * Util.SizeOfInt +
                        2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
     // Account for 11 reference fields: args, dictionary, DictionaryFile

@@ -50,45 +50,40 @@ public class Bootstrap extends ExtrememThread {
     ServerLogAccumulator server_accumulator;
     MemoryLog customer_alloc_accumulator, customer_garbage_accumulator;
     MemoryLog server_alloc_accumulator, server_garbage_accumulator;
+    customer_accumulator = new CustomerLogAccumulator(this, LifeSpan.NearlyForever, config.ResponseTimeMeasurements());
+    server_accumulator = new ServerLogAccumulator(this, LifeSpan.NearlyForever, config.ResponseTimeMeasurements());
+
     if (!config.ReportIndividualThreads()) {
-      customer_accumulator = (
-        new CustomerLogAccumulator(this, LifeSpan.NearlyForever));
-        
       customer_alloc_accumulator = new MemoryLog(LifeSpan.NearlyForever);
       customer_alloc_accumulator.memoryFootprint(this);
-        
+
       Trace.msg(1, "@ ",
                 Integer.toString(customer_alloc_accumulator.hashCode()),
                 ": Bootstrap.customer_alloc_accumulator");
-        
+
       customer_garbage_accumulator = new MemoryLog(LifeSpan.NearlyForever);
       customer_garbage_accumulator.memoryFootprint(this);
-        
+      
       Trace.msg(1, "@ ",
                 Integer.toString(customer_garbage_accumulator.hashCode()),
                 ": Bootstrap.customer_garbage_accumulator");
-        
-      server_accumulator = new ServerLogAccumulator(this,
-                                                    LifeSpan.NearlyForever);
-        
+
       server_alloc_accumulator = new MemoryLog(LifeSpan.NearlyForever);
       server_alloc_accumulator.memoryFootprint(this);
-        
+
       Trace.msg(1, "@ ",
                 Integer.toString(server_alloc_accumulator.hashCode()),
                 ": Bootstrap.server_alloc_accumulator");
-        
+
       server_garbage_accumulator = new MemoryLog(LifeSpan.NearlyForever);
       server_garbage_accumulator.memoryFootprint(this);
-        
+
       Trace.msg(1, "@ ",
                 Integer.toString(server_garbage_accumulator.hashCode()),
                 ": Bootstrap.server_garbage__accumulator");
     } else {
-      customer_accumulator = null;
       customer_alloc_accumulator = null;
       customer_garbage_accumulator = null;
-      server_accumulator = null;
       server_alloc_accumulator = null;
       server_garbage_accumulator = null;
     }
@@ -426,11 +421,12 @@ public class Bootstrap extends ExtrememThread {
     if (!config.ReportIndividualThreads()) {
       server_garbage_accumulator.garbageFootprint(this);
       server_alloc_accumulator.garbageFootprint(this);
-      server_accumulator.garbageFootprint(this);
       customer_garbage_accumulator.garbageFootprint(this);
       customer_alloc_accumulator.garbageFootprint(this);
-      customer_accumulator.garbageFootprint(this);
     } 
+    server_accumulator.garbageFootprint(this);
+    customer_accumulator.garbageFootprint(this);
+
     config.garbageFootprint(this);
     all_threads_accumulator.garbageFootprint(this);
     this.garbageFootprint(this);
@@ -450,6 +446,9 @@ public class Bootstrap extends ExtrememThread {
                                all_threads_accumulator);
     all_threads_accumulator = null;
     Report.releaseReportLock();
+
+    server_accumulator.reportPercentiles(this, config.ReportCSV());
+    customer_accumulator.reportPercentiles(this, config.ReportCSV());
       
     customer_accumulator = null;
     customer_alloc_accumulator  = null;

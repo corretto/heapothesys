@@ -81,7 +81,7 @@ class ServerThread extends ExtrememThread {
       this.accumulator = accumulator;
       this.alloc_accumulator = alloc_accumulator;
       this.garbage_accumulator = garbage_accumulator;
-      this.history = new ServerLog(this, LifeSpan.NearlyForever);
+      this.history = new ServerLog(this, LifeSpan.NearlyForever, config.ResponseTimeMeasurements());
 
       // Account for reference fields label, all_products,
       // all_customers, sales_queue, browsing_queue,
@@ -227,10 +227,11 @@ class ServerThread extends ExtrememThread {
     }
     Trace.msg(2, "Server ", label, " terminating.  Time is up.");
 
+    // We accumulate accumulator even if reporting individual threads
+    accumulator.accumulate(history);
     if (config.ReportIndividualThreads())
       this.report(this);
     else {
-      accumulator.accumulate(history);
       alloc_accumulator.foldInto(memoryLog());
       garbage_accumulator.foldInto(garbageLog());
     }

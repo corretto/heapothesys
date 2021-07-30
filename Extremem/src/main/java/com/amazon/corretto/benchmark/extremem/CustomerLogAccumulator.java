@@ -8,8 +8,8 @@ package com.amazon.corretto.benchmark.extremem;
  */
 class CustomerLogAccumulator extends CustomerLog {
 
-  CustomerLogAccumulator(ExtrememThread t, LifeSpan ls) {
-    super(t, ls);
+  CustomerLogAccumulator(ExtrememThread t, LifeSpan ls, int response_time_measurements) {
+    super(t, ls, response_time_measurements);
   }
 
   // Since there is no synchronization on other, this method should be
@@ -51,9 +51,46 @@ class CustomerLogAccumulator extends CustomerLog {
     saver.addToLog(other.saver);
     abandoner.addToLog(other.abandoner);
     loser.addToLog(other.loser);
+
+    prepare_response_times.addToLog(other.prepare_response_times);
+    purchase_response_times.addToLog(other.purchase_response_times);
+    save_for_later_response_times.addToLog(other.save_for_later_response_times);
+    abandonment_response_times.addToLog(other.abandonment_response_times);
+    do_nothing_response_times.addToLog(other.do_nothing_response_times);
   }
 
   synchronized void report(ExtrememThread t, String label, boolean reportCSV) {
     super.report(t, label, reportCSV);
+  }
+
+  public synchronized void reportPercentiles(ExtrememThread t, boolean reportCSV) {
+    Report.output("");
+    Report.output("Customer Response-Time Percentiles (in microseconds)");
+    if (reportCSV) {
+      Report.output("Label, P50, P95, P99, P99.9, P99.99, P99.999, P100");
+      Report.outputNoLine("Customer Preparation Processing, ");
+      prepare_response_times.report(t, true);
+      Report.outputNoLine("Customer Purchase Processing, ");
+      purchase_response_times.report(t, true);
+      Report.outputNoLine("Customer Save For Later Processing, ");
+      save_for_later_response_times.report(t, true);
+      Report.outputNoLine("Customer Abandonment Processing, ");
+      abandonment_response_times.report(t, true);
+      Report.outputNoLine("Do Nothing Processing, ");
+      do_nothing_response_times.report(t, true);
+      Report.output("* indicates insufficient data to report this percentile");
+    } else {
+      Report.outputNoLine("Customer Preparation Processing: ");
+      prepare_response_times.report(t, false);
+      Report.outputNoLine("Customer Purchase Processing: ");
+      purchase_response_times.report(t, false);
+      Report.outputNoLine("Customer Save For Later Processing: ");
+      save_for_later_response_times.report(t, false);
+      Report.outputNoLine("Customer Abandonment Processing: ");
+      abandonment_response_times.report(t, false);
+      Report.outputNoLine("Do Nothing Processing: ");
+      do_nothing_response_times.report(t, false);
+      Report.output("* indicates insufficient data to report this percentile");
+    }
   }
 }

@@ -220,8 +220,10 @@ class ResponseTimeMeasurements extends ExtrememObject {
       } else {
         Report.output(")");
       }
+    } else if (reportCSV) {
+      Report.output("0, *, *, *, *, *, *, *");
     } else {
-      Report.output(": P50(*) P95(*) P99(*) P99.9(*) P99.99(*) P99.999(*) P100(*)");
+      Report.output("[0]: P50(*) P95(*) P99(*) P99.9(*) P99.99(*) P99.999(*) P100(*)");
     }
   }
 

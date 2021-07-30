@@ -10,7 +10,6 @@ class ServerThread extends ExtrememThread {
   // server thread.
   private int attention;
 
-  private final String label;
   private final Products all_products;
   private final Customers all_customers;
   private final SalesTransactionQueue sales_queue;
@@ -45,12 +44,9 @@ class ServerThread extends ExtrememThread {
       super (config, random_seed);
       final Polarity Grow = Polarity.Expand;
       this.attention = sequence_no % TotalAttentionPoints;
-      this.label = Util.i2s(this, sequence_no);
-      Util.convertEphemeralString(this, LifeSpan.NearlyForever,
-                                  this.label.length());
-
       final MemoryLog log = this.memoryLog();
       final MemoryLog garbage = this.garbageLog();
+      this.setLabel(Util.i2s(this, sequence_no));
 
       Trace.msg(1, "@ ",
                 Integer.toString(log.hashCode()),
@@ -59,10 +55,11 @@ class ServerThread extends ExtrememThread {
                 Integer.toString(garbage.hashCode()),
                 ": ServerThread[", this.label, "].garbageLog()");
 
-      this.all_products = all_products;
+      Util.convertEphemeralString(this, LifeSpan.NearlyForever, label.length());
       this.all_customers = all_customers;
-      this.sales_queue = sales_queue;
+      this.all_products = all_products;
       this.browsing_queue = browsing_queue;
+      this.sales_queue = sales_queue;
 
       this.next_release_time = new AbsoluteTime(this, first_release);
       // Replaced every period, typically less than 2 minutes for ServerThread.

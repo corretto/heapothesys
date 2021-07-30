@@ -8,6 +8,7 @@ public class Bootstrap extends ExtrememThread {
 
   Bootstrap(Configuration config, long random_seed) {
     super(config, random_seed);
+    this.setLabel("Bootstrap");
   }
 
   public void runExtreme() {

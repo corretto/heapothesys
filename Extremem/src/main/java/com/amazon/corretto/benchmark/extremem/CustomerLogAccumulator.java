@@ -67,30 +67,18 @@ class CustomerLogAccumulator extends CustomerLog {
     Report.output("");
     Report.output("Customer Response-Time Percentiles (in microseconds)");
     if (reportCSV) {
-      Report.output("Label, P50, P95, P99, P99.9, P99.99, P99.999, P100");
-      Report.outputNoLine("Customer Preparation Processing, ");
-      prepare_response_times.report(t, true);
-      Report.outputNoLine("Customer Purchase Processing, ");
-      purchase_response_times.report(t, true);
-      Report.outputNoLine("Customer Save For Later Processing, ");
-      save_for_later_response_times.report(t, true);
-      Report.outputNoLine("Customer Abandonment Processing, ");
-      abandonment_response_times.report(t, true);
-      Report.outputNoLine("Do Nothing Processing, ");
-      do_nothing_response_times.report(t, true);
-      Report.output("* indicates insufficient data to report this percentile");
-    } else {
-      Report.outputNoLine("Customer Preparation Processing: ");
-      prepare_response_times.report(t, false);
-      Report.outputNoLine("Customer Purchase Processing: ");
-      purchase_response_times.report(t, false);
-      Report.outputNoLine("Customer Save For Later Processing: ");
-      save_for_later_response_times.report(t, false);
-      Report.outputNoLine("Customer Abandonment Processing: ");
-      abandonment_response_times.report(t, false);
-      Report.outputNoLine("Do Nothing Processing: ");
-      do_nothing_response_times.report(t, false);
-      Report.output("* indicates insufficient data to report this percentile");
+      Report.output("Label, Samples, P50, P95, P99, P99.9, P99.99, P99.999, P100");
     }
+    Report.outputNoLine("Customer Preparation Processing");
+    prepare_response_times.report(t, reportCSV);
+    Report.outputNoLine("Customer Purchase Processing");
+    purchase_response_times.report(t, reportCSV);
+    Report.outputNoLine("Customer Save For Later Processing");
+    save_for_later_response_times.report(t, reportCSV);
+    Report.outputNoLine("Customer Abandonment Processing");
+    abandonment_response_times.report(t, reportCSV);
+    Report.outputNoLine("Do Nothing Processing");
+    do_nothing_response_times.report(t, reportCSV);
+    Report.output("* indicates insufficient data to report this percentile");
   }
 }

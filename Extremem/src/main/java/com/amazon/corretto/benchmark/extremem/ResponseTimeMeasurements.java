@@ -17,9 +17,11 @@ class ResponseTimeMeasurements extends ExtrememObject {
   private int logged_entries;
   private int first_entry;
 
+  private long max_logged;
+  private long min_logged;
+
   // Each log entry is typically represented in microsecond units.
   private final long[] log;
-
 
   // If more than max_entries are logged, some (arbitrarily selected)
   // entries will be overwritten and will not contribute to final results.
@@ -47,8 +49,9 @@ class ResponseTimeMeasurements extends ExtrememObject {
 
   void addToLog(ResponseTimeMeasurements other) {
     if (total_entries > 0) {
+      other.prep_for_reporting();
       for (int i = 0; i < other.logged_entries; i++) {
-        addToLog(other.log[(first_entry + i) % total_entries]);
+        addToLog(other.log[(other.first_entry + i) % total_entries]);
       }
     }
   }
@@ -56,6 +59,14 @@ class ResponseTimeMeasurements extends ExtrememObject {
   // value may be negative due to imprecision in behavior of sleep()
   void addToLog(long microseconds) {
     if (total_entries > 0) {
+      if (logged_entries == 0) {
+        max_logged = min_logged = microseconds;
+      } else {
+        if (microseconds < min_logged)
+          min_logged = microseconds;
+        if (microseconds > max_logged)
+          max_logged = microseconds;
+      }
       if (logged_entries < total_entries) {
         log[logged_entries++] = microseconds;
       } else {
@@ -66,16 +77,28 @@ class ResponseTimeMeasurements extends ExtrememObject {
     }
   }
 
-  void report(ExtrememThread t, boolean reportCSV) {
-    String s;
-    int l;
+  int count() {
+    return logged_entries;
+  }
 
+  private void prep_for_reporting() {
     if (logged_entries > 0) {
       if (logged_entries < total_entries) {
         java.util.Arrays.sort(log, 0, logged_entries);
       } else {
         java.util.Arrays.sort(log);
       }
+      log[0] = min_logged;
+      log[logged_entries - 1] = max_logged;
+    }
+  }
+
+  void report(ExtrememThread t, boolean reportCSV) {
+    String s;
+    int l;
+
+    if (logged_entries > 0) {
+      prep_for_reporting();
       long p100     = log[logged_entries - 1];
       long  p50     = (logged_entries > 1)? log[logged_entries / 2 - 1]: -1;
       long  p95     = (logged_entries >= 100)? log[(int)(logged_entries * 0.95)]: -1;
@@ -87,7 +110,17 @@ class ResponseTimeMeasurements extends ExtrememObject {
       if (reportCSV) {
         Report.outputNoLine(", ");
       } else {
-        Report.outputNoLine("P50(");
+        Report.outputNoLine("[");
+      }
+      s = Integer.toString(logged_entries);
+      l = s.length();
+      Util.ephemeralString(t, l);
+      Report.outputNoLine(s);
+      Util.abandonEphemeralString(t, l);
+      if (reportCSV) {
+        Report.outputNoLine(", ");
+      } else {
+        Report.outputNoLine("]: P50(");
       }
       if (p50 >= 0) {
         s = Long.toString(p50);

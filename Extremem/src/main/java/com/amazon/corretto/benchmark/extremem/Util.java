@@ -79,7 +79,7 @@ class Util {
    */
   static String i2s(ExtrememThread t, int index) {
     if (index == 0) {
-      // Allocate a new String so caller an deal with result consistently.
+      // Allocate a new String so caller can deal with result consistently.
       ephemeralString(t, 1);
       return new String("a");
     } else {

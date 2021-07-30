@@ -149,7 +149,7 @@ Setting this value to true causes the produced reports to be output as comma-sep
 
 ### *-dResponseTimeMeasurements=0*
 
-Setting this value to a value greater than 0 causes logs of the specified number of response times to be maintained by each Customer thread and each Server thread.  When these logs are maintained, a percentile report is output based on the content of these logs.  If the simulation run gathers more response time measurements than the specified size of each log, arbitrarily selected latency measurements will be ignored.  Note that this may result in disagreement between, for example, the P100 percentile report and the reported maximum pause time.  Each thread maintains an independent log of the specified size.  Thus, changing the value of this simulation parameter has the effect of changing the size of live memory that is managed by the simulated workload.
+Setting this value to a value greater than 0 causes logs of the specified number of response times to be maintained by each Customer thread and each Server thread.  When these logs are maintained, a percentile report is output based on the content of these logs.  If the simulation run gathers more response time measurements than the specified size of each log, arbitrarily selected latency measurements will be ignored.  Care is taken, however, to not lose track of the minimum and maximum values logged by each thread.  Each thread maintains an independent log of the specified size.  Thus, changing the value of this simulation parameter has the effect of changing the size of live memory that is managed by the simulated workload.
 
 ## Example executions
 

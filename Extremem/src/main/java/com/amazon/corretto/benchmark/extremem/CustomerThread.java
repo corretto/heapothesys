@@ -8,7 +8,6 @@ class CustomerThread extends ExtrememThread {
   private static final int SaveProductForLater = 1;
   private static final int AbandonProduct = 2;
 
-  final String label;
   private final Customers all_customers;
   private final Products all_products;
   private AbsoluteTime next_release_time;
@@ -45,7 +44,7 @@ class CustomerThread extends ExtrememThread {
     super (config, random_seed);
     MemoryLog log = this.memoryLog();
     MemoryLog garbage = this.garbageLog();
-    label = Util.i2s(this, sequence_no);
+    this.setLabel(Util.i2s(this, sequence_no));
     
     Trace.msg(1, "@ ",
               Integer.toString(log.hashCode()),

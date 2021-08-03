@@ -32,6 +32,7 @@ CLASSFILES=\
  $(PKGDIR)/RelativeTime.class \
  $(PKGDIR)/RelativeTimeMetrics.class \
  $(PKGDIR)/Report.class \
+ $(PKGDIR)/ResponseTimeMeasurements.class \
  $(PKGDIR)/SalesTransaction.class \
  $(PKGDIR)/SalesTransactionQueue.class \
  $(PKGDIR)/ServerLog.class \

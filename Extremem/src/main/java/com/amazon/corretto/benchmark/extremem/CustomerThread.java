@@ -8,7 +8,6 @@ class CustomerThread extends ExtrememThread {
   private static final int SaveProductForLater = 1;
   private static final int AbandonProduct = 2;
 
-  final String label;
   private final Customers all_customers;
   private final Products all_products;
   private AbsoluteTime next_release_time;
@@ -45,7 +44,7 @@ class CustomerThread extends ExtrememThread {
     super (config, random_seed);
     MemoryLog log = this.memoryLog();
     MemoryLog garbage = this.garbageLog();
-    label = Util.i2s(this, sequence_no);
+    this.setLabel(Util.i2s(this, sequence_no));
     
     Trace.msg(1, "@ ",
               Integer.toString(log.hashCode()),
@@ -69,7 +68,7 @@ class CustomerThread extends ExtrememThread {
     this.alloc_accumulator = alloc_accumulator;
     this.garbage_accumulator = garbage_accumulator;
     
-    history = new CustomerLog(this, LifeSpan.NearlyForever);
+    history = new CustomerLog(this, LifeSpan.NearlyForever, config.ResponseTimeMeasurements());
     
     // Account for 11 reference fields: label, all_customers,
     // all_products, next_release_time, end_simulation_time,
@@ -299,10 +298,11 @@ class CustomerThread extends ExtrememThread {
     }
     Trace.msg(2, "Customer thread ", label, " terminating.  Time is up.");
 
+    // We accumulate accumulator even if reporting individual threads
+    accumulator.accumulate(history);
     if (config.ReportIndividualThreads())
       this.report(this);
     else {
-      accumulator.accumulate(history);
       alloc_accumulator.foldInto(memoryLog());
       garbage_accumulator.foldInto(garbageLog());
     }

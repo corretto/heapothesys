@@ -13,6 +13,8 @@ abstract class ExtrememThread extends java.lang.Thread {
   // execution of multiple threads.)
   private Random random;
 
+  protected String label = null;
+
   LifeSpan ls = LifeSpan.NearlyForever;
 
   protected Configuration config;
@@ -39,6 +41,14 @@ abstract class ExtrememThread extends java.lang.Thread {
     doPrivateTally(memory_log, LifeSpan.NearlyForever, Polarity.Expand);
     this.setDefaultUncaughtExceptionHandler(
       ExtrememUncaughtExceptionHandler.instance);
+  }
+
+  final void setLabel(String label) {
+    if (this.label == null) {
+      this.label = label;
+    } else {
+      Util.internalError("Only set ExtrememThread label one time");
+    }
   }
 
   abstract public void runExtreme();
@@ -164,6 +174,10 @@ abstract class ExtrememThread extends java.lang.Thread {
    */
   final void garbageFootprint(ExtrememThread t) {
     this.tallyMemory(t.garbageLog(), ls, Polarity.Expand);
+  }
+
+  final String getLabel() {
+    return "ServerThread<" + label + ">";
   }
 
   /**

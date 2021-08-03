@@ -12,28 +12,33 @@ class ServerLog extends ExtrememObject {
   int min_xact_per_batch = Integer.MAX_VALUE;
   int max_xact_per_batch;
   int total_xact;
+  ResponseTimeMeasurements xact_response_times;
 
   // For browsing histories
   int history_batches;
   int min_history_per_batch = Integer.MAX_VALUE;
   int max_history_per_batch;
   int total_histories;
+  ResponseTimeMeasurements history_response_times;
 
   // For customer replacements
   int customer_batches;
   int min_customer_per_batch = Integer.MAX_VALUE;
   int max_customer_per_batch;
   int total_customers;
+  ResponseTimeMeasurements customer_response_times;
 
   // For product replacements
   int product_batches;
   int min_product_per_batch = Integer.MAX_VALUE;
   int max_product_per_batch;
   int total_products;
+  ResponseTimeMeasurements product_response_times;
 
   int total_do_nothings;
+  ResponseTimeMeasurements do_nothing_response_times;
 
-  ServerLog(ExtrememThread t, LifeSpan ls) {
+  ServerLog(ExtrememThread t, LifeSpan ls, int response_time_measurements) {
     super(t, ls);
 
     sales_xact = new RelativeTimeMetrics(t, ls);
@@ -42,10 +47,18 @@ class ServerLog extends ExtrememObject {
     replace_products = new RelativeTimeMetrics(t, ls);
     do_nothing = new RelativeTimeMetrics(t, ls);
 
+    xact_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
+    history_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
+    customer_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
+    product_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
+    do_nothing_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
+
     MemoryLog log = t.memoryLog();
     // Account for reference fields sales_xact, expire_history,
-    // replace_customers, replace_products, do_nothing;
-    log.accumulate(ls, MemoryFlavor.ObjectReference, Polarity.Expand, 5);
+    // replace_customers, replace_products, do_nothing,
+    // xact_response_times, history_response_times,
+    // customer_response_times, product_response_times, do_nothing_response_times;
+    log.accumulate(ls, MemoryFlavor.ObjectReference, Polarity.Expand, 10);
     // Account for int fields xact_batches, min_xact_per_batch,
     // max_xact_per_batch, total_xact, history_batches,
     // min_history_per_batch, max_history_per_batch, total_histories,
@@ -69,6 +82,7 @@ class ServerLog extends ExtrememObject {
     long delta_microseconds = (
       delta.seconds() * 1000000 + delta.nanoseconds() / 1000);
     sales_xact.addToLog(delta_microseconds);
+    xact_response_times.addToLog(delta_microseconds);
     now.garbageFootprint(t);
     delta.garbageFootprint(t);
   }
@@ -85,6 +99,7 @@ class ServerLog extends ExtrememObject {
     long delta_microseconds = (
       delta.seconds() * 1000000 + delta.nanoseconds() / 1000);
     expire_history.addToLog(delta_microseconds);
+    history_response_times.addToLog(delta_microseconds);
     now.garbageFootprint(t);
     delta.garbageFootprint(t);
   }
@@ -101,6 +116,7 @@ class ServerLog extends ExtrememObject {
     long delta_microseconds = (
       delta.seconds() * 1000000 + delta.nanoseconds() / 1000);
     replace_customers.addToLog(delta_microseconds);
+    customer_response_times.addToLog(delta_microseconds);
     now.garbageFootprint(t);
     delta.garbageFootprint(t);
   }
@@ -117,6 +133,7 @@ class ServerLog extends ExtrememObject {
     long delta_microseconds = (
       delta.seconds() * 1000000 + delta.nanoseconds() / 1000);
     replace_products.addToLog(delta_microseconds);
+    product_response_times.addToLog(delta_microseconds);
     now.garbageFootprint(t);
     delta.garbageFootprint(t);
   }
@@ -128,6 +145,7 @@ class ServerLog extends ExtrememObject {
     long delta_microseconds = (
       delta.seconds() * 1000000 + delta.nanoseconds() / 1000);
     do_nothing.addToLog(delta_microseconds);
+    do_nothing_response_times.addToLog(delta_microseconds);
     now.garbageFootprint(t);
     delta.garbageFootprint(t);
   }
@@ -392,7 +410,9 @@ class ServerLog extends ExtrememObject {
     
     // Account for reference fields sales_xact, expire_history,
     // replace_customers, replace_products, do_nothing;
-    log.accumulate(ls, MemoryFlavor.ObjectReference, p, 5);
+    // xact_response_times, history_response_times,
+    // customer_response_times, product_response_times, do_nothing_response_times;
+    log.accumulate(ls, MemoryFlavor.ObjectReference, p, 10);
     // Account for int fields xact_batches, min_xact_per_batch,
     // max_xact_per_batch, total_xact, history_batches,
     // min_history_per_batch, max_history_per_batch, total_histories,
@@ -409,5 +429,11 @@ class ServerLog extends ExtrememObject {
     replace_customers.tallyMemory(log, ls, p);
     replace_products.tallyMemory(log, ls, p);
     do_nothing.tallyMemory(log, ls, p);
+
+    xact_response_times.tallyMemory(log, ls, p);
+    history_response_times.tallyMemory(log, ls, p);
+    customer_response_times.tallyMemory(log, ls, p);
+    product_response_times.tallyMemory(log, ls, p);
+    do_nothing_response_times.tallyMemory(log, ls, p);
   }
 }

@@ -1373,9 +1373,6 @@ class RelativeTimeMetrics extends ExtrememObject {
       histo_columns[i] = 0;
     int index = fbi;
     for (int i = 0; i < biu; i++) {
-      // model each existing bucket as a linear prog
-      //  We're looking at bucket i, containing N entries
-      //  Suppose 
 
       // Every data "bucket" has a hit_rate which is the total number
       // of samples divided by the number of 256-microsecond intervals
@@ -1405,10 +1402,8 @@ class RelativeTimeMetrics extends ExtrememObject {
       // the contributions over all reported quanta and adding or
       // subtracting to report totals, working from the center time of
       // the data bucket's time span outward.
-      
 
       float right_rate, left_rate;
-
       if (buckets[index] > 0) {
         int segment_quanta;
 
@@ -1442,9 +1437,11 @@ class RelativeTimeMetrics extends ExtrememObject {
         } else if (i + 1 == biu) {
           segment_start = bucket_bounds[index];
           long end_of_span = truncate256(lis);
-          if (end_of_span < lis)
+          // In the case that lis equals segment_start, we need to expand this segment_quanta calculation
+          if (end_of_span <= lis)
             end_of_span += 256;
           segment_quanta = (int) ((end_of_span - segment_start) / 256);
+
           float this_rate = ((float) buckets[index] / segment_quanta);
           
           if (biu > 1) {
@@ -1470,6 +1467,7 @@ class RelativeTimeMetrics extends ExtrememObject {
 
           long end_of_span = bucket_bounds[next_index];
           segment_quanta = (int) ((end_of_span - segment_start) / 256);
+
           float this_rate = ((float) buckets[index] / segment_quanta);
           
           float left_tally = (float) buckets[prev_index];
@@ -1490,8 +1488,10 @@ class RelativeTimeMetrics extends ExtrememObject {
         float midpoint_time = segment_start + segment_quanta * 128;
         my_intercept =
         ((float) bucket_tally) / segment_quanta - my_slope * midpoint_time;
-        
+
         if (bucket_tally < segment_quanta) {
+          // There are fewer tallied values than there are 256-microsecond segments
+
           int pad;
           long midpoint;
           if (my_slope > 0.0) {      // fill in from high end
@@ -1509,10 +1509,11 @@ class RelativeTimeMetrics extends ExtrememObject {
             midpoint += 256;
           }
         } else {
-          // But don't allow the rate to go negative
+          // There are more tallied values than there are 256-microsecond segments
           if (my_intercept + (segment_start + 128) * my_slope < 0) {
-            // form a triangle that slopes downward to the left, the
-            // enclosing rectangle holding twice my tally.
+            // Rather than allowing the rate to go negative, form a triangle that
+            // slopes downward to the left, the enclosing rectangle holding twice
+            // the tally.
             left_rate = 0.0F;
             right_rate = (2 * (float) bucket_tally) / segment_quanta;
             my_slope = (right_rate - left_rate) / (segment_quanta * 256);
@@ -1572,6 +1573,8 @@ class RelativeTimeMetrics extends ExtrememObject {
                                quanta_midpoint, quanta_contribution);
               bucket_tally -= quanta_contribution;
             }
+            // We distributed the tallies, but not all of them.  Spread the remaining
+            // tallies "evenly".
             while (bucket_tally > 0) {
               long midpoint = segment_start - 128 + 256 * segment_quanta;
               for (int j = 0; j < segment_quanta; j++) {
@@ -1600,6 +1603,8 @@ class RelativeTimeMetrics extends ExtrememObject {
   private final long repackSpan(long low_bound, long upper_bound) {
     long total_span = upper_bound - low_bound;
     long proposed_span = truncate256(total_span / BucketCount);
+    if (proposed_span < 256)
+      proposed_span = 256;
     while (low_bound + HistoColumnCount * proposed_span < upper_bound)
       proposed_span += 256;
     return proposed_span;
@@ -1752,9 +1757,9 @@ class RelativeTimeMetrics extends ExtrememObject {
       Trace.msg(4, id, ":              to (lbhb): ", debug_us2s(lbhb));
 
       long repack_lb = truncate256(sis);
+
       long repack_bucket_span = repackSpan(repack_lb, lis);
       repack(histo_columns, repack_lb, repack_bucket_span);
-
       int max_histo_size = 0;
       for (int i = 0; i < HistoColumnCount; i++) {
         if (histo_columns[i] > max_histo_size)

@@ -147,6 +147,10 @@ Setting this value to true results in a detailed summary of each thread's indivi
 
 Setting this value to true causes the produced reports to be output as comma-separated values that can be imported into Excel for further analysis.  This feature is only partially implemented at this time.
 
+### *-dResponseTimeMeasurements=0*
+
+Setting this value to a value greater than 0 causes logs of the specified number of response times to be maintained by each Customer thread and each Server thread.  When these logs are maintained, a percentile report is output based on the content of these logs.  If the simulation run gathers more response time measurements than the specified size of each log, arbitrarily selected latency measurements will be ignored.  Care is taken, however, to not lose track of the minimum and maximum values logged by each thread.  Each thread maintains an independent log of the specified size.  Thus, changing the value of this simulation parameter has the effect of changing the size of live memory that is managed by the simulated workload.
+
 ## Example executions
 
 To run the default workload configuration from within this directory, after successfully running "make install":

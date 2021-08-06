@@ -100,7 +100,7 @@ class ResponseTimeMeasurements extends ExtrememObject {
     if (logged_entries > 0) {
       prep_for_reporting();
       long p100     = log[logged_entries - 1];
-      long  p50     = (logged_entries > 1)? log[logged_entries * 0.50 - 1]: -1;
+      long  p50     = (logged_entries > 1)? log[(int)(logged_entries * 0.50 - 1)]: -1;
       long  p95     = (logged_entries >= 100)? log[(int)(logged_entries * 0.95 - 1)]: -1;
       long  p99     = (logged_entries >= 100)? log[(int)(logged_entries * 0.99 - 1)]: -1;
       long  p99_9   = (logged_entries >= 1000)? log[(int)(logged_entries * 0.999 - 1)]: -1;

@@ -6,7 +6,7 @@ package com.amazon.corretto.benchmark.extremem;
 /**
  *  Each ResponseTimeMeasurements instance maintains a log of the
  *  Configuration.ResponseTimeMeasurements() most recently logged
- *  response times.  This log is used to calculate P50, P90, P99,
+ *  response times.  This log is used to calculate P50, P95, P99,
  *  P99.9, P99.99, P99.999, and P100 response times for this
  *  quantity. 
  */
@@ -100,12 +100,12 @@ class ResponseTimeMeasurements extends ExtrememObject {
     if (logged_entries > 0) {
       prep_for_reporting();
       long p100     = log[logged_entries - 1];
-      long  p50     = (logged_entries > 1)? log[logged_entries / 2 - 1]: -1;
-      long  p95     = (logged_entries >= 100)? log[(int)(logged_entries * 0.95)]: -1;
-      long  p99     = (logged_entries >= 100)? log[(int)(logged_entries * 0.99)]: -1;
-      long  p99_9   = (logged_entries >= 1000)? log[(int)(logged_entries * 0.999)]: -1;
-      long  p99_99  = (logged_entries >= 10000)? log[(int)(logged_entries * 0.9999)]: -1;
-      long  p99_999 = (logged_entries >= 100000)? log[(int)(logged_entries * 0.99999)]: -1;
+      long  p50     = (logged_entries > 1)? log[logged_entries * 0.50 - 1]: -1;
+      long  p95     = (logged_entries >= 100)? log[(int)(logged_entries * 0.95 - 1)]: -1;
+      long  p99     = (logged_entries >= 100)? log[(int)(logged_entries * 0.99 - 1)]: -1;
+      long  p99_9   = (logged_entries >= 1000)? log[(int)(logged_entries * 0.999 - 1)]: -1;
+      long  p99_99  = (logged_entries >= 10000)? log[(int)(logged_entries * 0.9999 - 1)]: -1;
+      long  p99_999 = (logged_entries >= 100000)? log[(int)(logged_entries * 0.99999 - 1)]: -1;
     
       if (reportCSV) {
         Report.outputNoLine(", ");

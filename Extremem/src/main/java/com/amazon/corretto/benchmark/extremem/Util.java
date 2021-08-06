@@ -48,12 +48,13 @@ class Util {
   static void fatalException(String msg, Throwable t) {
     System.err.print("Intercepted fatal exception: ");
     System.err.println(msg);
+    t.printStackTrace(System.err);
     printException(t);
     System.exit(-1);
   }
 
   static void printException(Throwable t) {
-      logger.log(Level.INFO, t.getMessage(), t);
+    logger.log(Level.INFO, t.getMessage(), t);
   }
 
   // Use this service, without a message, when there is a strong

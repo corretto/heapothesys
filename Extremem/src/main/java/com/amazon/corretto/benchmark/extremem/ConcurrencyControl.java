@@ -31,6 +31,16 @@ class ConcurrencyControl extends ExtrememObject {
   private long total_reader_waits;
   private long total_writer_waits;
 
+  // Contended read and write delays are tallied in microseconds
+  private long total_contended_reads;
+  private long total_contended_read_delay;
+  private long maximum_contended_read_delay;
+
+  private long total_contended_writes;
+  private long total_contended_write_delay;
+  private long maximum_contended_write_delay;
+
+
   private final String cc_id;
 
   static synchronized int assignId() {
@@ -70,17 +80,31 @@ class ConcurrencyControl extends ExtrememObject {
   private synchronized void acquireLockForRead () {
     waiting_readers++;
     int num_waits = 0;
+    long start_time = -1;
     Trace.msg(4, cc_id, ": acquiring read lock, contention(",
               Integer.toString(waiting_readers), ", ",
               Integer.toString(num_writers), ")");
     while ((num_writers > 0) || (waiting_writers > 0)) {
       try {
-        num_waits++;
+        if (num_waits++ == 0) {
+          start_time = System.nanoTime();
+        }
         wait ();
       } catch (InterruptedException x) {
         ;                       // ignore the interrupt, wait some more
       }
     }
+    if (start_time != -1) {
+      long stop_time = System.nanoTime();
+      long delay_ns = stop_time - start_time;
+      long delay_us = delay_ns / 1_000;
+      total_contended_read_delay += delay_us;
+      if (maximum_contended_read_delay < delay_us) {
+        maximum_contended_read_delay = delay_us;
+      }
+      total_contended_reads++;
+    }
+
     if (num_waits < min_waits_per_read)
       min_waits_per_read = num_waits;
     if (num_waits > max_waits_per_read)
@@ -95,17 +119,31 @@ class ConcurrencyControl extends ExtrememObject {
   private synchronized void acquireLockForWrite () {
     waiting_writers++;
     int num_waits = 0;
+    long start_time = -1;
     Trace.msg(4, cc_id, ": acquring write lock, contention(",
               Integer.toString(waiting_readers + num_readers), ", ",
               Integer.toString(waiting_writers + num_writers), ")");
     while ((num_readers > 0) || (num_writers > 0)) {
       try {
-        num_waits++;
+        if (num_waits++ == 0) {
+          start_time = System.nanoTime();
+        }
         wait ();
       } catch (InterruptedException x) {
         ;                       // ignore the interrupt, wait some more
       }
     }
+    if (start_time != -1) {
+      long stop_time = System.nanoTime();
+      long delay_ns = stop_time - start_time;
+      long delay_us = delay_ns / 1_000;
+      total_contended_write_delay += delay_us;
+      if (maximum_contended_write_delay < delay_us) {
+        maximum_contended_write_delay = delay_us;
+      }
+      total_contended_writes++;
+    }
+
     if (num_waits < min_waits_per_write)
       min_waits_per_write = num_waits;
     if (num_waits > max_waits_per_write)
@@ -181,6 +219,15 @@ class ConcurrencyControl extends ExtrememObject {
       Report.output("       Total read requests: ", s);
     Util.abandonEphemeralString(t, l);
     
+    s = Long.toString(total_contended_reads);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    if (reportCSV)
+      Report.output("Total contended reads,", s);
+    else
+      Report.output("     Total contended reads: ", s);
+    Util.abandonEphemeralString(t, l);
+      
     s = Long.toString(total_reader_waits);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -188,6 +235,25 @@ class ConcurrencyControl extends ExtrememObject {
       Report.output("requiring this many waits,", s);
     else
       Report.output(" requiring this many waits: ", s);
+    Util.abandonEphemeralString(t, l);
+
+    double average_delay_us = ((double) total_contended_read_delay) / total_contended_reads;
+    s = Double.toString(average_delay_us);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    if (reportCSV)
+      Report.output("Average delay for contended read (microseconds),", s);
+    else
+      Report.output("     Average delay for contended read (microseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Long.toString(maximum_contended_read_delay);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    if (reportCSV)
+      Report.output("Maximum delay for contended read (microseconds),", s);
+    else
+      Report.output("     Maximum delay for contended read (microseconds): ", s);
     Util.abandonEphemeralString(t, l);
 
     float average;
@@ -238,7 +304,16 @@ class ConcurrencyControl extends ExtrememObject {
     else
       Report.output("     Total writer requests: ", s);
     Util.abandonEphemeralString(t, l);
-    
+
+    s = Long.toString(total_contended_writes);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    if (reportCSV)
+      Report.output("Total contended writes,", s);
+    else
+      Report.output("     Total contended writes: ", s);
+    Util.abandonEphemeralString(t, l);
+      
     s = Long.toString(total_writer_waits);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -246,6 +321,25 @@ class ConcurrencyControl extends ExtrememObject {
       Report.output("requiring this many waits,", s);
     else
       Report.output(" requiring this many waits: ", s);
+    Util.abandonEphemeralString(t, l);
+
+    average_delay_us = ((double) total_contended_write_delay) / total_contended_writes;
+    s = Double.toString(average_delay_us);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    if (reportCSV)
+      Report.output("Average delay for contended write (microseconds),", s);
+    else
+      Report.output("     Average delay for contended write (microseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Long.toString(maximum_contended_write_delay);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    if (reportCSV)
+      Report.output("Maximum delay for contended write (microseconds),", s);
+    else
+      Report.output("     Maximum delay for contended write (microseconds): ", s);
     Util.abandonEphemeralString(t, l);
 
     if (total_writer_requests > 0) {

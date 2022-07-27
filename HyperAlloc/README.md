@@ -38,7 +38,7 @@ If you would like to report a potential security issue in this project, please d
 
 Invocation with the minimum recommended set of HyperAlloc parameters and a typical jHiccup configuration:
 ```
-java -Xmx<bytes> -Xms<bytes> <GC options> <other JVM options> -Xloggc:<GC log file> -javaagent:<jHiccup directory>/jHiccup.jar='-a -d 0 -i 1000 -l <jHiccup log file>' -jar <HyperAlloc directory>/HyperaAlloc-1.0.jar -a <MB> -h <MB> -d <seconds> -c <true/false> -l <CVS output file>
+java -Xmx<bytes> -Xms<bytes> <GC options> <other JVM options> -Xloggc:<GC log file> -javaagent:<jHiccup directory>/jHiccup.jar='-a -d 0 -i 1000 -l <jHiccup log file>' -jar <HyperAlloc directory>/HyperAlloc-1.0.jar -a <MB> -h <MB> -d <seconds> -c <true/false> -l <CVS output file>
 ```
 
 ### Build

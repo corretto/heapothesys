@@ -116,10 +116,19 @@ class Customers extends ExtrememObject {
   }
 
   Customer selectRandomCustomer(ExtrememThread t) {
-    RandomSelector rs = new RandomSelector(t, LifeSpan.Ephemeral, this);
-    cc.actAsReader(rs);
-    Customer result = rs.one;
-    rs.garbageFootprint(t);
+    Customer result;
+    if (config.FastAndFurious()) {
+      int index = t.randomUnsignedInt() % config.NumCustomers()
+      synchronized (customer_names) {
+        String name = customer_names.get(index);
+        result = customer_map.get(name);
+      }
+    } else {
+      RandomSelector rs = new RandomSelector(t, LifeSpan.Ephemeral, this);
+      cc.actAsReader(rs);
+      result = rs.one;
+      rs.garbageFootprint(t);
+    }
     return result;
   }
   
@@ -131,9 +140,46 @@ class Customers extends ExtrememObject {
   }
 
   void replaceRandomCustomer(ExtrememThread t) {
-    RandomReplacer rr = new RandomReplacer(t, LifeSpan.Ephemeral, this);
-    cc.actAsWriter(rr);
-    rr.garbageFootprint(t);
+    if (config.FastAndFurious()) {
+      int replacement_index = t.randomUnsignedInt() % config.NumCustomers()
+      String replacement_name = customer_names.get(index);
+      String new_customer_name = randomDistinctName(t);
+      Customer new_customer = new Customer(new_customer_name, next_customer_no++);
+      Customer obsolete_customer;
+      synchronized (customer_names) {
+        obsolete_customer = customer_map.get(name);
+        customer_map.remove(obsolete_customer_name);
+        customer_names.set(index. new_customer_name);  // overwrites obsolete_customer_name
+        customer_map.put(new_customer_name, customer);
+      }
+      // Do memory accounting outside synchronized block
+      MemoryLog log = t.memoryLog();
+      int new_customer_length = new_customer_name.length();
+      Util.convertEphemeralString(t, this.intendedLifeSpan(), new_customer_length);
+      adjust_cncl(new_customer_length);
+
+      // Give the decommissioned customer opportunity to unhook
+      // saved-for-later products.
+      adjust_cbhs(-obsolete_customer.prepareForDemise(t));
+      String obsolete_customer_name = obsolete_customer.name();
+      int obsolete_len = obsolete_customer_name.length();
+      Util.abandonNonEphemeralString(t, this.intendedLifeSpan(), obsolete_len);
+      adjust_cncl(-obsolete_len);
+      // The obsolete_customer is not garbage collected until it is no longer referenced from any pending sales
+      // transactions.  We'll account for its garbage here rather than adding logic to reclaim Customer memory immediately
+      // following particular sales transactions.
+      obsolete_customer.garbageFootprint(t);
+
+      // Abandon the memory for the obsolete HashEntry
+      Util.abandonHashEntry(t, this.intendedLifeSpan());
+
+      adjust_cbhs(customer.browsingHistorySize());
+      Util.addHashEntry(t, this.intendedLifeSpan());
+    } else {
+      RandomReplacer rr = new RandomReplacer(t, LifeSpan.Ephemeral, this);
+      cc.actAsWriter(rr);
+      rr.garbageFootprint(t);
+    }
   }
 
   // Returns previous value.

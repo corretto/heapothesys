@@ -74,6 +74,8 @@ class Configuration {
   static final int DefaultProductReplacementPeriodSeconds = 90;
   static final int DefaultProductReplacementCount = 64;
 
+  static final bool DefaultFastAndFurious = false;
+
   static final long DefaultInitializationDelayMillis = 50;
   static final long DefaultDurationMinutes = 10;
 
@@ -126,6 +128,8 @@ class Configuration {
   private int SelectionCriteriaCount;
   private float BuyThreshold;
   private float SaveForLaterThreshold;
+
+  private final FastAndFurious;
 
   Configuration(String[] args) {
     this.args = args;
@@ -197,6 +201,8 @@ class Configuration {
     ProductReviewLength = DefaultProductReviewLength;
     RandomSeed = DefaultRandomSeed;
 
+    FastAndFurious = DefaultFastAndFurious;
+
     SimulationDuration = new RelativeTime(t, DefaultDurationMinutes * 60, 0);
     SimulationDuration.changeLifeSpan(t, LifeSpan.NearlyForever);
 
@@ -252,6 +258,7 @@ class Configuration {
   }
 
   private static String[] boolean_patterns = {
+    "FastAndFurious",
     "ReportCSV",
     "ReportIndividualThreads",
   };
@@ -352,11 +359,16 @@ class Configuration {
 
     switch (index) {
       case 0:
-        if (keyword.equals("ReportCSV")) {
+        if (keyword.equals("FastAndFurious")) {
           ReportCSV = b;
           break;
         }
       case 1:
+        if (keyword.equals("ReportCSV")) {
+          ReportCSV = b;
+          break;
+        }
+      case 2:
         if (keyword.equals("ReportIndividualThreads")) {
           ReportIndividualThreads = b;
           break;
@@ -722,6 +734,10 @@ class Configuration {
 
   String DictionaryFile() {
     return DictionaryFile();
+  }
+
+  boolean FastAndFurious() {
+    return FastAndFurious;
   }
 
   int MaxArrayLength() {

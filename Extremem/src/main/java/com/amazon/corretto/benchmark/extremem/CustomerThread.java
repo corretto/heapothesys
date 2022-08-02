@@ -261,8 +261,8 @@ class CustomerThread extends ExtrememThread {
                                                     c, p, expiration,
                                                     browsing_queue);
             expiration.garbageFootprint(this);
-            all_customers.addSaveForLater(c, this, h);
             browsing_queue.enqueue(h);
+            all_customers.addSaveForLater(c, this, h);
             // Garbage collection of the h BrowsingHistory object is
             // the "responsibility" of the ServerThread.  After the
             // ServerThread expires h because its expiration time has

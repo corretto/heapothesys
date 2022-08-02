@@ -210,10 +210,26 @@ class Products extends ExtrememObject {
   }
 
   Product fetchProductByIndex(ExtrememThread t, int index) {
-    ProductSelector ps = new ProductSelector(t, index, this);
-    cc.actAsReader(ps);
-    ps.garbageFootprint(t);
-    return ps.result;
+    if (config.FastAndFurious()) {
+      long id;
+      Product result;
+      synchronized (product_ids) {
+        id = product_ids.get(index);
+      }
+      if (id == -1) {
+        result = null;
+      } else {
+        synchronized (product_map) {
+          result = product_map.get(id);
+        }
+      }
+      return result;
+    } else {
+      ProductSelector ps = new ProductSelector(t, index, this);
+      cc.actAsReader(ps);
+      ps.garbageFootprint(t);
+      return ps.result;
+    }
   }
 
   Product controlledFetchProductByIndex(ExtrememThread t, int index) {
@@ -221,12 +237,62 @@ class Products extends ExtrememObject {
     return product_map.get(id);
   }
 
-  Product replaceArbitraryProduct(ExtrememThread t,
-                                  Product product) {
-    ProductReplacer pr = new ProductReplacer(t, this, product);
-    cc.actAsWriter (pr);
-    pr.garbageFootprint(t);
-    return pr.removed_product;
+  Product replaceArbitraryProduct(ExtrememThread t, Product new_product) {
+    if (config.FastAndFurious()) {
+      long old_id;
+      int index;
+      do {
+        // Take care to avoid races in case another thread tries to replace Product at same index.  Collisions are expected
+        // to be very rare.
+        index = t.randomUnsignedInt() % product_ids.length();
+        synchronized(product_ids) {
+          old_id = product_ids.get(index);
+          product_ids.set(index, -1L); // This might be redundant.
+        }
+      } while (old_id == -1L);
+
+      Product removed_product;
+      synchronized (product_map) {
+        removed_product = product_map.remove(old_id);
+      }
+
+      // Though garbage collection of removed_product may be deferred
+      // until any pending BrowsingHistory and SalesTransaction
+      // instances that reference removed_product become garbage
+      // themselves, account for the object's garbage collection here.
+      removed_product.garbageFootprint(t);
+      Util.abandonTreeNode(t, this.intendedLifeSpan());
+      synchronized (this) {
+        pncl -= removed_product.name().length();
+        pdcl -= removed_product.description().length();
+      }
+      removed_product.deactivate();
+
+      // Remove the obsolete product info.
+      rmFromIndicesFastAndFurious(t, removed_product);
+
+      synchronized (product_ids) {
+        product_ids.set(index, new_product.id());
+      }
+      synchronized (this) {
+        pncl += new_product.name().length();
+        pdcl += new_product.description().length();
+      }
+      synchronized (product_map) {
+        product_map.put(new_product.id(), new_product);
+      }
+      Util.createTreeNode(t, this.intendedLifeSpan());
+
+      // Add the new product into the keyword indices.
+      addToIndicesFastAndFurious(t, new_product);
+
+      return removed_product;
+    } else {
+      ProductReplacer pr = new ProductReplacer(t, this, new_product);
+      cc.actAsWriter (pr);
+      pr.garbageFootprint(t);
+      return pr.removed_product;
+    }
   }
 
   Product controlledReplaceArbitraryProduct (ExtrememThread t,
@@ -283,20 +349,150 @@ class Products extends ExtrememObject {
     // This race is handled elsewhere.
   }
 
-  Product[] lookupProductsMatchingAll(ExtrememThread t,
-                                      String [] keywords) {
-    SearchNamesAll sna = new SearchNamesAll(t, keywords, this);
-    cc.actAsReader(sna);
-    sna.garbageFootprint(t);
-    return sna.results;
+  Product[] lookupProductsMatchingAll(ExtrememThread t, String [] keywords) {
+    if (config.FastAndFurious()) {
+      ExtrememHashSet<Product> intersection = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+      for (int i = 0; i < keywords.length; i++) {
+        String keyword = keywords[i];
+        if (i == 0) {
+          ExtrememHashSet<Long> matched_ids;
+          synchronized (name_index) {
+            matched_ids = name_index.get(keyword);
+          }
+          if (matched_ids != null) {
+            Util.createEphemeralHashSetIterator(t);
+            synchronized (matched_ids) {
+              for (Long id: matched_ids) {
+                addToSetIfAvailable(t, intersection, id);
+              }
+            }
+            Util.abandonEphemeralHashSetIterator(t);
+          }
+          synchronized (description_index) {
+            matched_ids = description_index.get(keyword);
+          }
+          if (matched_ids != null) {
+            Util.createEphemeralHashSetIterator(t);
+            synchronized (matched_ids) {
+              for (Long id: matched_ids) {
+                addToSetIfAvailable(t, intersection, id);
+              }
+            }
+            Util.abandonEphemeralHashSetIterator(t);
+          }
+        } else {
+          ExtrememHashSet<Long> matched_ids;
+          ExtrememHashSet<Product> new_matches = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+          synchronized (name_index) {
+            matched_ids = name_index.get(keyword);
+          }
+          if (matched_ids != null) {
+            Util.createEphemeralHashSetIterator(t);
+            synchronized (matched_ids) {
+              for (Long id: matched_ids) {
+                addToSetIfAvailable(t, new_matches, id);
+              }
+            }
+            Util.abandonEphemeralHashSetIterator(t);
+          }
+          synchronized (description_index) {
+            matched_ids = description_index.get(keyword);
+          }
+          if (matched_ids != null) {
+            Util.createEphemeralHashSetIterator(t);
+            synchronized (matched_ids) {
+              for (Long id: matched_ids) {
+                addToSetIfAvailable(t, new_matches, id);
+              }
+            }
+            Util.abandonEphemeralHashSetIterator(t);
+          }
+          ExtrememHashSet<Product> remove_set = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+          Util.createEphemeralHashSetIterator(t);
+          for (Product p: intersection) {
+            if (!new_matches.contains(p)) {
+              remove_set.add(t, p);
+            }
+          }
+          Util.abandonEphemeralHashSetIterator(t);
+          new_matches.garbageFootprint(t);
+          Util.createEphemeralHashSetIterator(t);
+          for (Product p: remove_set) {
+            intersection.remove(t, p);
+          }
+          Util.abandonEphemeralHashSetIterator(t);
+          remove_set.garbageFootprint(t);
+          if (intersection.size() == 0) {
+            Util.ephemeralReferenceArray(t, 0);
+            // Returning an array with no entries.
+            return new Product[0];
+          }
+        }
+      }
+      Product[] result = new Product[intersection.size()];
+      Util.ephemeralReferenceArray(t, result.length);
+      int j = 0;
+      Util.createEphemeralHashSetIterator(t);
+      for (Product p: intersection)
+        result[j++] = p;
+      Util.abandonEphemeralHashSetIterator(t);
+      intersection.garbageFootprint(t);
+      return result;
+    } else {
+      SearchNamesAll sna = new SearchNamesAll(t, keywords, this);
+      cc.actAsReader(sna);
+      sna.garbageFootprint(t);
+      return sna.results;
+    }
   }
 
   Product[] lookupProductsMatchingAny(ExtrememThread t,
                                       String [] keywords) {
-    SearchNamesAny sna = new SearchNamesAny(t, keywords, this);
-    cc.actAsReader(sna);
-    sna.garbageFootprint(t);
-    return sna.results;
+    if (config.FastAndFurious()) {
+      ExtrememHashSet<Product> accumulator = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+      for (int i = 0; i < keywords.length; i++) {
+        String keyword = keywords[i];
+        ExtrememHashSet<Long> matched_ids = name_index.get(keyword);
+        synchronized (name_index) {
+          matched_ids = name_index.get(keyword);
+        }
+        if (matched_ids != null) {
+          Util.createEphemeralHashSetIterator(t);
+          synchronized (matched_ids) {
+            for (Long id: matched_ids) {
+              addToSetIfAvailable(t, accumulator, id);
+            }
+          }
+          Util.abandonEphemeralHashSetIterator(t);
+        }
+        synchronized (description_index) {
+          matched_ids = description_index.get(keyword);
+        }
+        if (matched_ids != null) {
+          Util.createEphemeralHashSetIterator(t);
+          synchronized (matched_ids) {
+            for (Long id: matched_ids) {
+              addToSetIfAvailable(t, accumulator, id);
+            }
+          }
+          Util.abandonEphemeralHashSetIterator(t);
+        }
+      }
+      Product[] result = new Product[accumulator.size()];
+      Util.ephemeralReferenceArray(t, result.length);
+      int j = 0;
+      Util.createEphemeralHashSetIterator(t);
+      for (Product p: accumulator)
+        result[j++] = p;
+      Util.abandonEphemeralHashSetIterator(t);
+      accumulator.garbageFootprint(t);
+      return result;
+    } else {
+      SearchNamesAny sna = new SearchNamesAny(t, keywords, this);
+      cc.actAsReader(sna);
+      sna.garbageFootprint(t);
+      return sna.results;
+    }
   }
 
   // Memory footprint may change as certain product names and
@@ -348,9 +544,49 @@ class Products extends ExtrememObject {
 
   private void doVariableTally(ExtrememThread t, MemoryLog log,
                                LifeSpan ls, Polarity p) {
-    BeanCounter bc = new BeanCounter(t, this, log, ls, p);
-    cc.actAsReader(bc);
-    bc.garbageFootprint(t);
+    if (config.FastAndFurious()) {
+      int num_products = config.NumProducts();
+
+      synchronized (this) {
+        // Need synchronizat to access pncl, pdcl, nie, nicl, etc.
+
+        // Account for the cumulative memory consumed by Product names.
+        Util.tallyStrings(log, ls, p, num_products, pncl);
+
+        // Account for the cumulative memory consumed by Product descriptions.
+        Util.tallyStrings(log, ls, p, num_products, pdcl);
+
+        // Account for the name_index.
+        Util.tallyTreeMap(nie, log, ls, p);
+
+        // Each key within name_index is a unique word (not stored elsewhere)
+        Util.tallyStrings(log, ls, p, nie, nicl);
+
+        // Each content within name_index is an ExtrememHashSet of Long.
+        ExtrememHashSet.tallyMemory(log, ls, p, nie, nip, nihacl);
+
+        // Account for the Long instances that are stored within the ExtrememHashSets.
+        log.accumulate(ls, MemoryFlavor.PlainObject, p, nip);
+        log.accumulate(ls, MemoryFlavor.ObjectRSB, p, nip * Util.SizeOfLong);
+
+        // Account for description_index.
+        Util.tallyTreeMap(die, log, ls, p);
+        // Each key within description_index is a unique word (not stored elsewhere). 
+    
+        Util.tallyStrings(log, ls, p, die, dicl);
+
+        // Each content within description_index is an ExtrememHashSet of Long.
+        ExtrememHashSet.tallyMemory(log, ls, p, die, dip, dihacl);
+
+        // Account for the Long instances that are stored within the HashSets.
+        log.accumulate(ls, MemoryFlavor.PlainObject, p, dip);
+        log.accumulate(ls, MemoryFlavor.ObjectRSB, p, dip * Util.SizeOfLong);
+      }
+    } else {
+      BeanCounter bc = new BeanCounter(t, this, log, ls, p);
+      cc.actAsReader(bc);
+      bc.garbageFootprint(t);
+    }
   }
 
   // Need to hold a reader lock in order to access state variables
@@ -547,7 +783,7 @@ class Products extends ExtrememObject {
     return index;
   }
 
-  // Precondition: thread holds the write exclusion lock.  Incoming argument
+  // Precondition: thread holds a write exclusion lock.  Incoming argument
   // word is privately allocated and is presumed to reside in
   // ephemeral memory.
   //
@@ -582,6 +818,87 @@ class Products extends ExtrememObject {
       Util.abandonEphemeralString(t, word_length);
     }
     return set;
+  }
+
+  // Thread does not hold exclusion lock.
+  // This method accounts for memory required to autobox id, and to
+  // create or expand the ExtrememHashSet<Long>, as appropriate.
+  private void
+  addStringToIndexFastAndFurious(ExtrememThread t, long id,
+                                 boolean is_name_index, String s,
+                                 TreeMap <String, ExtrememHashSet<Long>> index) {
+    MemoryLog log = t.memoryLog();
+    LifeSpan ls = this.intendedLifeSpan();
+    Polarity Grow = Polarity.Expand;
+    // Assume first characters of s not equal to space
+    for (int start = 0; start < s.length(); start = skipSpaces(s, start)) {
+      int end = skipNonSpaces(s, start);
+      String word = s.substring(start, end);
+      int word_length = end - start;
+      Util.ephemeralString(t, word_length);
+      start = end;
+
+      ExtrememHashSet<Long> set;
+      synchronized (index) {
+        set = index.get(word);
+      }
+      if (set == null) {
+        // Do the allocation of new HashSet outside of synchronized context
+        set = new ExtrememHashSet<Long>(t, ls);
+        synchronized (index) {
+          if (index.get(word) == null) {
+            index.put(word, set);
+          }
+        }
+        // Indicate that word will persist as part of this object's lifespan.
+        Util.convertEphemeralString(t, ls, word_length);
+
+        if (is_name_index) {
+          synchronized (this) {
+            nie++;
+            nicl += word.length();
+            nihacl += set.capacity();
+          }
+        } else {
+          synchronized (this) {
+            die++;
+            dicl += word.length();
+            dihacl += set.capacity();
+          }
+        }
+      } else {
+        // Replica of word is already present and accounted for.  Abandon our local copy.
+        Util.abandonEphemeralString(t, word_length);
+      }
+      // id gets auto-boxed to Long
+      long orig_capacity = set.capacity();
+      boolean success;
+      long new_capacity;
+      synchronized (set) {
+        // Note: there may be allocation within this synchronized block to represent id
+        success = set.add(t, id);
+        new_capacity = set.capacity();
+      }
+      if (success) {
+        // Account for autoboxing of id to Long
+        Util.nonEphemeralLong(t, ls);
+        if (is_name_index) {
+          synchronized (this) {
+            nihacl += new_capacity - orig_capacity;
+            nip++;
+          }
+        } else {
+          synchronized (this) {
+            dip++;
+            dihacl += new_capacity - orig_capacity;
+          }
+        }
+      } else {
+        // The autoboxed id is Ephemeral, then becomes garbage.
+        Util.ephemeralLong(t);
+        Util.abandonEphemeralLong(t);
+      }
+    }
   }
 
   // Precondition: thread holds the exclusion lock.
@@ -626,6 +943,15 @@ class Products extends ExtrememObject {
     }
   }
 
+  // Thread does not hold exclusion lock.
+  private void addToIndicesFastAndFurious(ExtrememThread t, Product p) {
+    long id = p.id ();
+    MemoryLog log = t.memoryLog();
+
+    addStringToIndexFastAndFurious(t, id, true, p.name(), name_index);
+    addStringToIndexFastAndFurious(t, id, false, p.description(), description_index);
+  }
+
   // Precondition: thread holds the exclusion lock
   private void addToIndices(ExtrememThread t, Product p) {
     long id = p.id ();
@@ -633,6 +959,52 @@ class Products extends ExtrememObject {
 
     addStringToIndex(t, id, true, p.name(), name_index);
     addStringToIndex(t, id, false, p.description(), description_index);
+  }
+
+  // Thread does not hold exclusion lock
+  private void rmStringFromIndexFastAndFurious(ExtrememThread t, long id,
+                                               boolean is_name_index, String s,
+                                               TreeMap <String, ExtrememHashSet<Long>> index) {
+    LifeSpan ls = this.intendedLifeSpan();
+    // Assume first characters of s not equal to space
+    for (int start = 0; start < s.length (); start = skipSpaces(s, start)) {
+      int end = skipNonSpaces(s, start);
+      String word = s.substring(start, end);
+      int word_length = end - start;
+      Util.ephemeralString(t, word_length);
+      start = end;
+      ExtrememHashSet<Long> set;
+      synchronized (index) {
+        set = index.get(word);
+      }
+      Util.abandonEphemeralString(t, word_length);
+      if (set != null) {
+        Polarity Grow = Polarity.Expand;
+        MemoryLog garbage = t.garbageLog();
+        // Even if the set size is decreased to zero, we do not destroy
+        // the set, nor do we reclaim the String that keys to this set.
+        // id gets autoboxed to Long and immediately abandoned.
+        Util.ephemeralLong(t);
+        Util.abandonEphemeralLong(t);
+        boolean success;
+        synchronized (set) {
+          success = set.remove(t, id);
+        }
+        if (success) {
+          // Abandon the value removed from the set
+          Util.abandonNonEphemeralLong(t, ls);
+          if (is_name_index) {
+            synchronized (this) {
+              nip--;
+            }
+          } else {
+            synchronized (this) {
+              dip--;
+            }
+          }
+        }
+      }  // else, shouldn't happen.
+    }
   }
 
   // Precondition: thread holds the exclusion lock
@@ -669,6 +1041,14 @@ class Products extends ExtrememObject {
     }
   }
 
+  // Thread does not hold an exclusion lock.  So we must synchronize locally for each change made.
+  private void rmFromIndicesFastAndFurious(ExtrememThread t, Product p) {
+    long id = p.id();
+
+    rmStringFromIndexFastAndFurious(t, id, true, p.name(), name_index);
+    rmStringFromIndexFastAndFurious(t, id, false, p.description(), description_index);
+  }
+
   // Precondition: thread holds the exclusion lock
   private void rmFromIndices(ExtrememThread t, Product p) {
     long id = p.id();
@@ -683,9 +1063,13 @@ class Products extends ExtrememObject {
   }
 
   void report(ExtrememThread t) {
-    Reporter r = new Reporter(t, this, config.ReportCSV());
-    cc.actAsReader(r);
-    r.garbageFootprint(t);
+    if (config.FastAndFurious()) {
+      Report.output("No Products concurrency report since configuration is FastAndFurious");
+    } else {
+      Reporter r = new Reporter(t, this, config.ReportCSV());
+      cc.actAsReader(r);
+      r.garbageFootprint(t);
+    }
   }
 
   /*

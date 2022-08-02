@@ -37,6 +37,7 @@ class Configuration {
 
   static final boolean DefaultReportIndividualThreads = false;
   static final boolean DefaultReportCSV = false;
+  static final boolean DefaultFastAndFurious = false;
 
   static final int DefaultDictionarySize = 25000;
   static final String DefaultDictionaryFile = "/usr/share/dict/words";
@@ -94,6 +95,7 @@ class Configuration {
   private int CustomerThreads;
   private int ServerThreads;
 
+  private boolean FastAndFurious;
   private boolean ReportIndividualThreads;
   private boolean ReportCSV;
 
@@ -197,6 +199,8 @@ class Configuration {
     ProductReviewLength = DefaultProductReviewLength;
     RandomSeed = DefaultRandomSeed;
 
+    FastAndFurious = DefaultFastAndFurious;
+
     SimulationDuration = new RelativeTime(t, DefaultDurationMinutes * 60, 0);
     SimulationDuration.changeLifeSpan(t, LifeSpan.NearlyForever);
 
@@ -252,6 +256,7 @@ class Configuration {
   }
 
   private static String[] boolean_patterns = {
+    "FastAndFurious",
     "ReportCSV",
     "ReportIndividualThreads",
   };
@@ -352,11 +357,16 @@ class Configuration {
 
     switch (index) {
       case 0:
+        if (keyword.equals("FastAndFurious")) {
+          FastAndFurious = b;
+          break;
+        }
+      case 1:
         if (keyword.equals("ReportCSV")) {
           ReportCSV = b;
           break;
         }
-      case 1:
+      case 2:
         if (keyword.equals("ReportIndividualThreads")) {
           ReportIndividualThreads = b;
           break;
@@ -722,6 +732,10 @@ class Configuration {
 
   String DictionaryFile() {
     return DictionaryFile();
+  }
+
+  boolean FastAndFurious() {
+    return FastAndFurious;
   }
 
   int MaxArrayLength() {

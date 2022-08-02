@@ -6,6 +6,8 @@ package com.amazon.corretto.benchmark.extremem;
 class Customer extends ExtrememObject {
   private static final int InitialSaveForLaterQueueSize = 8;
 
+  private boolean deceased;
+
   private final String name;
   private final long id;
 
@@ -21,6 +23,7 @@ class Customer extends ExtrememObject {
     super(t, ls);
     final Polarity Grow = Polarity.Expand;
     final MemoryLog log = t.memoryLog();
+    this.deceased = false;
     this.name = name;
     this.id = uniq_id;
     sflq = new BrowsingHistory [InitialSaveForLaterQueueSize];
@@ -45,6 +48,12 @@ class Customer extends ExtrememObject {
     return id;
   }
 
+  synchronized boolean isDeceased() {
+    return deceased;
+  }
+
+  // Note that size may change asynchronously when new items are added
+  // to the browsing history by other threads.
   synchronized int browsingHistorySize() {
     return sflq.length;
   }
@@ -54,39 +63,51 @@ class Customer extends ExtrememObject {
     purchase_hash += sale.hash(release_time);
   }
 
-  // Add s4l to this Customer's BrowsingHistoryQueue.  Return the
-  // number of new slots added to this Customer's
-  // BrowsingHistoryQueue.  Typical return value is zero.
+  // s4l was instantiated by the CustomerThread, has been associated  with the BrowsingHistoryQueue of that CustomerThread,
+  // and has been enqueued on that BrowsingHistoryQueue.  Here, we make note that the BrowsingHistory object corresponds
+  // to this Customer so that we can eliminate it if this Customer is deprecated.
+  //
+  // If there was a race whereby a server thread replaces this customer at "the same time" that a customer thread determines
+  // to save products for later on this same customer, it may be that this object is deceased upon invocation of this service.
+  // If this object is already deceased, its previously existing save-for-later array has already been expunged from the
+  // associated BrowsingHistoryQueue and that array will not be processed again.  So we have to expunge the entry here.
+  //
+  // Return the number of new slots added to this Customer's BrowsingHistory array.  Typical return value is zero.
   synchronized int addSaveForLater(ExtrememThread t, BrowsingHistory s4l) {
     int bqes = 0;               // browsing queue expansion slots
-    if (csfl >= sflq.length) {  // double the size of existing queue
-      final Polarity Grow = Polarity.Expand;
-      int old_size = sflq.length;
-      final MemoryLog log = t.memoryLog();
-      final MemoryLog garbage = t.garbageLog();
+    if (deceased) {
+      s4l.queue().dequeue(s4l);
+      s4l.garbageFootprint(t);
+    } else {
+      if (csfl >= sflq.length) {  // double the size of existing queue
+        final Polarity Grow = Polarity.Expand;
+        int old_size = sflq.length;
+        final MemoryLog log = t.memoryLog();
+        final MemoryLog garbage = t.garbageLog();
+        
+        log.accumulate(LifeSpan.NearlyForever,
+                       MemoryFlavor.ArrayObject, Grow, 1);
+        log.accumulate(LifeSpan.NearlyForever,
+                       MemoryFlavor.ArrayReference, Grow, old_size);
 
-      log.accumulate(LifeSpan.NearlyForever,
-                     MemoryFlavor.ArrayObject, Grow, 1);
-      log.accumulate(LifeSpan.NearlyForever,
-                     MemoryFlavor.ArrayReference, Grow, old_size);
+        bqes = old_size;
+        BrowsingHistory[] expanded_array = new BrowsingHistory [2 * old_size];
+        for (int i = 0; i < csfl; i++) {
+          expanded_array [i] = sflq [fsfl++];
+          if (fsfl == old_size)
+            fsfl = 0;
+        }
+        sflq = expanded_array;         // old array becomes garbage
 
-      bqes = old_size;
-      BrowsingHistory[] new_queue = new BrowsingHistory [2 * old_size];
-      for (int i = 0; i < csfl; i++) {
-        new_queue [i] = sflq [fsfl++];
-        if (fsfl == old_size)
-          fsfl = 0;
+        garbage.accumulate(LifeSpan.NearlyForever,
+                           MemoryFlavor.ArrayObject, Grow, 1);
+        garbage.accumulate(LifeSpan.NearlyForever,
+                           MemoryFlavor.ArrayReference, Grow, old_size);
+        fsfl = 0;
       }
-      sflq = new_queue;         // old queue becomes garbage
-
-      garbage.accumulate(LifeSpan.NearlyForever,
-                         MemoryFlavor.ArrayObject, Grow, 1);
-      garbage.accumulate(LifeSpan.NearlyForever,
-                         MemoryFlavor.ArrayReference, Grow, old_size);
-      fsfl = 0;
+      int queue_length = sflq.length;
+      sflq [(fsfl + csfl++) % queue_length] = s4l;
     }
-    int queue_length = sflq.length;
-    sflq [(fsfl + csfl++) % queue_length] = s4l;
     return bqes;
   }
 
@@ -163,6 +184,7 @@ class Customer extends ExtrememObject {
   // instance's save-for-later queue.
   synchronized int prepareForDemise(ExtrememThread t) {
     int index = fsfl;
+    this.deceased = true;
     for (int i = 0; i < csfl; i++) {
       BrowsingHistory h = sflq[index];
       h.queue().dequeue(h);

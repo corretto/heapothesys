@@ -37,6 +37,7 @@ class Configuration {
 
   static final boolean DefaultReportIndividualThreads = false;
   static final boolean DefaultReportCSV = false;
+  static final boolean DefaultFastAndFurious = false;
 
   static final int DefaultDictionarySize = 25000;
   static final String DefaultDictionaryFile = "/usr/share/dict/words";
@@ -74,8 +75,6 @@ class Configuration {
   static final int DefaultProductReplacementPeriodSeconds = 90;
   static final int DefaultProductReplacementCount = 64;
 
-  static final bool DefaultFastAndFurious = false;
-
   static final long DefaultInitializationDelayMillis = 50;
   static final long DefaultDurationMinutes = 10;
 
@@ -96,6 +95,7 @@ class Configuration {
   private int CustomerThreads;
   private int ServerThreads;
 
+  private boolean FastAndFurious;
   private boolean ReportIndividualThreads;
   private boolean ReportCSV;
 
@@ -128,8 +128,6 @@ class Configuration {
   private int SelectionCriteriaCount;
   private float BuyThreshold;
   private float SaveForLaterThreshold;
-
-  private final FastAndFurious;
 
   Configuration(String[] args) {
     this.args = args;
@@ -360,7 +358,7 @@ class Configuration {
     switch (index) {
       case 0:
         if (keyword.equals("FastAndFurious")) {
-          ReportCSV = b;
+          FastAndFurious = b;
           break;
         }
       case 1:

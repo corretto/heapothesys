@@ -240,18 +240,20 @@ class Products extends ExtrememObject {
   Product replaceArbitraryProduct(ExtrememThread t, Product new_product) {
     if (config.FastAndFurious()) {
       long old_id;
+      int index;
       do {
         // Take care to avoid races in case another thread tries to replace Product at same index.  Collisions are expected
         // to be very rare.
-        int index = t.randomUnsignedInt() % product_ids.length();
+        index = t.randomUnsignedInt() % product_ids.length();
         synchronized(product_ids) {
           old_id = product_ids.get(index);
           product_ids.set(index, -1L); // This might be redundant.
         }
       } while (old_id == -1L);
 
+      Product removed_product;
       synchronized (product_map) {
-        Product removed_product = product_map.remove(old_id);
+        removed_product = product_map.remove(old_id);
       }
 
       // Though garbage collection of removed_product may be deferred
@@ -286,7 +288,7 @@ class Products extends ExtrememObject {
 
       return removed_product;
     } else {
-      ProductReplacer pr = new ProductReplacer(t, this, product);
+      ProductReplacer pr = new ProductReplacer(t, this, new_product);
       cc.actAsWriter (pr);
       pr.garbageFootprint(t);
       return pr.removed_product;
@@ -353,7 +355,7 @@ class Products extends ExtrememObject {
       for (int i = 0; i < keywords.length; i++) {
         String keyword = keywords[i];
         if (i == 0) {
-          ExtrememHashSet<Long> matched_ids = name_index.get(keyword);
+          ExtrememHashSet<Long> matched_ids;
           synchronized (name_index) {
             matched_ids = name_index.get(keyword);
           }
@@ -379,9 +381,10 @@ class Products extends ExtrememObject {
             Util.abandonEphemeralHashSetIterator(t);
           }
         } else {
+          ExtrememHashSet<Long> matched_ids;
           ExtrememHashSet<Product> new_matches = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
           synchronized (name_index) {
-            ExtrememHashSet<Long> matched_ids = name_index.get(keyword);
+            matched_ids = name_index.get(keyword);
           }
           if (matched_ids != null) {
             Util.createEphemeralHashSetIterator(t);
@@ -841,7 +844,7 @@ class Products extends ExtrememObject {
       }
       if (set == null) {
         // Do the allocation of new HashSet outside of synchronized context
-        ExtrememHashSet<Long> new_set = new ExtrememHashSet<Long>(t, ls);
+        set = new ExtrememHashSet<Long>(t, ls);
         synchronized (index) {
           if (index.get(word) == null) {
             index.put(word, set);
@@ -869,7 +872,7 @@ class Products extends ExtrememObject {
       }
       // id gets auto-boxed to Long
       long orig_capacity = set.capacity();
-      bool success;
+      boolean success;
       long new_capacity;
       synchronized (set) {
         // Note: there may be allocation within this synchronized block to represent id
@@ -970,8 +973,9 @@ class Products extends ExtrememObject {
       int word_length = end - start;
       Util.ephemeralString(t, word_length);
       start = end;
+      ExtrememHashSet<Long> set;
       synchronized (index) {
-        ExtrememHashSet<Long> set = index.get(word);
+        set = index.get(word);
       }
       Util.abandonEphemeralString(t, word_length);
       if (set != null) {
@@ -982,7 +986,7 @@ class Products extends ExtrememObject {
         // id gets autoboxed to Long and immediately abandoned.
         Util.ephemeralLong(t);
         Util.abandonEphemeralLong(t);
-        bool success;
+        boolean success;
         synchronized (set) {
           success = set.remove(t, id);
         }
@@ -1060,7 +1064,7 @@ class Products extends ExtrememObject {
 
   void report(ExtrememThread t) {
     if (config.FastAndFurious()) {
-      Report.output("No Products concurrent report since configuration is FastAndFurious");
+      Report.output("No Products concurrency report since configuration is FastAndFurious");
     } else {
       Reporter r = new Reporter(t, this, config.ReportCSV());
       cc.actAsReader(r);

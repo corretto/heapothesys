@@ -177,22 +177,30 @@ java -jar src/main/java/extremem.jar \
 
 ### *-dFastAndFurious=false*
 
-In the original Extremem implementation, the shared Customers and Products in-memory databases are each protected by a global
+In the default Extremem configuration, the shared Customers and Products in-memory databases are each protected by a global
 synchronization lock which allows multiple readers and a single writer.  Multiple customers can read from these databases
 concurrently.  Each time a server thread replaces customers or products, a write-lock is required, causing all customer threads
 to wait until the server thread has finished its changes to the database.  With the high transaction rates required to represent
 allocations in excess of 2 GB per second, significant synchronization contention has been observed.  This flag changes the
-synchronization protocol.  This mode of operation is identified as fast and furious because it allows false positives and false
+synchronization protocol.  The FastAndFurious mode of operation replaces the global multiple-reader-single-writer lock with
+a larger number of smaller-context locks.  Locks that protect much smaller scopes are held for much shorter
+time frames, improving parallel access to shared data structures.  
+The large majority of these smaller-context locks should normally be uncontended
+because the contexts are so small that collisions by multiple threads on the same small contexts is normally
+rare.  This mode of operation is identified as ``furious'' because it allows false positives and false
 negatives.  During the process of replacing products, the indexes might report a match to a product that no longer exists.
-Likewise, the indexes may not regognize a match for a product that has been newly added but is not yet indexed.  This mode
-of operation properly uses synchronization to assure coherency of data structures.  However, locks are held for much shorter
-time frames and for much more limited scopes so as to improve parallel access to shared data structures.  The default value
-is false in order to preserve compatibility with the original mode of operation.  While configuring for FastAndFurious allows
-Extremem to simuilate higher allocation rates without interference from synchronization, disabling FastAndFurious may reveal
-different weaknesses in particular GC approaches.  In particular, interference from synchronization causes allocations to
-be more bursty, suspended while threads are waiting for exclusive access and trying to catchup when they eventually acquire
-exclusive access.  These bursts of allocation make it more difficult to predict when the allocation pool will become depleted,
-and this makes it more difficult to effectively trigger the start of each GC cycle.
+Likewise, the indexes may not recognize a match for a product that has been newly added but is not yet indexed.  This mode
+of operation properly uses synchronization to assure coherency of data structures.  The default value of the FastAndFurious flag
+is false, preserving compatibility with the original Extremem mode of operation.  While configuring FastAndFurious=true allows
+Extremem to simulate higher allocation rates with less interference from synchronization contention, disabling FastAndFurious
+may reveal different weaknesses in particular GC approaches.  In particular, interference from synchronization causes allocations
+to be more bursty.  While a single server thread locks indexes in order to replace products or customers, multiple customer
+threads that would normally be allocating are idle, waiting for the server thread to releases its exclusive lock.  When the server
+thread releases its lock, these customer threads resume execution and allocate at rates much higher than normal because they
+have fallen behind their intended execution schedule.  This causes a burst of allocation, making it difficult for the GC
+scheduling heuristic to predict when the allocation pool will become depleted.  If the heuristic is late to trigger the start
+of GC, it is likely that the allocation pool will become exhausted before the GC replenishes it, resulting in a degenerated
+stop-the-world GC pause.
 
 ## Interpreting Results
 

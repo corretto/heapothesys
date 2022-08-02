@@ -118,7 +118,7 @@ class Customers extends ExtrememObject {
   Customer selectRandomCustomer(ExtrememThread t) {
     Customer result;
     if (config.FastAndFurious()) {
-      int index = t.randomUnsignedInt() % config.NumCustomers()
+      int index = t.randomUnsignedInt() % config.NumCustomers();
       synchronized (customer_names) {
         String name = customer_names.get(index);
         result = customer_map.get(name);
@@ -141,16 +141,22 @@ class Customers extends ExtrememObject {
 
   void replaceRandomCustomer(ExtrememThread t) {
     if (config.FastAndFurious()) {
-      int replacement_index = t.randomUnsignedInt() % config.NumCustomers()
-      String replacement_name = customer_names.get(index);
       String new_customer_name = randomDistinctName(t);
-      Customer new_customer = new Customer(new_customer_name, next_customer_no++);
+      long new_customer_no;
       Customer obsolete_customer;
+      synchronized (this) {
+        new_customer_no = next_customer_no++;
+      }
+      Customer new_customer = new Customer(t, LifeSpan.NearlyForever, new_customer_name, new_customer_no);
+      int replacement_index = t.randomUnsignedInt() % config.NumCustomers();
       synchronized (customer_names) {
-        obsolete_customer = customer_map.get(name);
-        customer_map.remove(obsolete_customer_name);
-        customer_names.set(index. new_customer_name);  // overwrites obsolete_customer_name
-        customer_map.put(new_customer_name, customer);
+        String replacement_name = customer_names.get(replacement_index);
+        customer_names.set(replacement_index, new_customer_name);
+        
+        synchronized(customer_map) {
+          obsolete_customer = customer_map.remove(replacement_name);
+          customer_map.put(new_customer_name, new_customer);
+        }
       }
       // Do memory accounting outside synchronized block
       MemoryLog log = t.memoryLog();
@@ -158,8 +164,7 @@ class Customers extends ExtrememObject {
       Util.convertEphemeralString(t, this.intendedLifeSpan(), new_customer_length);
       adjust_cncl(new_customer_length);
 
-      // Give the decommissioned customer opportunity to unhook
-      // saved-for-later products.
+      // Give the decommissioned customer opportunity to unhook saved-for-later products.
       adjust_cbhs(-obsolete_customer.prepareForDemise(t));
       String obsolete_customer_name = obsolete_customer.name();
       int obsolete_len = obsolete_customer_name.length();
@@ -173,7 +178,7 @@ class Customers extends ExtrememObject {
       // Abandon the memory for the obsolete HashEntry
       Util.abandonHashEntry(t, this.intendedLifeSpan());
 
-      adjust_cbhs(customer.browsingHistorySize());
+      adjust_cbhs(new_customer.browsingHistorySize());
       Util.addHashEntry(t, this.intendedLifeSpan());
     } else {
       RandomReplacer rr = new RandomReplacer(t, LifeSpan.Ephemeral, this);
@@ -276,8 +281,12 @@ class Customers extends ExtrememObject {
   }
 
   void report(ExtrememThread t) {
-    Report.output("Customers concurrency report:");
-    cc.report(t, config.ReportCSV());
+    if (config.FastAndFurious()) {
+      Report.output("No Customers concurrency report since configuration is FastAndFurious");
+    } else {
+      Report.output("Customers concurrency report:");
+      cc.report(t, config.ReportCSV());
+    }
   }
 
   /*

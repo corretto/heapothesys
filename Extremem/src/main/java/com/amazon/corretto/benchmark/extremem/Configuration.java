@@ -38,6 +38,7 @@ class Configuration {
   static final boolean DefaultReportIndividualThreads = false;
   static final boolean DefaultReportCSV = false;
   static final boolean DefaultFastAndFurious = false;
+  static final boolean DefaultPhasedUpdates = false;
 
   static final int DefaultDictionarySize = 25000;
   static final String DefaultDictionaryFile = "/usr/share/dict/words";
@@ -75,6 +76,8 @@ class Configuration {
   static final int DefaultProductReplacementPeriodSeconds = 90;
   static final int DefaultProductReplacementCount = 64;
 
+  static final int DefaultPhasedUpdateIntervalSeconds = 60;
+
   static final long DefaultInitializationDelayMillis = 50;
   static final long DefaultDurationMinutes = 10;
 
@@ -96,6 +99,7 @@ class Configuration {
   private int ServerThreads;
 
   private boolean FastAndFurious;
+  private boolean PhasedUpdates;;
   private boolean ReportIndividualThreads;
   private boolean ReportCSV;
 
@@ -111,6 +115,8 @@ class Configuration {
 
   private RelativeTime ServerPeriod;
   private RelativeTime BrowsingExpiration;
+
+  private RelativeTime PhasedUpdateInterval;
 
   // Multiple concurrent Server threads execute with the same period,
   // with different stagger values.
@@ -200,6 +206,7 @@ class Configuration {
     RandomSeed = DefaultRandomSeed;
 
     FastAndFurious = DefaultFastAndFurious;
+    PhasedUpdates = DefaultPhasedUpdates;
 
     SimulationDuration = new RelativeTime(t, DefaultDurationMinutes * 60, 0);
     SimulationDuration.changeLifeSpan(t, LifeSpan.NearlyForever);
@@ -221,6 +228,9 @@ class Configuration {
 
     ServerPeriod = rt.addMillis(t, DefaultServerPeriodMilliseconds);
     ServerPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
+
+    PhasedUpdateInterval = rt.addSeconds(t, DefaultPhasedUpdateIntervalSeconds);
+    PhasedUpdateInterval.changeLifeSpan(t, LifeSpan.NearlyForever);
 
     CustomerReplacementPeriod = (
       rt.addSeconds(t, DefaultCustomerReplacementPeriodSeconds));
@@ -257,6 +267,7 @@ class Configuration {
 
   private static String[] boolean_patterns = {
     "FastAndFurious",
+    "PhasedUpdates",
     "ReportCSV",
     "ReportIndividualThreads",
   };
@@ -292,6 +303,7 @@ class Configuration {
     "CustomerReplacementPeriod",
     "CustomerThinkTime",
     "InitializationDelay",
+    "PhasedUpdateInterval",
     "ProductReplacementPeriod",
     "ServerPeriod",
     "SimulationDuration",
@@ -362,11 +374,16 @@ class Configuration {
           break;
         }
       case 1:
+        if (keyword.equals("PhasedUpdates")) {
+          PhasedUpdates = b;
+          break;
+        }
+      case 2:
         if (keyword.equals("ReportCSV")) {
           ReportCSV = b;
           break;
         }
-      case 2:
+      case 3:
         if (keyword.equals("ReportIndividualThreads")) {
           ReportIndividualThreads = b;
           break;
@@ -585,20 +602,27 @@ class Configuration {
           break;
         }
       case 5:
+        if (keyword.equals("PhasedUpdateInterval")) {
+          PhasedUpdateInterval.garbageFootprint(t);
+          PhasedUpdateInterval = new RelativeTime(t, secs, nanos);
+          PhasedUpdateInterval.changeLifeSpan(t, LifeSpan.NearlyForever);
+          break;
+        }
+      case 6:
         if (keyword.equals("ProductReplacementPeriod")) {
           ProductReplacementPeriod.garbageFootprint(t);
           ProductReplacementPeriod = new RelativeTime(t, secs, nanos);
           ProductReplacementPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
           break;
         }
-      case 6:
+      case 7:
         if (keyword.equals("ServerPeriod")) {
           ServerPeriod.garbageFootprint(t);
           ServerPeriod = new RelativeTime(t, secs, nanos);
           ServerPeriod.changeLifeSpan(t, LifeSpan.NearlyForever);
           break;
         }
-      case 7:
+      case 8:
         if (keyword.equals("SimulationDuration")) {
           SimulationDuration.garbageFootprint(t);
           SimulationDuration = new RelativeTime(t, secs, nanos);
@@ -631,6 +655,9 @@ class Configuration {
 
   private void assureConfiguration(ExtrememThread t) {
     // Ignore memory allocation accounting along early termination paths.
+
+    if (PhasedUpdates && FastAndFurious)
+      usage("Only one of PhasedUpdates or FastAndFurious can be true");
 
     if (DictionarySize < 1)
       usage("DictionarySize must be greater or equal to 1");
@@ -736,6 +763,10 @@ class Configuration {
 
   boolean FastAndFurious() {
     return FastAndFurious;
+  }
+
+  boolean PhasedUpdates() {
+    return PhasedUpdates;
   }
 
   int MaxArrayLength() {
@@ -852,6 +883,10 @@ class Configuration {
     return ProductReplacementPeriod;
   }
 
+  RelativeTime PhasedUpdateInterval() {
+    return PhasedUpdateInterval;
+  }
+
   // Dictionary services
   String arbitraryWord(ExtrememThread t) {
     return dictionary.arbitraryWord(t);
@@ -873,8 +908,19 @@ class Configuration {
                   ReportIndividualThreads? "true": "false");
     Report.output("ReportCSV,", ReportCSV? "true": "false");
 
-    Report.output();
+
     Report.output("Simulation configuration");
+
+    Report.output("FastAndFurious,",
+                  FastAndFurious? "true": "false");
+    Report.output("PhasedUpdates,",
+                  PhasedUpdates? "true": "false");
+    Report.output();
+    s = Long.toString(PhasedUpdateInterval.microseconds());
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("PhasedUpdateInterval,", s);
+    Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(RandomSeed);
     l = s.length();
@@ -940,6 +986,12 @@ class Configuration {
     l = s.length();
     Util.ephemeralString(t, l);
     Report.output("ServerPeriod,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Long.toString(PhasedUpdateInterval.microseconds());
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("PhasedUpdateInterval,", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("Customer maintenance");
@@ -1081,6 +1133,16 @@ class Configuration {
     Report.output();
     Report.output("Simulation configuration");
 
+    Report.output("  Fine-grain locking of data base (FastAndFurious): ", FastAndFurious? "true": "false");
+    Report.output("       Rebuild data base in phases (PhasedUpdates): ", PhasedUpdates? "true": "false");
+    Report.output();
+    s = Long.toString(PhasedUpdateInterval.microseconds());
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("  Time between data rebuild (PhasedUpdateInterval): ", s);
+    Util.abandonEphemeralString(t, l);
+
+
     s = Integer.toString(RandomSeed);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -1142,6 +1204,11 @@ class Configuration {
     s = ServerPeriod.toString(t);
     l = s.length();
     Report.output("                Server thread period (ServerPeriod): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = PhasedUpdateInterval.toString(t);
+    l = s.length();
+    Report.output("      Phased update interval (PhasedUpdateInterval): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("Customer maintenance");

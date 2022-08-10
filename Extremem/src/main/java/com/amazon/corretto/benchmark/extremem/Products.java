@@ -9,6 +9,100 @@ import java.util.TreeMap;
  * Keep track of all currently active products.
  */
 class Products extends ExtrememObject {
+  static class ChangeLogNode {
+    private Product replacement_product;
+    private int replacement_index;
+    private ChangeLogNode next;
+
+    ChangeLogNode(int index, Product product) {
+      this.replacement_index = index;
+      this.replacement_product = product;
+      this.next = null;
+    }
+
+    int index() {
+      return replacement_index;
+    }
+
+    Product product() {
+      return replacement_product;
+    }
+  }
+
+  static class ChangeLog {
+    ChangeLogNode head, tail;
+
+    ChangeLog() {
+      head = tail = null;
+    }
+
+    synchronized private void addToEnd(ChangeLogNode node) {
+      if (head == null) {
+        head = tail = node;
+      } else {
+        tail.next = node;
+        tail = node;
+      }
+    }
+
+    void append(int index, Product product) {
+      ChangeLogNode new_node = new ChangeLogNode(index, product);
+      addToEnd(new_node);
+    }
+
+    // Returns null if ChangeLog is empty.
+    synchronized ChangeLogNode pull() {
+      ChangeLogNode result = head;
+      if (head == tail) {
+        // This handles case where head == tail == null already.  Overwriting with null is cheaper than testing and branching
+        // over for special case.
+        head = tail = null;
+      } else {
+        head = head.next;
+      }
+      return result;
+    }
+  }
+
+  static class CurrentProductsData {
+    final private ArrayletOflong product_ids;
+    // Map unique product id to Product
+    final private TreeMap <Long, Product> product_map;
+    // Map keywords found in product name to product id
+    final private TreeMap <String, ExtrememHashSet<Long>> name_index;
+    // Map keywords found in product description to product id
+    final private TreeMap <String, ExtrememHashSet<Long>> description_index;
+
+    CurrentProductsData(ArrayletOflong product_ids, TreeMap <Long, Product> product_map,
+                        TreeMap <String, ExtrememHashSet<Long>> name_index,
+                        TreeMap <String, ExtrememHashSet<Long>> description_index) {
+
+      this.product_ids = product_ids;
+      this.product_map = product_map;
+      this.name_index = name_index;
+      this.description_index = description_index;
+    }
+
+    ArrayletOflong productIds() {
+      return product_ids;
+    }
+
+    TreeMap <Long, Product> productMap() {
+      return product_map;
+    }
+
+    TreeMap <String, ExtrememHashSet<Long>> nameIndex() {
+      return name_index;
+    }
+
+    TreeMap <String, ExtrememHashSet<Long>> descriptionIndex() {
+      return description_index;
+    }
+  }
+
+  // The change_log is only used if config.PhasedUpdates
+  final ChangeLog change_log;
+
   private static final float DefaultLoadFactor = 0.75f;
 
   /* Concurrency control:
@@ -115,7 +209,6 @@ class Products extends ExtrememObject {
 
   private long npi;             // next product id
 
-  // was private long[] product_ids;
   private ArrayletOflong product_ids;
 
   private ConcurrencyControl cc;
@@ -130,6 +223,12 @@ class Products extends ExtrememObject {
 
   Products (ExtrememThread t, LifeSpan ls, Configuration config) {
     super(t, ls);
+
+    if (config.PhasedUpdates()) {
+      change_log = new ChangeLog();
+    } else {
+      change_log = null;
+    }
 
     MemoryLog log = t.memoryLog();
     MemoryLog garbage = t.garbageLog();
@@ -209,6 +308,33 @@ class Products extends ExtrememObject {
     // accounted during construction of description_index.
   }
 
+  // In PhasedUpdates mode of operation, the database updater thread invokes this service to update customer_names
+  // and customer_map each time it rebuilds the Customers database
+  synchronized void establishUpdatedDataBase(ExtrememThread t, ArrayletOflong product_ids, TreeMap <Long, Product> product_map,
+                                             TreeMap <String, ExtrememHashSet<Long>> name_index,
+                                             TreeMap <String, ExtrememHashSet<Long>> description_index) {
+    this.product_ids = product_ids;
+    this.product_map = product_map;
+    this.name_index = name_index;
+    this.description_index = description_index;
+  }
+
+  // In PhasedUpdates mode of operation. every CustomerThread invokes getUpdatedDataBase() before each customer transaction.
+  // This assures no incoherent changes to data base in the middle of the customer transaction.
+  synchronized CurrentProductsData getUpdatedDataBase() {
+    if (config.PhasedUpdates()) {
+      return new CurrentProductsData(product_ids, product_map, name_index, description_index);
+    } else {
+      throw new IllegalStateException("Only update data base in PhasedUpdates mode of operation");
+    }
+  }
+
+  // For PhasedUpdates mode of operation
+  Product fetchProductByIndexPhasedUpdates(ExtrememThread t, int index, CurrentProductsData current) {
+    long id = current.productIds().get(index);
+    return current.productMap().get(id);
+  }
+
   Product fetchProductByIndex(ExtrememThread t, int index) {
     if (config.FastAndFurious()) {
       long id;
@@ -235,6 +361,17 @@ class Products extends ExtrememObject {
   Product controlledFetchProductByIndex(ExtrememThread t, int index) {
     long id = product_ids.get(index);
     return product_map.get(id);
+  }
+
+  // The Product result returned is only an approximation of which Product will be replaced.  In the case that
+  // the change_log holds multiple changes of the same product, this replacement will change the product that
+  // is in the change_log rather than the one that is in the current data base.
+  Product replaceArbitraryProductPhasedUpdates(ExtrememThread t, Product new_product) {
+    int index = t.randomUnsignedInt() % product_ids.length();
+    change_log.append(index, new_product);
+    long old_id = product_ids.get(index);
+    Product removed_product_approximation = product_map.get(old_id);
+    return removed_product_approximation;
   }
 
   Product replaceArbitraryProduct(ExtrememThread t, Product new_product) {
@@ -336,10 +473,14 @@ class Products extends ExtrememObject {
     long new_id = nextUniqId ();
     Product new_product = new Product(t, LifeSpan.NearlyForever,
                                       new_id, name, description);
-    Product old_product = replaceArbitraryProduct (t, new_product);
+    if (config.PhasedUpdates()) {
+      Product old_product = replaceArbitraryProductPhasedUpdates(t, new_product);
 
-    Trace.msg(4, "old product: ", old_product.name(),
-              " replaced with new product: ", new_product.name());
+    } else {
+      Product old_product = replaceArbitraryProduct (t, new_product);
+      Trace.msg(4, "old product: ", old_product.name(),
+                " replaced with new product: ", new_product.name());
+    }
 
     // Note that there is a race between when keyword searches are
     // performed and when products are looked up.  For example, a
@@ -349,8 +490,85 @@ class Products extends ExtrememObject {
     // This race is handled elsewhere.
   }
 
+  Product[] lookupProductsMatchingAllPhasedUpdates(ExtrememThread t, String[] keywords, CurrentProductsData current) {
+    ExtrememHashSet<Product> intersection = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+    for (int i = 0; i < keywords.length; i++) {
+      String keyword = keywords[i];
+      if (i == 0) {
+        ExtrememHashSet<Long> matched_ids;
+        matched_ids = current.nameIndex().get(keyword);
+        if (matched_ids != null) {
+          Util.createEphemeralHashSetIterator(t);
+          for (Long id: matched_ids) {
+            addToSetIfAvailable(t, intersection, id);
+          }
+          Util.abandonEphemeralHashSetIterator(t);
+        }
+        matched_ids = current.descriptionIndex().get(keyword);
+        if (matched_ids != null) {
+          Util.createEphemeralHashSetIterator(t);
+          for (Long id: matched_ids) {
+            addToSetIfAvailable(t, intersection, id);
+          }
+          Util.abandonEphemeralHashSetIterator(t);
+        }
+      } else {
+        ExtrememHashSet<Long> matched_ids;
+        ExtrememHashSet<Product> new_matches = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+        matched_ids = current.nameIndex().get(keyword);
+        if (matched_ids != null) {
+          Util.createEphemeralHashSetIterator(t);
+          for (Long id: matched_ids) {
+            addToSetIfAvailable(t, new_matches, id);
+          }
+          Util.abandonEphemeralHashSetIterator(t);
+        }
+        matched_ids = current.descriptionIndex().get(keyword);
+        if (matched_ids != null) {
+          Util.createEphemeralHashSetIterator(t);
+          for (Long id: matched_ids) {
+            addToSetIfAvailable(t, new_matches, id);
+          }
+          Util.abandonEphemeralHashSetIterator(t);
+        }
+        ExtrememHashSet<Product> remove_set = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+        Util.createEphemeralHashSetIterator(t);
+        for (Product p: intersection) {
+          if (!new_matches.contains(p)) {
+            remove_set.add(t, p);
+          }
+        }
+        Util.abandonEphemeralHashSetIterator(t);
+        new_matches.garbageFootprint(t);
+        Util.createEphemeralHashSetIterator(t);
+        for (Product p: remove_set) {
+          intersection.remove(t, p);
+        }
+        Util.abandonEphemeralHashSetIterator(t);
+        remove_set.garbageFootprint(t);
+        if (intersection.size() == 0) {
+          Util.ephemeralReferenceArray(t, 0);
+          // Returning an array with no entries.
+          return new Product[0];
+        }
+      }
+    }
+    Product[] result = new Product[intersection.size()];
+    Util.ephemeralReferenceArray(t, result.length);
+    int j = 0;
+    Util.createEphemeralHashSetIterator(t);
+    for (Product p: intersection)
+      result[j++] = p;
+    Util.abandonEphemeralHashSetIterator(t);
+    intersection.garbageFootprint(t);
+    return result;
+  }
+
   Product[] lookupProductsMatchingAll(ExtrememThread t, String [] keywords) {
-    if (config.FastAndFurious()) {
+    if (config.PhasedUpdates()) {
+      CurrentProductsData all_products_currently = getUpdatedDataBase();
+      return lookupProductsMatchingAllPhasedUpdates(t, keywords, all_products_currently);
+    } else if (config.FastAndFurious()) {
       ExtrememHashSet<Product> intersection = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
       for (int i = 0; i < keywords.length; i++) {
         String keyword = keywords[i];
@@ -446,9 +664,44 @@ class Products extends ExtrememObject {
     }
   }
 
-  Product[] lookupProductsMatchingAny(ExtrememThread t,
-                                      String [] keywords) {
-    if (config.FastAndFurious()) {
+  Product[] lookupProductsMatchingAnyPhasedUpdates(ExtrememThread t, String [] keywords, CurrentProductsData products) {
+    ExtrememHashSet<Product> accumulator = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+    for (int i = 0; i < keywords.length; i++) {
+      String keyword = keywords[i];
+      ExtrememHashSet<Long> matched_ids = name_index.get(keyword);
+      matched_ids = name_index.get(keyword);
+      if (matched_ids != null) {
+        Util.createEphemeralHashSetIterator(t);
+        for (Long id: matched_ids) {
+          addToSetIfAvailable(t, accumulator, id);
+        }
+        Util.abandonEphemeralHashSetIterator(t);
+      }
+      matched_ids = description_index.get(keyword);
+      if (matched_ids != null) {
+        Util.createEphemeralHashSetIterator(t);
+        for (Long id: matched_ids) {
+          addToSetIfAvailable(t, accumulator, id);
+        }
+        Util.abandonEphemeralHashSetIterator(t);
+      }
+    }
+    Product[] result = new Product[accumulator.size()];
+    Util.ephemeralReferenceArray(t, result.length);
+    int j = 0;
+    Util.createEphemeralHashSetIterator(t);
+    for (Product p: accumulator)
+      result[j++] = p;
+    Util.abandonEphemeralHashSetIterator(t);
+    accumulator.garbageFootprint(t);
+    return result;
+  }
+
+  Product[] lookupProductsMatchingAny(ExtrememThread t, String [] keywords) {
+    if (config.PhasedUpdates()) {
+      CurrentProductsData all_products_currently = getUpdatedDataBase();
+      return lookupProductsMatchingAnyPhasedUpdates(t, keywords, all_products_currently);
+    } else if (config.FastAndFurious()) {
       ExtrememHashSet<Product> accumulator = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
       for (int i = 0; i < keywords.length; i++) {
         String keyword = keywords[i];
@@ -493,6 +746,54 @@ class Products extends ExtrememObject {
       sna.garbageFootprint(t);
       return sna.results;
     }
+  }
+
+  // Rebuild Products data base from change_log.  Return the number of products actually replaced.
+  long rebuildProductsPhasedUpdates(ExtrememThread t) {
+    ArrayletOflong new_product_ids;
+    TreeMap <Long, Product> new_product_map;
+    TreeMap <String, ExtrememHashSet<Long>> new_name_index;
+    TreeMap <String, ExtrememHashSet<Long>> new_description_index;
+    long tally = 0;
+
+    LifeSpan ls = this.intendedLifeSpan();
+    int num_products = config.NumProducts();
+    new_product_ids = new ArrayletOflong(t, ls, config.MaxArrayLength(), num_products);
+    new_product_map = new TreeMap<Long, Product>();
+    new_name_index = new TreeMap<String, ExtrememHashSet<Long>>();
+    new_description_index = new TreeMap<String, ExtrememHashSet<Long>>();
+
+    // First, copy the existing data base
+    for (int i = 0; i < num_products; i++) {
+      long product_id = product_ids.get(i);
+      Product product = product_map.get(product_id);
+      new_product_ids.set(i, product_id);
+      new_product_map.put(product_id, product);
+    }
+
+    // Then, modify the data base according to content of the change log.
+    ChangeLogNode change;
+    while ((change = change_log.pull()) != null) {
+      int replacement_index = change.index();
+      long replacement_product_id = product_ids.get(replacement_index);
+      tally++;
+
+      new_product_map.remove(replacement_product_id);
+
+      Product new_product = change.product();
+      long new_product_id = new_product.id();
+      new_product_ids.set(replacement_index, new_product_id);
+      new_product_map.put(new_product_id, new_product);
+    }
+
+    // Now, build the replacement indexes
+    for (int i = 0; i < num_products; i++) {
+      long product_id = new_product_ids.get(i);
+      Product product = new_product_map.get(product_id);
+      addToIndicesPhasedUpdates(t, product, new_name_index, new_description_index);
+    }
+    establishUpdatedDataBase(t, new_product_ids, new_product_map, new_name_index, new_description_index);
+    return tally;
   }
 
   // Memory footprint may change as certain product names and
@@ -820,6 +1121,37 @@ class Products extends ExtrememObject {
     return set;
   }
 
+  // Thread does not hold exclusion lock and does not require it.  Memory accounting is not fully implemented.
+  private void addStringToIndexPhasedUpdates(ExtrememThread t, long id, boolean is_name_index, String s,
+                                             TreeMap <String, ExtrememHashSet<Long>> index) {
+    LifeSpan ls = this.intendedLifeSpan();
+    // Assume first characters of s not equal to space
+    for (int start = 0; start < s.length(); start = skipSpaces(s, start)) {
+      int end = skipNonSpaces(s, start);
+      String word = s.substring(start, end);
+      int word_length = end - start;
+      start = end;
+
+      ExtrememHashSet<Long> set;
+      set = index.get(word);
+      if (set == null) {
+        // Do the allocation of new HashSet outside of synchronized context
+        set = new ExtrememHashSet<Long>(t, ls);
+        if (index.get(word) == null) {
+          index.put(word, set);
+        }
+      }
+      // id gets auto-boxed to Long
+      long orig_capacity = set.capacity();
+      boolean success;
+      long new_capacity;
+      // Note: there may be allocation within this synchronized block to represent id
+      success = set.add(t, id);
+    }
+  }
+
+
+
   // Thread does not hold exclusion lock.
   // This method accounts for memory required to autobox id, and to
   // create or expand the ExtrememHashSet<Long>, as appropriate.
@@ -943,11 +1275,21 @@ class Products extends ExtrememObject {
     }
   }
 
+  private void addToIndicesPhasedUpdates(ExtrememThread t, Product p,
+                                         TreeMap<String, ExtrememHashSet<Long>> name_map,
+                                         TreeMap<String, ExtrememHashSet<Long>> desc_map) {
+    long id = p.id ();
+
+    // Memory accounting not implemented for PhasedUpdates
+    addStringToIndexPhasedUpdates(t, id, true, p.name(), name_map);
+    addStringToIndexPhasedUpdates(t, id, false, p.description(), desc_map);
+  }
+
   // Thread does not hold exclusion lock.
   private void addToIndicesFastAndFurious(ExtrememThread t, Product p) {
     long id = p.id ();
-    MemoryLog log = t.memoryLog();
 
+    // Memory accounting not implemented for FastAndFurious
     addStringToIndexFastAndFurious(t, id, true, p.name(), name_index);
     addStringToIndexFastAndFurious(t, id, false, p.description(), description_index);
   }

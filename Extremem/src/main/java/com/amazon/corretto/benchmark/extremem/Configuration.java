@@ -988,12 +988,6 @@ class Configuration {
     Report.output("ServerPeriod,", s);
     Util.abandonEphemeralString(t, l);
 
-    s = Long.toString(PhasedUpdateInterval.microseconds());
-    l = s.length();
-    Util.ephemeralString(t, l);
-    Report.output("PhasedUpdateInterval,", s);
-    Util.abandonEphemeralString(t, l);
-
     Report.output("Customer maintenance");
 
     s = Long.toString(CustomerReplacementPeriod.microseconds());
@@ -1136,7 +1130,7 @@ class Configuration {
     Report.output("  Fine-grain locking of data base (FastAndFurious): ", FastAndFurious? "true": "false");
     Report.output("       Rebuild data base in phases (PhasedUpdates): ", PhasedUpdates? "true": "false");
     Report.output();
-    s = Long.toString(PhasedUpdateInterval.microseconds());
+    s = PhasedUpdateInterval.toString();
     l = s.length();
     Util.ephemeralString(t, l);
     Report.output("  Time between data rebuild (PhasedUpdateInterval): ", s);
@@ -1204,11 +1198,6 @@ class Configuration {
     s = ServerPeriod.toString(t);
     l = s.length();
     Report.output("                Server thread period (ServerPeriod): ", s);
-    Util.abandonEphemeralString(t, l);
-
-    s = PhasedUpdateInterval.toString(t);
-    l = s.length();
-    Report.output("      Phased update interval (PhasedUpdateInterval): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("Customer maintenance");

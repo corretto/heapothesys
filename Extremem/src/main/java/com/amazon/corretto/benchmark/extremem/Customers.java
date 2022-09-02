@@ -9,13 +9,90 @@ import java.util.HashMap;
  * Keep track of all currently active customers.
  */
 class Customers extends ExtrememObject {
+  static class ChangeLogNode {
+    private Customer replacement_customer;
+    private int replacement_index;
+    private ChangeLogNode next;
+
+    ChangeLogNode(int index, Customer customer) {
+      this.replacement_index = index;
+      this.replacement_customer = customer;
+      this.next = null;
+    }
+
+    int index() {
+      return replacement_index;
+    }
+
+    Customer customer() {
+      return replacement_customer;
+    }
+  }
+
+  static class ChangeLog {
+    ChangeLogNode head, tail;
+
+    ChangeLog() {
+      head = tail = null;
+    }
+
+    synchronized private void addToEnd(ChangeLogNode node) {
+      if (head == null) {
+        head = tail = node;
+      } else {
+        tail.next = node;
+        tail = node;
+      }
+    }
+
+    void append(int index, Customer customer) {
+      ChangeLogNode new_node = new ChangeLogNode(index, customer);
+      addToEnd(new_node);
+    }
+
+    // Returns null if ChangeLog is empty.
+    synchronized ChangeLogNode pull() {
+      ChangeLogNode result = head;
+      if (head == tail) {
+        // This handles case where head == tail == null already.  Overwriting with null is cheaper than testing and branching
+        // over for special case.
+        head = tail = null;
+      } else {
+        head = head.next;
+      }
+      return result;
+    }
+  }
+
+  static class CurrentCustomersData {
+    final private Arraylet<String> customer_names;
+    final private HashMap<String, Customer> customer_map;
+
+    CurrentCustomersData(Arraylet<String> customer_names, HashMap<String, Customer> customer_map) {
+      this.customer_names = customer_names;
+      this.customer_map = customer_map;
+    }
+
+    Arraylet<String> customerNames() {
+      return customer_names;
+    }
+
+    HashMap<String, Customer> customerMap() {
+      return customer_map;
+    }
+  }
+
+  // The change_log is only used if config.PhasedUpdates
+  final ChangeLog change_log;
+
   static final float DefaultLoadFactor = 0.75f;
 
   final private ConcurrencyControl cc;
   final private Configuration config;
   // was final private String[] customer_names;
-  final private Arraylet<String> customer_names;
-  final private HashMap<String, Customer> customer_map;
+
+  private Arraylet<String> customer_names;
+  private HashMap<String, Customer> customer_map;
 
   private int cbhs = 0;         // cumulative browsing history size.
 
@@ -27,6 +104,12 @@ class Customers extends ExtrememObject {
     int num_customers = config.NumCustomers();
     MemoryLog log = t.memoryLog();
     Polarity Grow = Polarity.Expand;
+
+    if (config.PhasedUpdates()) {
+      change_log = new ChangeLog();
+    } else {
+      change_log = null;
+    }
 
     // Account for cc, config, customer_names, customer_map
     log.accumulate(ls, MemoryFlavor.ObjectReference, Grow, 4);
@@ -115,9 +198,27 @@ class Customers extends ExtrememObject {
     } while (true);
   }
 
+  // In PhasedUpdates mode of operation, the database updater thread invokes this service to update customer_names
+  // and customer_map each time it rebuilds the Customers database
+  synchronized void establishUpdatedDataBase(ExtrememThread t, Arraylet<String> customer_names,
+                                             HashMap<String, Customer>customer_map) {
+    this.customer_names = customer_names;
+    this.customer_map = customer_map;
+  }
+
+  synchronized CurrentCustomersData getCurrentData() {
+    return new CurrentCustomersData(customer_names, customer_map);
+  }
+
   Customer selectRandomCustomer(ExtrememThread t) {
     Customer result;
-    if (config.FastAndFurious()) {
+    if (config.PhasedUpdates()) {
+      // no synchronization necessary here
+      int index = t.randomUnsignedInt() % config.NumCustomers();
+      CurrentCustomersData frozen_state = getCurrentData();
+      String name = frozen_state.customerNames().get(index);
+      result = frozen_state.customerMap().get(name);
+    } else if (config.FastAndFurious()) {
       int index = t.randomUnsignedInt() % config.NumCustomers();
       synchronized (customer_names) {
         String name = customer_names.get(index);
@@ -137,6 +238,62 @@ class Customers extends ExtrememObject {
     String name = customer_names.get(index);
     Customer c = customer_map.get(name);
     return c;
+  }
+
+  // For PhasedUpdates mode of operation
+  void replaceRandomCustomerPhasedUpdates(ExtrememThread t) {
+    String new_customer_name = randomDistinctName(t);
+    long new_customer_no;
+    Customer obsolete_customer;
+    synchronized (this) {
+      new_customer_no = next_customer_no++;
+    }
+    Customer new_customer = new Customer(t, LifeSpan.NearlyForever, new_customer_name, new_customer_no);
+    int replacement_index = t.randomUnsignedInt() % config.NumCustomers();
+    change_log.append(replacement_index, new_customer);
+
+    // Memory accounting is not implemented for PhasedUpdates mode
+  }
+
+  // Rebuild Customers data base from change_log.  Return number of customers changed.
+  long rebuildCustomersPhasedUpdates(ExtrememThread t) {
+    Arraylet<String> new_customer_names;
+    HashMap<String, Customer> new_customer_map;
+    int num_customers = config.NumCustomers();
+    int capacity = Util.computeHashCapacity(num_customers, DefaultLoadFactor, Util.InitialHashMapArraySize);
+    long tally = 0;
+
+    LifeSpan ls = this.intendedLifeSpan();
+    new_customer_names = new Arraylet<String>(t, ls, config.MaxArrayLength(), num_customers);
+    new_customer_map = new HashMap<String, Customer>(capacity, DefaultLoadFactor);
+
+    // First, copy the existing data base
+    for (int i = 0; i < num_customers; i++) {
+      String customer_name = customer_names.get(i);
+      new_customer_names.set(i, customer_name);
+      new_customer_map.put(customer_name, customer_map.get(customer_name));
+    }
+
+    // Then, modify the data base according to instructions in the change log.
+    ChangeLogNode change;
+    while ((change = change_log.pull()) != null) {
+      tally++;
+      int replacement_index = change.index();
+      Customer replacement_customer = change.customer();
+      String replacement_customer_name = replacement_customer.name();
+      if (new_customer_map.get(replacement_customer_name) == null) {
+        String obsolete_name = new_customer_names.get(replacement_index);
+        new_customer_map.remove(obsolete_name);
+        new_customer_names.set(replacement_index, replacement_customer_name);
+        new_customer_map.put(replacement_customer_name, replacement_customer);
+        // Don't bother to expire the old customer or expunge it from save-for-later queues.  That will happen when the
+        // expiration time is reached, at which time the object will become garbage.
+      }
+      // else, in the very unlikely event that this new name is redundant with an existing name, skip the
+      // customer replacement request.
+    }
+    establishUpdatedDataBase(t, new_customer_names, new_customer_map);
+    return tally;
   }
 
   void replaceRandomCustomer(ExtrememThread t) {

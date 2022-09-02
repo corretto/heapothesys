@@ -12,6 +12,7 @@ public class Bootstrap extends ExtrememThread {
   }
 
   public void runExtreme() {
+    UpdateThread update_thread;
     CustomerThread[] customer_threads;
     ServerThread[] server_threads;
 
@@ -269,7 +270,8 @@ public class Bootstrap extends ExtrememThread {
       server_threads[i].start(); // will wait for first release
     }
     staggered_start.garbageFootprint(this);
-      
+    staggered_start = null;
+
     staggered_customer_replacement.garbageFootprint(this);
     staggered_customer_replacement = null;
       
@@ -286,7 +288,17 @@ public class Bootstrap extends ExtrememThread {
     if (product_replacement_stagger != null)
       product_replacement_stagger.garbageFootprint(this);
     product_replacement_stagger = null;
-      
+    
+    if (config.PhasedUpdates()) {
+      staggered_start = start_time.addRelative(this, config.PhasedUpdateInterval());
+      update_thread = new UpdateThread(config, randomLong(), all_products, all_customers, staggered_start, end_time);
+      update_thread.start();    // will wait for first release
+      staggered_start.garbageFootprint(this);
+      staggered_start = null;
+    } else {
+      update_thread = null;
+    }
+  
     now = AbsoluteTime.now(this);
     if (config.ReportCSV()) {
       s = Long.toString(now.microseconds());
@@ -311,7 +323,6 @@ public class Bootstrap extends ExtrememThread {
     now = null;
       
     Trace.msg(2, "Joining with customer threads");
-      
     // Each thread will terminate when the end_time is reached.
     for (int i = 0; i < config.CustomerThreads(); i++) {
       try {
@@ -322,7 +333,6 @@ public class Bootstrap extends ExtrememThread {
     }
       
     Trace.msg(2, "Joining with server threads");
-      
     for (int i = 0; i < config.ServerThreads(); i++) {
       try {
         server_threads[i].join();
@@ -330,7 +340,20 @@ public class Bootstrap extends ExtrememThread {
         i--;                    // just try it again
       }
     }
-      
+
+    if (update_thread != null) {
+      Trace.msg(2, "Joining with update thread");
+      boolean retry = false;
+      do {
+        try {
+          update_thread.join();
+          retry = false;
+        } catch (InterruptedException x) {
+          retry = true;
+        }
+      } while (retry);
+    }
+
     Trace.msg(2, "Program simulation has ended");
     all_products.report(this);
     all_customers.report(this);

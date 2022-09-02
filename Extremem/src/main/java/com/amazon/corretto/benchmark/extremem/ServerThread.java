@@ -172,8 +172,13 @@ class ServerThread extends ExtrememThread {
           break;
         case 2:
           if (next_release_time.compare(customer_replacement_time) >= 0) {
-            for (int i = config.CustomerReplacementCount(); i > 0; i--)
-              all_customers.replaceRandomCustomer(this);
+            if (config.PhasedUpdates()) {
+              for (int i = config.CustomerReplacementCount(); i > 0; i--)
+                all_customers.replaceRandomCustomerPhasedUpdates(this);
+            } else {
+              for (int i = config.CustomerReplacementCount(); i > 0; i--)
+                all_customers.replaceRandomCustomer(this);
+            }
 
             customer_replacement_time.garbageFootprint(this);
             customer_replacement_time = (

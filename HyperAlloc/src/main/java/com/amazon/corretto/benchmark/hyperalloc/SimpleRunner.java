@@ -2,9 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.management.ManagementFactory;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -39,12 +42,15 @@ public class SimpleRunner extends TaskBase {
         try {
             AllocObject.setOverhead(config.isUseCompressedOops() ? AllocObject.ObjectOverhead.CompressedOops
                     : AllocObject.ObjectOverhead.NonCompressedOops);
-            final ObjectStore store = new ObjectStore(config.getLongLivedInMb(), config.getPruneRatio(),
-                    config.getReshuffleRatio());
+            final ObjectStore store = new ObjectStore(config.getLongLivedInMb(), config.getPruneRatio(), config.getReshuffleRatio());
             final Thread storeThread = new Thread(store);
             storeThread.setDaemon(true);
             storeThread.setName("HyperAlloc-Store");
             storeThread.start();
+
+            MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
+            ObjectName objectName = new ObjectName("com.amazon.hyperalloc:name=ObjectStore");
+            platformMBeanServer.registerMBean(store, objectName);
 
             AllocationRateLogger allocationLogger = new AllocationRateLogger(config.getAllocationLogFile());
             allocationLogger.start();

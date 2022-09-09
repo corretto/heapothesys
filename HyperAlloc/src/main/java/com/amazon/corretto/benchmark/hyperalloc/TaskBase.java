@@ -124,12 +124,8 @@ public abstract class TaskBase {
                                                 final int maxObjectSize, final int queueLength) {
         return () -> {
             final long rate = rateInMb * 1024 * 1024;
-            final ArrayDeque<AllocObject> survivorQueue = new ArrayDeque<>();
-
             final long end = System.nanoTime() + durationInMs * 1000000;
             final BurstyTokenBucket throughput = new BurstyTokenBucket(rate, TimeUnit.SECONDS);
-            int longLivedRate = MAX_LONG_LIVED_RATIO;
-            int longLivedCounter = longLivedRate;
 
             // This arguably belongs inside the rate limiter. This code is meant
             // to smooth out the extremely spiky allocation patterns. Even with
@@ -168,23 +164,7 @@ public abstract class TaskBase {
                         }
                     }
 
-                    survivorQueue.push(obj);
-
-                    if (survivorQueue.size() > queueLength) {
-                        final AllocObject removed = survivorQueue.poll();
-                        if (--longLivedCounter == 0) {
-                            if (store.tryAdd(removed)) {
-                                if (longLivedRate > MAX_LONG_LIVED_RATIO) {
-                                    longLivedRate /= 2;
-                                }
-                            } else {
-                                if (longLivedRate < MIN_LONG_LIVED_RATIO) {
-                                    longLivedRate *= 2;
-                                }
-                            }
-                            longLivedCounter = longLivedRate;
-                        }
-                    }
+                    store.tryAdd(obj);
                 }
             }
             return 0L;

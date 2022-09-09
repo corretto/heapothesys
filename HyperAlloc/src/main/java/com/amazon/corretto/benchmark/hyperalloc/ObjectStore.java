@@ -8,6 +8,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
  * and object values based on the <i>reshuffleRatio</i> argument. It makes sure the barriers are exercised during run
  * time.
  */
-public class ObjectStore implements Runnable {
+public class ObjectStore implements Runnable, ObjectStoreMXBean {
     // The default value of number of object in a store list group.
     private static final int DEFAULT_MAX_ITEM_IN_GROUP = 512;
     // The default value of the prune ratio per minute. 1/50 of objects in the store would be replaced within a minute.
@@ -40,6 +41,9 @@ public class ObjectStore implements Runnable {
     final int maxItemInGroup;
 
     private AtomicLong currentSize;
+
+    private LongAdder dropCount;
+
     private boolean running;
 
     static Logger logger = Logger.getGlobal();
@@ -72,8 +76,9 @@ public class ObjectStore implements Runnable {
         this.reshuffleRatio = reshuffleRatio;
         this.maxItemInGroup = maxItemInGroup;
 
+        dropCount = new LongAdder();
         currentSize = new AtomicLong(0L);
-        queue = new ArrayBlockingQueue<>(maxItemInGroup);
+        queue = new ArrayBlockingQueue<>(5_000);
         running = true;
     }
 
@@ -88,6 +93,7 @@ public class ObjectStore implements Runnable {
                 return true;
             }
 
+            dropCount.increment();
             return false;
         } catch (InterruptedException e) {
             return false;
@@ -122,11 +128,12 @@ public class ObjectStore implements Runnable {
                     if (obj != null) {
                         replaceInStore(obj);
                         pruneRate.deduct(obj.getRealSize());
-                        if (ThreadLocalRandom.current().nextBoolean()) {
-                            reshuffle(reshuffleRatio);
-                        }
                         continue;
                     }
+                }
+
+                if (ThreadLocalRandom.current().nextBoolean()) {
+                    reshuffle(reshuffleRatio);
                 }
 
                 Thread.sleep(INTERVAL_IN_MS);
@@ -211,5 +218,20 @@ public class ObjectStore implements Runnable {
             current.forEach(obj -> tryRef(obj, currentIndex));
             current.forEach(AllocObject::touch);
         }
+    }
+
+    @Override
+    public long getCurrentSize() {
+        return currentSize.get();
+    }
+
+    @Override
+    public long getSizeLimit() {
+        return sizeLimit;
+    }
+
+    @Override
+    public long getDroppedCount() {
+        return dropCount.sum();
     }
 }

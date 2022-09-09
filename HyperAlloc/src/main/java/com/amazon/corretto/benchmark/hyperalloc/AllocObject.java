@@ -54,7 +54,16 @@ class AllocObject {
      * This method is used to exercise barriers.
      */
     void touch() {
-        data[ThreadLocalRandom.current().nextInt(data.length)] += 1;
+        try {
+            CriticalGC.acquire(data);
+//            System.out.println(Thread.currentThread().getName() + ": acquire critical");
+            data[ThreadLocalRandom.current().nextInt(data.length)] += 1;
+            Thread.sleep(ThreadLocalRandom.current().nextInt(10, 500));
+        } catch (InterruptedException ignore) {
+        } finally {
+//            System.out.println(Thread.currentThread().getName() + ": release critical");
+            CriticalGC.release(data);
+        }
     }
 
     long getSum() {
@@ -88,7 +97,7 @@ class AllocObject {
     }
 
     static int getRandomSize(int min, int max) {
-        return min == max ? min : ThreadLocalRandom.current().nextInt(max - min) + min;
+        return min == max ? min : ThreadLocalRandom.current().nextInt(min, max);
     }
 
     static AllocObject create(final int size) {

@@ -7,7 +7,8 @@ public final class HyperAlloc {
 
     private HyperAlloc() {}
 
-    public static void main(String[] args) {
+    public static void main(String[] args)  {
+        System.loadLibrary("CriticalGC");
         switch (findRunType(args)) {
             case "simple" :
                 new SimpleRunner(new SimpleRunConfig(args)).start();

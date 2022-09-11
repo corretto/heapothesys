@@ -14,7 +14,6 @@ package com.amazon.corretto.benchmark.extremem;
 class ArrayletOflong extends ExtrememObject {
   // We use max_arraylet_length for the typical segment size and the typical index size.  We only truncate the
   // last array segment and the last indexing segment at each indexing level.
-
   private final int max_arraylet_length;
   private final int length;               // Number of elements in Arraylet
   private final int num_segments;         // Total number of array segments representing the elements of this Arraylet
@@ -40,7 +39,7 @@ class ArrayletOflong extends ExtrememObject {
       // At second indexing tier, each index element represents max_arraylet_length * max_arraylet_length
       // At level N (with bottom equal to zero), each index element represents max_arraylet_length * max_arraylet_length ^ N
       int index_levels = 1;
-      int potential_span = max_arraylet_length * max_arraylet_length;
+      long potential_span = max_arraylet_length * (long) max_arraylet_length;
       while (potential_span < length) {
         index_levels++;
         potential_span *= max_arraylet_length;
@@ -236,7 +235,9 @@ class ArrayletOflong extends ExtrememObject {
       log.accumulate(ls, MemoryFlavor.ArrayObject, p, index_segment.length);;
       for (int i = 0; i < index_segment.length; i++) {
         long[] data_segment = (long[]) index_segment[i];
-        log.accumulate(ls, MemoryFlavor.ArrayRSB, p, data_segment.length * Util.SizeOfLong);
+        if (data_segment != null) {
+          log.accumulate(ls, MemoryFlavor.ArrayRSB, p, data_segment.length * Util.SizeOfLong);
+        }
       }
     }
   }

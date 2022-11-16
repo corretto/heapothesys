@@ -1130,7 +1130,7 @@ class Configuration {
     Report.output("  Fine-grain locking of data base (FastAndFurious): ", FastAndFurious? "true": "false");
     Report.output("       Rebuild data base in phases (PhasedUpdates): ", PhasedUpdates? "true": "false");
     Report.output();
-    s = PhasedUpdateInterval.toString();
+    s = PhasedUpdateInterval.toString(t);
     l = s.length();
     Util.ephemeralString(t, l);
     Report.output("  Time between data rebuild (PhasedUpdateInterval): ", s);

@@ -13,8 +13,9 @@ class UpdateThread extends ExtrememThread {
   private final Configuration config;
   private final Products all_products;
   private final Customers all_customers;
+
   private AbsoluteTime next_release_time;
-  private final AbsoluteTime end_simulation_time;
+  private AbsoluteTime end_simulation_time;
 
   private long customers_rebuild_count = 0;
   private long replaced_customers_min = 0;
@@ -35,8 +36,7 @@ class UpdateThread extends ExtrememThread {
   // private final MemoryLog alloc_accumulator;
   // private final MemoryLog garbage_accumulator;
 
-  UpdateThread(Configuration config, long random_seed, Products all_products, Customers all_customers,
-               AbsoluteTime first_release, AbsoluteTime end_simulation) {
+  UpdateThread(Configuration config, long random_seed, Products all_products, Customers all_customers) {
       super (config, random_seed);
       final Polarity Grow = Polarity.Expand;
       final MemoryLog log = this.memoryLog();
@@ -50,12 +50,6 @@ class UpdateThread extends ExtrememThread {
 
       this.all_customers = all_customers;
       this.all_products = all_products;
-
-      // Replaced every period, typically less than 2 minutes for ServerThread.
-      this.next_release_time = new AbsoluteTime(this, first_release);
-      this.next_release_time.changeLifeSpan(this, LifeSpan.TransientShort);
-
-      this.end_simulation_time = end_simulation;
 
       // this.accumulator = accumulator;
       // this.alloc_accumulator = alloc_accumulator;
@@ -72,7 +66,16 @@ class UpdateThread extends ExtrememThread {
       // log.accumulate(LifeSpan.NearlyForever,
       //                MemoryFlavor.ObjectRSB, Grow, Util.SizeOfInt);
   }
-  
+
+  public void setStartAndStop(AbsoluteTime first_release, AbsoluteTime end_simulation) {
+    // Replaced every period, typically less than 2 minutes for ServerThread.
+    this.next_release_time = new AbsoluteTime(this, first_release);
+    this.next_release_time.changeLifeSpan(this, LifeSpan.TransientShort);
+
+    this.end_simulation_time = end_simulation;
+  }
+
+
   public void runExtreme() {
     long customers_rebuild_count = 0;
     long replaced_customers_min = 0;

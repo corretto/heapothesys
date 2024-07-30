@@ -11,7 +11,7 @@ class CustomerThread extends ExtrememThread {
   private final Customers all_customers;
   private final Products all_products;
   private AbsoluteTime next_release_time;
-  private final AbsoluteTime end_simulation_time;
+  private AbsoluteTime end_simulation_time;
 
   private final BrowsingHistoryQueue browsing_queue;
   private final SalesTransactionQueue sales_queue;
@@ -39,8 +39,7 @@ class CustomerThread extends ExtrememThread {
                   SalesTransactionQueue sales_queue,
                   CustomerLogAccumulator accumulator,
                   MemoryLog alloc_accumulator,
-                  MemoryLog garbage_accumulator,
-                  AbsoluteTime first_release, AbsoluteTime end_simulation) {
+                  MemoryLog garbage_accumulator) {
     super (config, random_seed);
     MemoryLog log = this.memoryLog();
     MemoryLog garbage = this.garbageLog();
@@ -59,11 +58,6 @@ class CustomerThread extends ExtrememThread {
     this.browsing_queue = browsing_queue;
     this.sales_queue = sales_queue;
     
-    // We'll count the period of CustomerThread activities as
-    // Ephemeral: next_release is discarded and reallocated every period.
-    next_release_time = new AbsoluteTime(this, first_release);
-    end_simulation_time = end_simulation;
-    
     this.accumulator = accumulator;
     this.alloc_accumulator = alloc_accumulator;
     this.garbage_accumulator = garbage_accumulator;
@@ -78,6 +72,13 @@ class CustomerThread extends ExtrememThread {
     
     // Account for object referenced by history.
     history.tallyMemory(log, ls, Polarity.Expand);
+  }
+
+  public void setStartAndStop(AbsoluteTime start, AbsoluteTime stop) {
+    // We'll count the period of CustomerThread activities as
+    // Ephemeral: next_release is discarded and reallocated every period.
+    this.next_release_time = new AbsoluteTime(this, start);
+    this.end_simulation_time = stop;
   }
 
   public void runExtreme() {

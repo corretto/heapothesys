@@ -78,7 +78,6 @@ class Configuration {
 
   static final int DefaultPhasedUpdateIntervalSeconds = 60;
 
-  static final long DefaultInitializationDelayMillis = 50;
   static final long DefaultDurationMinutes = 10;
 
   /*
@@ -107,7 +106,6 @@ class Configuration {
   private String DictionaryFile;
   private Words dictionary;
 
-  private RelativeTime InitializationDelay;
   private RelativeTime SimulationDuration;
 
   private RelativeTime CustomerPeriod;
@@ -182,12 +180,12 @@ class Configuration {
                    Polarity.Expand, 17 * Util.SizeOfInt +
                    2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
-    // Account for 11 reference fields: args, dictionary,
-    // DictionaryFile, InitializationDelay, SimulationDuration,
+    // Account for 10 reference fields: args, dictionary,
+    // DictionaryFile, SimulationDuration,
     // CustomerPeriod, CustomerThinkTime, ServerPeriod, BrowsingExpiration,
     // CustomerReplacementPeriod, ProductReplacementPeriod.
     log.accumulate(LifeSpan.NearlyForever,
-                   MemoryFlavor.ObjectReference, Polarity.Expand, 11);
+                   MemoryFlavor.ObjectReference, Polarity.Expand, 10);
 
     ResponseTimeMeasurements = DefaultResponseTimeMeasurements;
     ReportIndividualThreads = DefaultReportIndividualThreads;
@@ -210,11 +208,6 @@ class Configuration {
 
     SimulationDuration = new RelativeTime(t, DefaultDurationMinutes * 60, 0);
     SimulationDuration.changeLifeSpan(t, LifeSpan.NearlyForever);
-
-    InitializationDelay = (
-      new RelativeTime(t, DefaultInitializationDelayMillis / 1000, (int)
-                       (DefaultInitializationDelayMillis % 1000) * 1000000));
-    InitializationDelay.changeLifeSpan(t, LifeSpan.NearlyForever);
 
     RelativeTime rt = new RelativeTime(t);
     CustomerPeriod = rt.addMinutes(t, DefaultCustomerPeriodMinutes);
@@ -552,9 +545,9 @@ class Configuration {
         u *= 60;                // convert minutes to seconds
       case 's':
         u *= 1000;              // convert seconds to ms
-      case '@':
+      case '@':                 // '@' represents ms
         break;
-      case '$':
+      case '$':                 // '$' represents no time unit specified
       default:
         usage("Time suffix must be ms, s, m, h, or d");
     }
@@ -596,9 +589,7 @@ class Configuration {
         }
       case 4:
         if (keyword.equals("InitializationDelay")) {
-          InitializationDelay.garbageFootprint(t);
-          InitializationDelay = new RelativeTime(t, secs, nanos);
-          InitializationDelay.changeLifeSpan(t, LifeSpan.NearlyForever);
+          Report.output("Warning.  InitializationDelay is deprecated and ignored");
           break;
         }
       case 5:
@@ -827,10 +818,6 @@ class Configuration {
     return SimulationDuration;
   }
 
-  RelativeTime InitializationDelay() {
-    return InitializationDelay;
-  }
-
   RelativeTime CustomerPeriod() {
     return CustomerPeriod;
   }
@@ -926,12 +913,6 @@ class Configuration {
     l = s.length();
     Util.ephemeralString(t, l);
     Report.output("RandomSeed,", s);
-    Util.abandonEphemeralString(t, l);
-
-    s = Long.toString(InitializationDelay.microseconds());
-    l = s.length();
-    Util.ephemeralString(t, l);
-    Report.output("InitializationDelay,", s);
     Util.abandonEphemeralString(t, l);
 
     s = Long.toString(SimulationDuration.microseconds());
@@ -1143,11 +1124,6 @@ class Configuration {
     Report.output("    Seed for random number generation (RandomSeed): ", s);
     Util.abandonEphemeralString(t, l);
 
-    s = InitializationDelay.toString(t);
-    l = s.length();
-    Report.output("               Startup Pause (InitializationDelay): ", s);
-    Util.abandonEphemeralString(t, l);
-
     s = SimulationDuration.toString(t);
     l = s.length();
     Report.output("                     Duration (SimulationDuration): ", s);
@@ -1333,16 +1309,15 @@ class Configuration {
                        Grow, 17 * Util.SizeOfInt +
                        2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
-    // Account for 11 reference fields: args, dictionary, DictionaryFile
-    // InitializationDelay, SimulationDuration, CustomerPeriod,
+    // Account for 10 reference fields: args, dictionary, DictionaryFile
+    // SimulationDuration, CustomerPeriod,
     // CustomerThinkTime, ServerPeriod, BrowsingExpiration,
     // CustomerReplacementPeriod, ProductReplacementPeriod 
     garbage.accumulate(LifeSpan.NearlyForever,
-                       MemoryFlavor.ObjectReference, Polarity.Expand, 11);
+                       MemoryFlavor.ObjectReference, Polarity.Expand, 10);
 
     Util.tallyString(t.garbageLog(), LifeSpan.NearlyForever,
                      Polarity.Expand, DictionaryFile.length());
-    InitializationDelay.garbageFootprint(t);
     SimulationDuration.garbageFootprint(t);
     CustomerPeriod.garbageFootprint(t);
     CustomerThinkTime.garbageFootprint(t);

@@ -25,8 +25,7 @@ public class Bootstrap extends ExtrememThread {
       
     MemoryLog memory = memoryLog();
     MemoryLog garbage = garbageLog();
-    MemoryLog all_threads_accumulator = (
-      new MemoryLog(LifeSpan.NearlyForever));
+    MemoryLog all_threads_accumulator = new MemoryLog(LifeSpan.NearlyForever);
     all_threads_accumulator.memoryFootprint(this);
       
     Trace.msg(1, "@ ",
@@ -148,35 +147,63 @@ public class Bootstrap extends ExtrememThread {
       Trace.msg(3, "Server stagger set to: ", server_stagger.toString(this));
     }
       
-    // In addition to config.InitializationDelay(), reserve 1 second for
-    // variable costs of initializing every 2000 threads.  
-    int start_delay_milliseconds = (
-      (config.CustomerThreads() + config.ServerThreads()) / 2);
+    Trace.msg(2, "starting up CustomerThreads: ", Integer.toString(config.CustomerThreads()));
       
-    RelativeTime start_delay = (config.InitializationDelay().
-                                addMillis(this, start_delay_milliseconds));
+    // Initialize and startup all of the threads as specified in
+    // config.
+    customer_threads = new CustomerThread[config.CustomerThreads()];
+    Util.referenceArray(this, LifeSpan.NearlyForever, config.CustomerThreads());
       
-    String s = start_delay.toString(this);
-    Trace.msg(3, "");
-    Trace.msg(3, "Simulation starts in ", s);
-    Util.abandonEphemeralString(this, s);
+    int bq_no = config.BrowsingHistoryQueueCount() - 1;
+    int sq_no = config.SalesTransactionQueueCount() - 1;
+    for (int i = 0; i < config.CustomerThreads(); i++) {
+      customer_threads[i] = new CustomerThread(config, randomLong(), i, all_products, all_customers, browsing_queues[bq_no],
+                                               sales_queues[sq_no], customer_accumulator, customer_alloc_accumulator,
+                                               customer_garbage_accumulator);
+      if (bq_no-- == 0) {
+        bq_no = config.BrowsingHistoryQueueCount() - 1;
+      }
+      if (sq_no-- == 0) {
+        sq_no = config.SalesTransactionQueueCount() - 1;
+      }
+    }
+    if (customer_stagger != null) {
+      customer_stagger.garbageFootprint(this);
+    }
+    Trace.msg(2, "starting up ServerThreads: ",
+              Integer.toString(config.ServerThreads()));
       
+    server_threads = new ServerThread[config.ServerThreads()];
+    Util.referenceArray(this, LifeSpan.NearlyForever, config.ServerThreads());
+      
+    bq_no = config.BrowsingHistoryQueueCount() - 1;
+    sq_no = config.SalesTransactionQueueCount() - 1;
+    for (int i = 0; i < config.ServerThreads(); i++) {
+      server_threads[i] = new ServerThread(config, randomLong(), i, all_products, all_customers, browsing_queues[bq_no],
+                                           sales_queues[sq_no], server_accumulator, server_alloc_accumulator,
+                                           server_garbage_accumulator);
+      if (bq_no-- == 0)
+        bq_no = config.BrowsingHistoryQueueCount() - 1;
+      if (sq_no-- == 0)
+        sq_no = config.SalesTransactionQueueCount() - 1;
+    }
+    
+    if (config.PhasedUpdates()) {
+      update_thread = new UpdateThread(config, randomLong(), all_products, all_customers);
+    } else {
+      update_thread = null;
+    }
+  
     AbsoluteTime now = AbsoluteTime.now(this);
-    AbsoluteTime start_time = now.addRelative(this, start_delay);
-    start_delay.garbageFootprint(this);
-    start_delay = null;
-    now.garbageFootprint(this);
-    now = null;
-    AbsoluteTime end_time = (
-      start_time.addRelative(this, config.SimulationDuration()));
-    end_time.changeLifeSpan(this, LifeSpan.NearlyForever);
-      
-    AbsoluteTime staggered_customer_replacement = (
-      new AbsoluteTime(this, start_time));
-      
-    AbsoluteTime staggered_product_replacement = (
-      new AbsoluteTime(this, start_time));
-      
+
+    // Add 4 ms to conservatively approximate the time required to establish start times and start() each thread
+    AbsoluteTime start_time = now.addMillis(this, 4 * (config.CustomerThreads() + config.ServerThreads()));
+    AbsoluteTime end_time =  start_time.addRelative(this, config.SimulationDuration());
+
+    AbsoluteTime staggered_customer_replacement = new AbsoluteTime(this, start_time);
+    AbsoluteTime staggered_product_replacement = new AbsoluteTime(this, start_time);
+
+    String s;
     if (config.ReportCSV()) {
       s = Long.toString(start_time.microseconds());
       Util.ephemeralString(this, s.length());
@@ -200,75 +227,30 @@ public class Bootstrap extends ExtrememThread {
     Trace.msg(2, "End simulation time: ", s);
     Trace.msg(2, "");
     Util.abandonEphemeralString(this, s);
-      
-    Trace.msg(2, "starting up CustomerThreads: ",
-              Integer.toString(config.CustomerThreads()));
-      
-    // Initialize and startup all of the threads as specified in
-    // config.
-    customer_threads = new CustomerThread[config.CustomerThreads()];
-    Util.referenceArray(this, LifeSpan.NearlyForever,
-                        config.CustomerThreads());
-      
+
+    // startup the customer threads
     AbsoluteTime staggered_start = start_time.addMinutes(this, 0);
-    int bq_no = config.BrowsingHistoryQueueCount() - 1;
-    int sq_no = config.SalesTransactionQueueCount() - 1;
     for (int i = 0; i < config.CustomerThreads(); i++) {
-      customer_threads[i] = (
-        new CustomerThread(config, randomLong(), i, all_products,
-                           all_customers, browsing_queues[bq_no],
-                           sales_queues[sq_no], customer_accumulator,
-                           customer_alloc_accumulator,
-                           customer_garbage_accumulator, staggered_start,
-                           end_time));
-      if (bq_no-- == 0)
-        bq_no = config.BrowsingHistoryQueueCount() - 1;
-      if (sq_no-- == 0)
-        sq_no = config.SalesTransactionQueueCount() - 1;
+      customer_threads[i].setStartAndStop(staggered_start, end_time);
       staggered_start.garbageFootprint(this);
-      staggered_start = staggered_start.addRelative(this, customer_stagger);
       customer_threads[i].start(); // will wait for first release
+      staggered_start = staggered_start.addRelative(this, customer_stagger);
     }
-    staggered_start.garbageFootprint(this);
-    if (customer_stagger != null)
-      customer_stagger.garbageFootprint(this);
-      
-    Trace.msg(2, "starting up ServerThreads: ",
-              Integer.toString(config.ServerThreads()));
-      
-    server_threads = new ServerThread[config.ServerThreads()];
-    Util.referenceArray(this,
-                        LifeSpan.NearlyForever, config.ServerThreads());
-      
+
+    // startup the server threads
     staggered_start = start_time.addMinutes(this, 0);
-      
-    bq_no = config.BrowsingHistoryQueueCount() - 1;
-    sq_no = config.SalesTransactionQueueCount() - 1;
     for (int i = 0; i < config.ServerThreads(); i++) {
-      server_threads[i] = (
-        new ServerThread(config,
-                         randomLong(), i, all_products, all_customers,
-                         browsing_queues[bq_no], sales_queues[sq_no],
-                         server_accumulator, server_alloc_accumulator,
-                         server_garbage_accumulator, staggered_start,
-                         staggered_customer_replacement,
-                         staggered_product_replacement, end_time));
-      if (bq_no-- == 0)
-        bq_no = config.BrowsingHistoryQueueCount() - 1;
-      if (sq_no-- == 0)
-        sq_no = config.SalesTransactionQueueCount() - 1;
+      server_threads[i].setStartsAndStop(staggered_start, staggered_customer_replacement, staggered_product_replacement,
+                                         end_time);
       staggered_start.garbageFootprint(this);
       staggered_start = staggered_start.addRelative(this, server_stagger);
       staggered_customer_replacement.garbageFootprint(this);
-      staggered_customer_replacement = (
-        staggered_customer_replacement
-        .addRelative(this, customer_replacement_stagger));
+      staggered_customer_replacement = staggered_customer_replacement.addRelative(this, customer_replacement_stagger);
       staggered_product_replacement.garbageFootprint(this);
-      staggered_product_replacement = (
-        staggered_product_replacement
-        .addRelative(this, product_replacement_stagger));
+      staggered_product_replacement = staggered_product_replacement.addRelative(this, product_replacement_stagger);
       server_threads[i].start(); // will wait for first release
     }
+
     staggered_start.garbageFootprint(this);
     staggered_start = null;
 
@@ -277,7 +259,7 @@ public class Bootstrap extends ExtrememThread {
       
     staggered_product_replacement.garbageFootprint(this);
     staggered_product_replacement = null;
-      
+
     if (server_stagger != null)
       server_stagger.garbageFootprint(this);
       
@@ -288,17 +270,15 @@ public class Bootstrap extends ExtrememThread {
     if (product_replacement_stagger != null)
       product_replacement_stagger.garbageFootprint(this);
     product_replacement_stagger = null;
-    
+
     if (config.PhasedUpdates()) {
       staggered_start = start_time.addRelative(this, config.PhasedUpdateInterval());
-      update_thread = new UpdateThread(config, randomLong(), all_products, all_customers, staggered_start, end_time);
+      update_thread.setStartAndStop(staggered_start, end_time);
       update_thread.start();    // will wait for first release
       staggered_start.garbageFootprint(this);
       staggered_start = null;
-    } else {
-      update_thread = null;
     }
-  
+
     now = AbsoluteTime.now(this);
     if (config.ReportCSV()) {
       s = Long.toString(now.microseconds());
@@ -312,13 +292,15 @@ public class Bootstrap extends ExtrememThread {
     Util.abandonEphemeralString(this, s);
 
     if (now.compare(start_time) > 0) {
-      Configuration.usage("Initialization must complete before start."
-                          + "  Increase InitializationDelay.");
-      // Does not return.
+      Report.output("Warning!  Consumed more than 4 ms to start each thread.");
+      s = start_time.toString(this);
+      Report.output(" Planned to start at: ", s);
+      s = now.toString(this);
+      Report.output("Actually starting at: ", s);
     }
     start_time.garbageFootprint(this);
     start_time = null;
-      
+    end_time.changeLifeSpan(this, LifeSpan.NearlyForever);
     now.garbageFootprint(this);
     now = null;
       

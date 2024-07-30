@@ -196,13 +196,9 @@ public class Bootstrap extends ExtrememThread {
   
     AbsoluteTime now = AbsoluteTime.now(this);
 
-    // Add 2 ms to conservatively approximate the time required to establish start times and start() each thread
-    AbsoluteTime start_time = now.addMillis(this, 2 * (config.CustomerThreads() + config.ServerThreads()));
+    // Add 4 ms to conservatively approximate the time required to establish start times and start() each thread
+    AbsoluteTime start_time = now.addMillis(this, 4 * (config.CustomerThreads() + config.ServerThreads()));
     AbsoluteTime end_time =  start_time.addRelative(this, config.SimulationDuration());
-
-    start_time.garbageFootprint(this);
-    start_time = null;
-    end_time.changeLifeSpan(this, LifeSpan.NearlyForever);
 
     AbsoluteTime staggered_customer_replacement = new AbsoluteTime(this, start_time);
     AbsoluteTime staggered_product_replacement = new AbsoluteTime(this, start_time);
@@ -254,6 +250,7 @@ public class Bootstrap extends ExtrememThread {
       staggered_product_replacement = staggered_product_replacement.addRelative(this, product_replacement_stagger);
       server_threads[i].start(); // will wait for first release
     }
+
     staggered_start.garbageFootprint(this);
     staggered_start = null;
 
@@ -295,12 +292,15 @@ public class Bootstrap extends ExtrememThread {
     Util.abandonEphemeralString(this, s);
 
     if (now.compare(start_time) > 0) {
-      Report.output("Warning!  Consumed more than 2 ms to start each thread.");
-      // If you see this message, we need to tweak initialization delays in this source code.
+      Report.output("Warning!  Consumed more than 4 ms to start each thread.");
+      s = start_time.toString(this);
+      Report.output(" Planned to start at: ", s);
+      s = now.toString(this);
+      Report.output("Actually starting at: ", s);
     }
     start_time.garbageFootprint(this);
     start_time = null;
-      
+    end_time.changeLifeSpan(this, LifeSpan.NearlyForever);
     now.garbageFootprint(this);
     now = null;
       

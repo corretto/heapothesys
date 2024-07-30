@@ -180,7 +180,7 @@ class Configuration {
                    Polarity.Expand, 17 * Util.SizeOfInt +
                    2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
-    // Account for 11 reference fields: args, dictionary,
+    // Account for 10 reference fields: args, dictionary,
     // DictionaryFile, SimulationDuration,
     // CustomerPeriod, CustomerThinkTime, ServerPeriod, BrowsingExpiration,
     // CustomerReplacementPeriod, ProductReplacementPeriod.

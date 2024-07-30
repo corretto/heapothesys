@@ -14,7 +14,6 @@ class ServerThread extends ExtrememThread {
   private final Customers all_customers;
   private final SalesTransactionQueue sales_queue;
   private final BrowsingHistoryQueue browsing_queue;
-  private final AbsoluteTime end_simulation_time;
 
   private final ServerLog history;
   private final ServerLogAccumulator accumulator;
@@ -24,23 +23,17 @@ class ServerThread extends ExtrememThread {
   private AbsoluteTime next_release_time;
   private AbsoluteTime customer_replacement_time;
   private AbsoluteTime product_replacement_time;
+  private AbsoluteTime end_simulation_time;
 
   /* Memory accounting: The memory allocated for each ServerThread
    * instance is accounted in the memoryLog() for the ServerThread.
    * ServerThread is assumed to have NearlyForever life span.
    * The Bootstrap thread accounts for this ServerThread instance's
    * garbage.  */
-  ServerThread(Configuration config, long random_seed, int sequence_no,
-               Products all_products, Customers all_customers,
-               BrowsingHistoryQueue browsing_queue,
-               SalesTransactionQueue sales_queue,
-               ServerLogAccumulator accumulator,
-               MemoryLog alloc_accumulator,
-               MemoryLog garbage_accumulator,
-               AbsoluteTime first_release,
-               AbsoluteTime customer_replacement_time,
-               AbsoluteTime product_replacement_time,
-               AbsoluteTime end_simulation) {
+  ServerThread(Configuration config, long random_seed, int sequence_no, Products all_products, Customers all_customers,
+               BrowsingHistoryQueue browsing_queue, SalesTransactionQueue sales_queue, ServerLogAccumulator accumulator,
+               MemoryLog alloc_accumulator, MemoryLog garbage_accumulator) {
+
       super (config, random_seed);
       final Polarity Grow = Polarity.Expand;
       this.attention = sequence_no % TotalAttentionPoints;
@@ -61,20 +54,6 @@ class ServerThread extends ExtrememThread {
       this.browsing_queue = browsing_queue;
       this.sales_queue = sales_queue;
 
-      this.next_release_time = new AbsoluteTime(this, first_release);
-      // Replaced every period, typically less than 2 minutes for ServerThread.
-      this.next_release_time.changeLifeSpan(this, LifeSpan.TransientShort);
-      this.customer_replacement_time = (
-        new AbsoluteTime(this, customer_replacement_time));
-      this.customer_replacement_time.changeLifeSpan(this,
-                                                    LifeSpan.TransientShort);
-      this.product_replacement_time = (
-        new AbsoluteTime(this, product_replacement_time));
-      this.product_replacement_time.changeLifeSpan(this,
-                                                   LifeSpan.TransientShort);
-
-      this.end_simulation_time = end_simulation;
-
       this.accumulator = accumulator;
       this.alloc_accumulator = alloc_accumulator;
       this.garbage_accumulator = garbage_accumulator;
@@ -90,6 +69,20 @@ class ServerThread extends ExtrememThread {
       // Account for int field attention.
       log.accumulate(LifeSpan.NearlyForever,
                      MemoryFlavor.ObjectRSB, Grow, Util.SizeOfInt);
+  }
+
+  public void setStartsAndStop(AbsoluteTime first_release, AbsoluteTime customer_replacement_time,
+                               AbsoluteTime product_replacement_time, AbsoluteTime end_simulation) {
+
+    this.next_release_time = new AbsoluteTime(this, first_release);
+
+    // Replaced every period, typically less than 2 minutes for ServerThread.
+    this.next_release_time.changeLifeSpan(this, LifeSpan.TransientShort);
+    this.customer_replacement_time = new AbsoluteTime(this, customer_replacement_time);
+    this.customer_replacement_time.changeLifeSpan(this, LifeSpan.TransientShort);
+    this.product_replacement_time = new AbsoluteTime(this, product_replacement_time);
+    this.product_replacement_time.changeLifeSpan(this, LifeSpan.TransientShort);
+    this.end_simulation_time = end_simulation;
   }
 
   public void runExtreme() {

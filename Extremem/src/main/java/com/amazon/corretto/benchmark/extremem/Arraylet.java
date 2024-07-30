@@ -269,7 +269,7 @@ class Arraylet<BaseType> extends ExtrememObject {
       Trace.debug("Testing Arraylet with max size 4");
       a = new Arraylet<Long>(t, LifeSpan.Ephemeral, 4, 56);
       for (int i = 0; i < 56; i++)
-        a.set(i, new Long(-10 * i));
+        a.set(i, Long.valueOf(-10 * i));
       for (int i = 55; i >= 0; i--) {
         Long l = a.get(i);
         String s1 = Integer.toString(i);
@@ -284,7 +284,7 @@ class Arraylet<BaseType> extends ExtrememObject {
       Trace.debug("Testing Arraylet with max size 7");
       a = new Arraylet<Long>(t, LifeSpan.Ephemeral, 7, 61);
       for (int i = 0; i < 61; i++)
-        a.set(i, new Long(-10 * i));
+        a.set(i, Long.valueOf(-10 * i));
       for (int i = 60; i >= 0; i--) {
         Long l = a.get(i);
         String s1 = Integer.toString(i);
@@ -300,7 +300,7 @@ class Arraylet<BaseType> extends ExtrememObject {
       Trace.debug("Testing Arraylet with max size 0");
       a = new Arraylet<Long>(t, LifeSpan.Ephemeral, 0, 61);
       for (int i = 0; i < 61; i++)
-        a.set(i, new Long(-10 * i));
+        a.set(i, Long.valueOf(-10 * i));
       for (int i = 60; i >= 0; i--) {
         Long l = a.get(i);
         String s1 = Integer.toString(i);

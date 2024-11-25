@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
+import java.lang.management.ManagementFactory;
+
 /**
  * Class for parsing simple run parameters.
  */
@@ -16,7 +18,7 @@ public class SimpleRunConfig {
     private boolean useCompressedOops = true;
     private int pruneRatio = ObjectStore.DEFAULT_PRUNE_RATIO;
     private int reshuffleRatio = ObjectStore.DEFAULT_RESHUFFLE_RATIO;
-    private int heapSizeInMb = 1024;
+    private int heapSizeInMb = (int)(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getCommitted() / 1048576L);
     private String logFile = "output.csv";
     private String allocationLogFile = null;
     private Double allocationSmoothnessFactor = null;
@@ -31,6 +33,8 @@ public class SimpleRunConfig {
             if (args[i].equals("-a")) {
                 allocRateInMbPerSecond = Long.parseLong(args[++i]);
             } else if (args[i].equals("-h")) {
+                // Left in to be compatible with existing scripts
+                System.out.println("@deprecated - value retrieved from MemoryMXBean");
                 heapSizeInMb = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-s")) {
                 longLivedInMb = Integer.parseInt(args[++i]);
@@ -73,7 +77,7 @@ public class SimpleRunConfig {
 
     private void usage() {
         System.out.println("Usage: java -jar HyperAlloc.jar " +
-                "[-u run type] [-a allocRateInMb] [-h heapSizeInMb] [-s longLivedObjectsInMb] " +
+                "[-u run type] [-a allocRateInMb] [-s longLivedObjectsInMb] " +
                 "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
                 "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-c useCompressedOops] " +
                 "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)] " +

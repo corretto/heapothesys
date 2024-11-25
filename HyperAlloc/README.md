@@ -38,7 +38,7 @@ If you would like to report a potential security issue in this project, please d
 
 Invocation with the minimum recommended set of HyperAlloc parameters and a typical jHiccup configuration:
 ```
-java -Xmx<bytes> -Xms<bytes> <GC options> <other JVM options> -Xloggc:<GC log file> -javaagent:<jHiccup directory>/jHiccup.jar='-a -d 0 -i 1000 -l <jHiccup log file>' -jar <HyperAlloc directory>/HyperAlloc-1.0.jar -a <MB> -h <MB> -d <seconds> -c <true/false> -l <CVS output file>
+java -Xmx<bytes> -Xms<bytes> <GC options> <other JVM options> -Xloggc:<GC log file> -javaagent:<jHiccup directory>/jHiccup.jar='-a -d 0 -i 1000 -l <jHiccup log file>' -jar <HyperAlloc directory>/HyperAlloc-1.0.jar -a <MB> -d <seconds> -c <true/false> -l <CVS output file>
 ```
 
 ### Build
@@ -54,10 +54,7 @@ The JAR file can be found in the *target* folder.
 The two primary arguments are allocation rate and heap occupancy:
 
 * -a < target allocation rate in Mb per second >, default: 1024
-* -s < target heap occupancy in Mb >, default: 64 
-
-Currently, the benchmark program needs to be told the heap size in use.
-* -h < heap size in Mb >
+* -s < target heap occupancy in Mb >, default: 64
 
 The benchmark cannot always achieve the specified values. In particular, the run duration must be long enough for HyperAlloc to meet the heap occupancy target, especially for those low allocation rate cases. You can set the benchmark run duration using:
 
@@ -111,7 +108,7 @@ In order to calm the allocation rate during startup, HyperAlloc can gradually in
 We normally use [JHiccup](https://www.azul.com/jhiccup/) to measure JVM pauses. You can either download it from its [website](https://www.azul.com/jhiccup-2/), or build it from the source code in its [GitHub repo](https://github.com/giltene/jHiccup). You can also use GC logs to measure safepoint times, allocation stalls, and Garbage Collection pauses. In the example below, we run HyperAlloc for the Shenandoah collector for 10 minutes using a 16Gb/s allocation rate and with 32Gb of a 64Gb heap occupied by long-lived objects.
 
 ```
-jdk/jdk-13.0.2+8/bin/java -Xmx65536m -Xms65536m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseLargePages -XX:+AlwaysPreTouch -XX:-UseBiasedLocking -Xloggc:./results/16384_65536_32768/gc.log -javaagent:<path to jHiccup>/jHiccup.jar='-a -d 0 -i 1000 -l ./results/16384_65536_32768/hyperalloc.hlog' -jar ./buildRoot/jar/HyperAlloc-1.0.jar -a 16384 -h 32768 -d 600 -m 128 -c false -t 16 -n 64 -x 32768 -l ./results/16384_65536_32768/output.csv
+jdk/jdk-13.0.2+8/bin/java -Xmx65536m -Xms65536m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseLargePages -XX:+AlwaysPreTouch -XX:-UseBiasedLocking -Xloggc:./results/16384_65536_32768/gc.log -javaagent:<path to jHiccup>/jHiccup.jar='-a -d 0 -i 1000 -l ./results/16384_65536_32768/hyperalloc.hlog' -jar ./buildRoot/jar/HyperAlloc-1.0.jar -a 16384 -d 600 -m 128 -c false -t 16 -n 64 -x 32768 -l ./results/16384_65536_32768/output.csv
 ```
 
 This command sets JHiccup as a Java agent and use it to create the hiccup log. The *output.csv* file contains the following information:

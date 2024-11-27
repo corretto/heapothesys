@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
+import sun.jvm.hotspot.runtime.VM;
+
 import java.lang.management.ManagementFactory;
 
 /**
@@ -15,7 +17,7 @@ public class SimpleRunConfig {
     private int numOfThreads = 4;
     private int minObjectSize = 128;
     private int maxObjectSize = 1024;
-    private boolean useCompressedOops = true;
+    private boolean useCompressedOops = VM.getVM().isCompressedOopsEnabled();
     private int pruneRatio = ObjectStore.DEFAULT_PRUNE_RATIO;
     private int reshuffleRatio = ObjectStore.DEFAULT_RESHUFFLE_RATIO;
     private int heapSizeInMb = (int)(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getCommitted() / 1048576L);
@@ -34,8 +36,7 @@ public class SimpleRunConfig {
                 allocRateInMbPerSecond = Long.parseLong(args[++i]);
             } else if (args[i].equals("-h")) {
                 // Left in to be compatible with existing scripts
-                System.out.println("@deprecated - value retrieved from MemoryMXBean");
-                heapSizeInMb = Integer.parseInt(args[++i]);
+                System.out.println("Use of -h has been deprecated - using value retrieved from MemoryMXBean");
             } else if (args[i].equals("-s")) {
                 longLivedInMb = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-m")) {
@@ -53,7 +54,7 @@ public class SimpleRunConfig {
             } else if (args[i].equals("-f")) {
                 reshuffleRatio = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-c")) {
-                useCompressedOops = Boolean.parseBoolean(args[++i]);
+                System.out.println("Use of -c has been deprecated - using value retrieved from VM.isCompressedOopsEnabled()");
             } else if (args[i].equals("-z")) {
                 allocationSmoothnessFactor = Double.parseDouble(args[++i]);
                 if (allocationSmoothnessFactor < 0 || allocationSmoothnessFactor > 1.0) {

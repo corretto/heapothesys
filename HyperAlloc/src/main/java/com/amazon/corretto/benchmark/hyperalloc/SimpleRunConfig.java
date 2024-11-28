@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
-import sun.jvm.hotspot.runtime.VM;
+import com.sun.management.HotSpotDiagnosticMXBean;
 
 import java.lang.management.ManagementFactory;
 
@@ -17,7 +17,7 @@ public class SimpleRunConfig {
     private int numOfThreads = 4;
     private int minObjectSize = 128;
     private int maxObjectSize = 1024;
-    private boolean useCompressedOops = VM.getVM().isCompressedOopsEnabled();
+    private boolean useCompressedOops;
     private int pruneRatio = ObjectStore.DEFAULT_PRUNE_RATIO;
     private int reshuffleRatio = ObjectStore.DEFAULT_RESHUFFLE_RATIO;
     private int heapSizeInMb = (int)(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getCommitted() / 1048576L);
@@ -25,6 +25,11 @@ public class SimpleRunConfig {
     private String allocationLogFile = null;
     private Double allocationSmoothnessFactor = null;
     private double rampUpSeconds = 0.0;
+
+    {
+        HotSpotDiagnosticMXBean mxBeanServer = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+        useCompressedOops = Boolean.parseBoolean(mxBeanServer.getVMOption("UseCompressedOops").getValue());
+    }
 
     /**
      * Parse input arguments from a string array.
@@ -35,6 +40,7 @@ public class SimpleRunConfig {
             if (args[i].equals("-a")) {
                 allocRateInMbPerSecond = Long.parseLong(args[++i]);
             } else if (args[i].equals("-h")) {
+                ++i;
                 // Left in to be compatible with existing scripts
                 System.out.println("Use of -h has been deprecated - using value retrieved from MemoryMXBean");
             } else if (args[i].equals("-s")) {
@@ -54,7 +60,8 @@ public class SimpleRunConfig {
             } else if (args[i].equals("-f")) {
                 reshuffleRatio = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-c")) {
-                System.out.println("Use of -c has been deprecated - using value retrieved from VM.isCompressedOopsEnabled()");
+                ++i;
+                System.out.println("Use of -c has been deprecated - using value retrieved from HotSpotDiagnosticMXBean");
             } else if (args[i].equals("-z")) {
                 allocationSmoothnessFactor = Double.parseDouble(args[++i]);
                 if (allocationSmoothnessFactor < 0 || allocationSmoothnessFactor > 1.0) {
@@ -80,7 +87,7 @@ public class SimpleRunConfig {
         System.out.println("Usage: java -jar HyperAlloc.jar " +
                 "[-u run type] [-a allocRateInMb] [-s longLivedObjectsInMb] " +
                 "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
-                "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-c useCompressedOops] " +
+                "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] " +
                 "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)] " +
                 "[-p rampUpSeconds ]");
     }

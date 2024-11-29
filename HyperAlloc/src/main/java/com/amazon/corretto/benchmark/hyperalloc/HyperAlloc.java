@@ -8,6 +8,7 @@ public final class HyperAlloc {
     private HyperAlloc() {}
 
     public static void main(String[] args) {
+
         switch (findRunType(args)) {
             case "simple" :
                 new SimpleRunner(new SimpleRunConfig(args)).start();

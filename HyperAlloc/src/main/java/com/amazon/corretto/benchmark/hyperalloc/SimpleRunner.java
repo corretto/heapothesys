@@ -27,6 +27,7 @@ public class SimpleRunner extends TaskBase {
     private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(0);
 
     private final SimpleRunConfig config;
+    private long realAllocRate;
 
     public SimpleRunner(SimpleRunConfig config) {
         this.config = config;
@@ -36,6 +37,7 @@ public class SimpleRunner extends TaskBase {
 
     @Override
     public void start() {
+        System.out.println("Starting a SimpleRunner");
         try {
             AllocObject.setOverhead(config.isUseCompressedOops() ? AllocObject.ObjectOverhead.CompressedOops
                     : AllocObject.ObjectOverhead.NonCompressedOops);
@@ -64,7 +66,6 @@ public class SimpleRunner extends TaskBase {
                 }
             } catch (ExecutionException ex) {
                 logger.log(Level.SEVERE, ex.getMessage(), ex);
-                printResult(-1);
                 System.exit(1);
             }
 
@@ -87,26 +88,13 @@ public class SimpleRunner extends TaskBase {
                 Thread.currentThread().interrupt();
             }
             store.stopAndReturnSize();
-            printResult(AllocObject.getBytesAllocated() / 1024 / 1024 / config.getDurationInSecond());
+            realAllocRate = AllocObject.getBytesAllocated() / 1024 / 1024 / config.getDurationInSecond();
+            try (RunReport report = new RunReport(config.getLogFile())) {
+                this.writeOn(report);
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);
-        }
-    }
-
-    private void printResult(final long realAllocRate) throws IOException {
-        try (FileWriter fw = new FileWriter(config.getLogFile(), true)) {
-            fw.write(config.getHeapSizeInMb() + ","
-                    + config.getAllocRateInMbPerSecond() + ","
-                    + realAllocRate + ","
-                    + ((double) (config.getLongLivedInMb() + config.getMidAgedInMb()) / config.getHeapSizeInMb()) + ","
-                    + config.isUseCompressedOops() + ","
-                    + config.getNumOfThreads() + ","
-                    + config.getMinObjectSize() + ","
-                    + config.getMaxObjectSize() + ","
-                    + config.getPruneRatio() + ","
-                    + config.getReshuffleRatio() + ",\n"
-            );
         }
     }
 
@@ -203,5 +191,19 @@ public class SimpleRunner extends TaskBase {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    public void writeOn(RunReport report) throws IOException {
+        report.write(config.getHeapSizeInMb());
+        report.write(config.getAllocRateInMbPerSecond());
+        report.write(realAllocRate);
+        report.write((config.getLongLivedInMb() + config.getMidAgedInMb()) / config.getHeapSizeInMb());
+        report.write(config.isUseCompressedOops());
+        report.write(config.getNumOfThreads());
+        report.write(config.getMinObjectSize());
+        report.write(config.getMaxObjectSize());
+        report.write(config.getPruneRatio());
+        report.write(config.getReshuffleRatio());
+        report.eol();
     }
 }

@@ -20,7 +20,7 @@ public class SimpleRunConfig {
     private boolean useCompressedOops;
     private int pruneRatio = ObjectStore.DEFAULT_PRUNE_RATIO;
     private int reshuffleRatio = ObjectStore.DEFAULT_RESHUFFLE_RATIO;
-    private int heapSizeInMb = (int)(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getCommitted() / 1048576L);
+    private int heapSizeInMb = (int)(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax() / 1048576L);
     private String logFile = "output.csv";
     private String allocationLogFile = null;
     private Double allocationSmoothnessFactor = null;
@@ -117,7 +117,6 @@ public class SimpleRunConfig {
                            final String allocationLogFile, final double rampUpSeconds) {
         this.allocRateInMbPerSecond = allocRateInMbPerSecond;
         this.allocationSmoothnessFactor = allocSmoothnessFactor;
-        this.heapSizeInMb = heapSizeInMb;
         this.longLivedInMb = longLivedInMb;
         this.midAgedInMb = midAgedInMb;
         this.durationInSecond = durationInSecond;
@@ -126,7 +125,6 @@ public class SimpleRunConfig {
         this.maxObjectSize = maxObjectSize;
         this.pruneRatio = pruneRatio;
         this.reshuffleRatio = reshuffleRatio;
-        this.useCompressedOops = useCompressedOops;
         this.logFile = logFile;
         this.allocationLogFile = allocationLogFile;
         this.rampUpSeconds = rampUpSeconds;

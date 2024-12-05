@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+
+import java.lang.management.ManagementFactory;
+
 /**
  * Class for parsing simple run parameters.
  */
@@ -13,14 +17,19 @@ public class SimpleRunConfig {
     private int numOfThreads = 4;
     private int minObjectSize = 128;
     private int maxObjectSize = 1024;
-    private boolean useCompressedOops = true;
+    private boolean useCompressedOops;
     private int pruneRatio = ObjectStore.DEFAULT_PRUNE_RATIO;
     private int reshuffleRatio = ObjectStore.DEFAULT_RESHUFFLE_RATIO;
-    private int heapSizeInMb = 1024;
+    private int heapSizeInMb = (int)(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax() / 1048576L);
     private String logFile = "output.csv";
     private String allocationLogFile = null;
     private Double allocationSmoothnessFactor = null;
     private double rampUpSeconds = 0.0;
+
+    {
+        HotSpotDiagnosticMXBean mxBeanServer = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+        useCompressedOops = Boolean.parseBoolean(mxBeanServer.getVMOption("UseCompressedOops").getValue());
+    }
 
     /**
      * Parse input arguments from a string array.
@@ -31,7 +40,9 @@ public class SimpleRunConfig {
             if (args[i].equals("-a")) {
                 allocRateInMbPerSecond = Long.parseLong(args[++i]);
             } else if (args[i].equals("-h")) {
-                heapSizeInMb = Integer.parseInt(args[++i]);
+                ++i;
+                // Left in to be compatible with existing scripts
+                System.out.println("Use of -h has been deprecated - using value retrieved from MemoryMXBean");
             } else if (args[i].equals("-s")) {
                 longLivedInMb = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-m")) {
@@ -49,7 +60,8 @@ public class SimpleRunConfig {
             } else if (args[i].equals("-f")) {
                 reshuffleRatio = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-c")) {
-                useCompressedOops = Boolean.parseBoolean(args[++i]);
+                ++i;
+                System.out.println("Use of -c has been deprecated - using value retrieved from HotSpotDiagnosticMXBean");
             } else if (args[i].equals("-z")) {
                 allocationSmoothnessFactor = Double.parseDouble(args[++i]);
                 if (allocationSmoothnessFactor < 0 || allocationSmoothnessFactor > 1.0) {
@@ -73,9 +85,9 @@ public class SimpleRunConfig {
 
     private void usage() {
         System.out.println("Usage: java -jar HyperAlloc.jar " +
-                "[-u run type] [-a allocRateInMb] [-h heapSizeInMb] [-s longLivedObjectsInMb] " +
+                "[-u run type] [-a allocRateInMb] [-s longLivedObjectsInMb] " +
                 "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
-                "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-c useCompressedOops] " +
+                "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] " +
                 "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)] " +
                 "[-p rampUpSeconds ]");
     }
@@ -105,7 +117,6 @@ public class SimpleRunConfig {
                            final String allocationLogFile, final double rampUpSeconds) {
         this.allocRateInMbPerSecond = allocRateInMbPerSecond;
         this.allocationSmoothnessFactor = allocSmoothnessFactor;
-        this.heapSizeInMb = heapSizeInMb;
         this.longLivedInMb = longLivedInMb;
         this.midAgedInMb = midAgedInMb;
         this.durationInSecond = durationInSecond;
@@ -114,7 +125,6 @@ public class SimpleRunConfig {
         this.maxObjectSize = maxObjectSize;
         this.pruneRatio = pruneRatio;
         this.reshuffleRatio = reshuffleRatio;
-        this.useCompressedOops = useCompressedOops;
         this.logFile = logFile;
         this.allocationLogFile = allocationLogFile;
         this.rampUpSeconds = rampUpSeconds;

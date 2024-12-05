@@ -15,7 +15,7 @@ To configure HyperAlloc to reach a high sustained allocation rate, there are two
 
 As an experimental feature, HyperAlloc makes dynamic changes to the created object graph in order to exercise the memory read and write barriers typical of concurrent garbage collectors. Before beginning its main test phase, it stores long-lived objects in a hierarchical list of object groups. In order to exercise garbage collector marking phases, higher group objects randomly reference objects in the next lower group to create a somewhat complex and randomized reference graph. This graph does not remain static: HyperAlloc constantly replaces a portion of it and reshuffles references between the objects in it. You can control the long-lived object replacement ratio by specifying the -r option (<ratio of objects being replaced per minute>, default: 50). The default value means that 1/50 of objects will be replaced per minute. The reshuffled object reference ratio (-f <ratio of objects get reshuffled>, default: 100) default value means that when replacement happens, 1/100 of inter-object references are reshuffled.
 
-To predict heap occupancy and allocation rates, HyperAlloc makes its own calculations based on knowledge of JVM-internal object representations, which depend on the JVM implementation in use. These are currently specific to the HotSpot JVM for JDK 8 or later. The calculations seem to agree with what HotSpot GC logs indicate as long as the following parameter is used correctly. HyperAlloc cannot automatically detect when the JVM uses compressed object references, i.e., 32-bit object references in a 64-bit JVM, aka “compressedOops”. You need to set the parameter “-c” to false when running HyperAlloc with a 32 GB or larger heap or with a collector that does not support “compressedOops”.
+To predict heap occupancy and allocation rates, HyperAlloc makes its own calculations based on knowledge of JVM-internal object representations, which depend on the JVM implementation in use. These are currently specific to the HotSpot JVM for JDK 8 or later. The calculations seem to agree with what HotSpot GC logs indicate as long as the following parameter is used correctly. HyperAlloc automatically detects when the JVM uses compressed object references, i.e., 32-bit object references in a 64-bit JVM, aka “compressedOops”.
 
 HyperAlloc, while written from scratch, inherits its basic ideas from Gil Tene’s [HeapFragger](https://github.com/giltene/HeapFragger) workload. HeapFragger has additional features (e.g., inducing fragmentation and detecting generational promotion), whereas HyperAlloc concentrates on accurately predicting the resulting allocation rate. Additionally, we thank to Gil for his [jHiccup](https://www.azul.com/jhiccup/) agent, which we utilize to measure JVM pauses.
 
@@ -38,7 +38,7 @@ If you would like to report a potential security issue in this project, please d
 
 Invocation with the minimum recommended set of HyperAlloc parameters and a typical jHiccup configuration:
 ```
-java -Xmx<bytes> -Xms<bytes> <GC options> <other JVM options> -Xloggc:<GC log file> -javaagent:<jHiccup directory>/jHiccup.jar='-a -d 0 -i 1000 -l <jHiccup log file>' -jar <HyperAlloc directory>/HyperAlloc-1.0.jar -a <MB> -h <MB> -d <seconds> -c <true/false> -l <CVS output file>
+java -Xmx<bytes> -Xms<bytes> <GC options> <other JVM options> -Xloggc:<GC log file> -javaagent:<jHiccup directory>/jHiccup.jar='-a -d 0 -i 1000 -l <jHiccup log file>' -jar <HyperAlloc directory>/HyperAlloc-1.0.jar -a <MB> -d <seconds> -l <CVS output file>
 ```
 
 ### Build
@@ -54,10 +54,7 @@ The JAR file can be found in the *target* folder.
 The two primary arguments are allocation rate and heap occupancy:
 
 * -a < target allocation rate in Mb per second >, default: 1024
-* -s < target heap occupancy in Mb >, default: 64 
-
-Currently, the benchmark program needs to be told the heap size in use.
-* -h < heap size in Mb >
+* -s < target heap occupancy in Mb >, default: 64
 
 The benchmark cannot always achieve the specified values. In particular, the run duration must be long enough for HyperAlloc to meet the heap occupancy target, especially for those low allocation rate cases. You can set the benchmark run duration using:
 
@@ -66,10 +63,6 @@ The benchmark cannot always achieve the specified values. In particular, the run
 At end of the run, HyperAlloc writes the actual achieved allocation rate and the configuration into a file.
 
 * -l < result file name >, default: output.csv
-
-If you run with a 32G or larger heap or with a collector that does not support 32-bit object pointers, aka "compressedOops", you must set this paramteter to "false". Otherwise all object size calculations are off by nearly 50%. Currently, HyperAlloc does not automatically detect this.
-
-* -c < compressedOops support >, default: true
 
 In order to achieve high allocation rates, HyperAlloc uses multiple worker threads. If the hardware has enough CPU cores, you can increase the number of worker threads to ensure achieving the target allocation rate.
 
@@ -111,7 +104,7 @@ In order to calm the allocation rate during startup, HyperAlloc can gradually in
 We normally use [JHiccup](https://www.azul.com/jhiccup/) to measure JVM pauses. You can either download it from its [website](https://www.azul.com/jhiccup-2/), or build it from the source code in its [GitHub repo](https://github.com/giltene/jHiccup). You can also use GC logs to measure safepoint times, allocation stalls, and Garbage Collection pauses. In the example below, we run HyperAlloc for the Shenandoah collector for 10 minutes using a 16Gb/s allocation rate and with 32Gb of a 64Gb heap occupied by long-lived objects.
 
 ```
-jdk/jdk-13.0.2+8/bin/java -Xmx65536m -Xms65536m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseLargePages -XX:+AlwaysPreTouch -XX:-UseBiasedLocking -Xloggc:./results/16384_65536_32768/gc.log -javaagent:<path to jHiccup>/jHiccup.jar='-a -d 0 -i 1000 -l ./results/16384_65536_32768/hyperalloc.hlog' -jar ./buildRoot/jar/HyperAlloc-1.0.jar -a 16384 -h 32768 -d 600 -m 128 -c false -t 16 -n 64 -x 32768 -l ./results/16384_65536_32768/output.csv
+jdk/jdk-13.0.2+8/bin/java -Xmx65536m -Xms65536m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseLargePages -XX:+AlwaysPreTouch -XX:-UseBiasedLocking -Xloggc:./results/16384_65536_32768/gc.log -javaagent:<path to jHiccup>/jHiccup.jar='-a -d 0 -i 1000 -l ./results/16384_65536_32768/hyperalloc.hlog' -jar ./buildRoot/jar/HyperAlloc-1.0.jar -a 16384 -d 600 -m 128 -c false -t 16 -n 64 -x 32768 -l ./results/16384_65536_32768/output.csv
 ```
 
 This command sets JHiccup as a Java agent and use it to create the hiccup log. The *output.csv* file contains the following information:

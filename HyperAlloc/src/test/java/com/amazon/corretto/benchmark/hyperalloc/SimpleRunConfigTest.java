@@ -3,15 +3,13 @@
 package com.amazon.corretto.benchmark.hyperalloc;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.management.ManagementFactory;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleRunConfigTest {
@@ -45,9 +43,9 @@ class SimpleRunConfigTest {
 
     @Test
     void ConstructorTest() {
-        final SimpleRunConfig config = new SimpleRunConfig(16384L, 0.0, 32768, 256,
+        final SimpleRunConfig config = new SimpleRunConfig(16384L, 0.0, 256,
                 32, 3000, 16, 256, 512,
-                10, 20, false, "nosuch.csv", null, 0.0);
+                10, 20, "nosuch.csv", null, 0.0);
 
         assertThat(config.getNumOfThreads(), is(16));
         assertThat(config.getAllocRateInMbPerSecond(), is(16384L));
@@ -84,11 +82,12 @@ class SimpleRunConfigTest {
     }
 
     @Test
-    void UnknownParameterShouldExitTest() throws Exception {
-        int status = catchSystemExit(
-                () -> new SimpleRunConfig(new String[]{"-w", "who"}));
-        assertThat(status, is(1));
+    void UnknownParameterShouldExitTest() {
+        try {
+            new SimpleRunConfig(new String[]{"-w", "who"});
+            fail("Expected IllegalArgumentException here");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), containsString("Unknown"));
+        }
     }
-
-    class MySecurityManager extends SecurityManager {}
 }

@@ -17,10 +17,10 @@ public class SimpleRunConfig {
     private int numOfThreads = 4;
     private int minObjectSize = 128;
     private int maxObjectSize = 1024;
-    private boolean useCompressedOops;
+    private final boolean useCompressedOops;
     private int pruneRatio = ObjectStore.DEFAULT_PRUNE_RATIO;
     private int reshuffleRatio = ObjectStore.DEFAULT_RESHUFFLE_RATIO;
-    private int heapSizeInMb = (int)(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax() / 1048576L);
+    private final int heapSizeInMb = (int) (ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax() / 1048576L);
     private String logFile = "output.csv";
     private String allocationLogFile = null;
     private Double allocationSmoothnessFactor = null;
@@ -33,6 +33,7 @@ public class SimpleRunConfig {
 
     /**
      * Parse input arguments from a string array.
+     *
      * @param args The string array of the arguments.
      */
     public SimpleRunConfig(final String[] args) {
@@ -71,27 +72,26 @@ public class SimpleRunConfig {
             } else if (args[i].equals("-z")) {
                 allocationSmoothnessFactor = Double.parseDouble(args[++i]);
                 if (allocationSmoothnessFactor < 0 || allocationSmoothnessFactor > 1.0) {
-                    usage();
-                    System.exit(1);
+                    throw new IllegalArgumentException("-z must be between 0.0 and 1.0");
                 }
             } else if (args[i].equals("-l")) {
                 logFile = args[++i];
             } else if (args[i].equals("-b") || args[i].equals("--allocation-log")) {
                 allocationLogFile = args[++i];
             } else if (args[i].equals("-u")) {
+                System.out.println("Use of -u has been deprecated");
                 i++;
             } else if (args[i].equals("-p") || args[i].equals("--ramp-up-seconds")) {
                 rampUpSeconds = Double.parseDouble(args[++i]);
             } else {
-                usage();
-                System.exit(1);
+                throw new IllegalArgumentException("Unknown argument: " + args[i]);
             }
         }
     }
 
-    private void usage() {
+    public static void usage() {
         System.out.println("Usage: java -jar HyperAlloc.jar " +
-                "[-u run type] [-a allocRateInMb] [-s longLivedObjectsInMb] " +
+                "[-a allocRateInMb] [-s longLivedObjectsInMb] " +
                 "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
                 "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] " +
                 "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)] " +
@@ -100,26 +100,24 @@ public class SimpleRunConfig {
 
     /**
      * Creating a simple config from parameters.
+     *
      * @param allocRateInMbPerSecond Allocation rate in Mb per second.
-     * @param heapSizeInMb Heap size (-Xmx) in Mb.
-     * @param longLivedInMb The size of long-lived objects in Mb.
-     * @param midAgedInMb The size of mid-aged objects in Mb.
-     * @param durationInSecond The run duration in seconds.
-     * @param numOfThreads The number of runner threads.
-     * @param minObjectSize The minimum object size in byte.
-     * @param maxObjectSize The maximum object size in byte.
-     * @param pruneRatio The prune ratio per minute.
-     * @param reshuffleRatio The reshuffle ratio.
-     * @param useCompressedOops Whether compressedOops is enabled.
-     * @param logFile The name of the output .csv file.
-     * @param allocationLogFile The name of the allocation log file.
-     * @param rampUpSeconds Gradually increase allocation rate over this period of time.
+     * @param longLivedInMb          The size of long-lived objects in Mb.
+     * @param midAgedInMb            The size of mid-aged objects in Mb.
+     * @param durationInSecond       The run duration in seconds.
+     * @param numOfThreads           The number of runner threads.
+     * @param minObjectSize          The minimum object size in byte.
+     * @param maxObjectSize          The maximum object size in byte.
+     * @param pruneRatio             The prune ratio per minute.
+     * @param reshuffleRatio         The reshuffle ratio.
+     * @param logFile                The name of the output .csv file.
+     * @param allocationLogFile      The name of the allocation log file.
+     * @param rampUpSeconds          Gradually increase allocation rate over this period of time.
      */
     public SimpleRunConfig(final long allocRateInMbPerSecond, final double allocSmoothnessFactor,
-                           final int heapSizeInMb, final int longLivedInMb,
-                           final int midAgedInMb, final int durationInSecond, final int numOfThreads,
+                           final int longLivedInMb, final int midAgedInMb, final int durationInSecond, final int numOfThreads,
                            final int minObjectSize, final int maxObjectSize, final int pruneRatio,
-                           final int reshuffleRatio, final boolean useCompressedOops, final String logFile,
+                           final int reshuffleRatio, final String logFile,
                            final String allocationLogFile, final double rampUpSeconds) {
         this.allocRateInMbPerSecond = allocRateInMbPerSecond;
         this.allocationSmoothnessFactor = allocSmoothnessFactor;
@@ -188,7 +186,7 @@ public class SimpleRunConfig {
         return allocationSmoothnessFactor;
     }
 
-    public String  getAllocationLogFile() {
+    public String getAllocationLogFile() {
         return allocationLogFile;
     }
 

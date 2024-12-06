@@ -8,7 +8,6 @@ public final class HyperAlloc {
     private HyperAlloc() {}
 
     public static void main(String[] args) {
-
         try {
             runner(args);
         } catch (Throwable t) {

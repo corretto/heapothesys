@@ -3,13 +3,10 @@
 package com.amazon.corretto.benchmark.hyperalloc;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.management.ManagementFactory;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
@@ -93,4 +90,6 @@ class SimpleRunConfigTest {
                 "Usage: java -jar HyperAlloc.jar [-u run type] [-a allocRateInMb] [-s longLivedObjectsInMb] [-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] [-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)] [-p rampUpSeconds ]";
         assertEquals(expected,e.getMessage());
     }
+
+    class MySecurityManager extends SecurityManager {}
 }

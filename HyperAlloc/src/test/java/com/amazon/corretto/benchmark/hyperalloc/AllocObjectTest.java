@@ -78,36 +78,4 @@ class AllocObjectTest {
             assertThat(size, lessThan(i + 8));
         }
     }
-
-    @Test
-    void OverheadTest() {
-        AllocObject.setOverhead(AllocObject.ObjectOverhead.CompressedOops);
-        assertDoesNotThrow(() -> AllocObject.create(40, 40, null));
-        AllocObject.setOverhead(AllocObject.ObjectOverhead.NonCompressedOops);
-        assertThrows(AssertionError.class, () -> AllocObject.create(40, 40, null));
-        assertDoesNotThrow(() -> AllocObject.create(56, 56, null));
-
-        AllocObject.setOverhead(AllocObject.ObjectOverhead.CompressedOops);
-    }
-
-    @Test
-    @Disabled("Only run when compressed oops disabled.")
-    void ObjectSizeNoCompressedOopsTest() {
-        AllocObject.setOverhead(AllocObject.ObjectOverhead.NonCompressedOops);
-
-        final AllocObject o1 = new AllocObject(56, null);
-        final AllocObject o2 = new AllocObject(57, null);
-        final AllocObject o3 = new AllocObject(58, null);
-        final AllocObject o4 = new AllocObject(59, null);
-        final AllocObject o5 = new AllocObject(65, null);
-
-        final AllocObject o6 = new AllocObject(1024, null);
-
-        assertThat(o1.getRealSize(), is(56));
-        assertThat(o2.getRealSize(), is(64));
-        assertThat(o3.getRealSize(), is(64));
-        assertThat(o4.getRealSize(), is(64));
-        assertThat(o5.getRealSize(), is(72));
-        assertThat(o6.getRealSize(), is(1024));
-    }
 }

@@ -52,7 +52,13 @@ public class SimpleRunConfig {
             } else if (args[i].equals("-t")) {
                 numOfThreads = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-n")) {
-                minObjectSize = Integer.parseInt(args[++i]);
+                int requestedMinObjectSize = Integer.parseInt(args[++i]);
+                if (requestedMinObjectSize < AllocObject.getObjectOverhead()) {
+                    System.out.println("Minimum object size includes the object header, minimum object size is: " + AllocObject.getObjectOverhead());
+                    minObjectSize = AllocObject.getObjectOverhead();
+                } else {
+                    minObjectSize = requestedMinObjectSize;
+                }
             } else if (args[i].equals("-x")) {
                 maxObjectSize = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-r")) {
@@ -121,7 +127,7 @@ public class SimpleRunConfig {
         this.midAgedInMb = midAgedInMb;
         this.durationInSecond = durationInSecond;
         this.numOfThreads = numOfThreads;
-        this.minObjectSize = minObjectSize;
+        this.minObjectSize = Math.max(minObjectSize, AllocObject.getObjectOverhead());
         this.maxObjectSize = maxObjectSize;
         this.pruneRatio = pruneRatio;
         this.reshuffleRatio = reshuffleRatio;

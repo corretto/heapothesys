@@ -65,8 +65,7 @@ public class SimpleRunConfig {
             } else if (args[i].equals("-z")) {
                 allocationSmoothnessFactor = Double.parseDouble(args[++i]);
                 if (allocationSmoothnessFactor < 0 || allocationSmoothnessFactor > 1.0) {
-                    usage();
-                    System.exit(1);
+                    throw new IllegalArgumentException(String.format("AllocationSmoothness of %s not in range\n",allocationSmoothnessFactor) + usage());
                 }
             } else if (args[i].equals("-l")) {
                 logFile = args[++i];
@@ -77,19 +76,13 @@ public class SimpleRunConfig {
             } else if (args[i].equals("-p") || args[i].equals("--ramp-up-seconds")) {
                 rampUpSeconds = Double.parseDouble(args[++i]);
             } else {
-                usage();
-                System.exit(1);
+                throw new IllegalArgumentException(String.format("Unrecognized argument: %s\n",args[i]) + usage());
             }
         }
     }
 
-    private void usage() {
-        System.out.println("Usage: java -jar HyperAlloc.jar " +
-                "[-u run type] [-a allocRateInMb] [-s longLivedObjectsInMb] " +
-                "[-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] " +
-                "[-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] " +
-                "[-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)] " +
-                "[-p rampUpSeconds ]");
+    private String usage() {
+        return "Usage: java -jar HyperAlloc.jar [-u run type] [-a allocRateInMb] [-s longLivedObjectsInMb] [-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] [-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)] [-p rampUpSeconds ]";
     }
 
     /**

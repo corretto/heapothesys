@@ -9,13 +9,29 @@ public final class HyperAlloc {
 
     public static void main(String[] args) {
 
-        switch (findRunType(args)) {
-            case "simple" :
-                new SimpleRunner(new SimpleRunConfig(args)).start();
-                break;
-            default:
-                System.out.println("Current supported run type (-u): simple.");
-                System.exit(1);
+        try {
+            runner(args);
+        } catch (Throwable t) {
+            System.out.println(t.getMessage());
+            System.exit(1);
+        }
+    }
+
+    static void runner(String[] args) {
+        try {
+            String runType = findRunType(args);
+
+            switch (runType) {
+                case "simple":
+                    new SimpleRunner(new SimpleRunConfig(args)).start();
+                    break;
+                default:
+                    throw new IllegalArgumentException(String.format("Unknown run type (-u %s), supported type is -u simple.", runType));
+            }
+        } catch (IllegalArgumentException iae) {
+            throw iae;
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
         }
     }
 

@@ -84,11 +84,13 @@ class SimpleRunConfigTest {
     }
 
     @Test
-    void UnknownParameterShouldExitTest() throws Exception {
-        int status = catchSystemExit(
-                () -> new SimpleRunConfig(new String[]{"-w", "who"}));
-        assertThat(status, is(1));
-    }
+    void UnknownParameterShouldExitTest() {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> {
+            HyperAlloc.runner(new String[]{"-w", "who"});
+        });
 
-    class MySecurityManager extends SecurityManager {}
+        String expected = "Unrecognized argument: -w\n" +
+                "Usage: java -jar HyperAlloc.jar [-u run type] [-a allocRateInMb] [-s longLivedObjectsInMb] [-m midAgedObjectsInMb] [-d runDurationInSeconds ] [-t numOfThreads] [-n minObjectSize] [-x maxObjectSize] [-r pruneRatio] [-f reshuffleRatio] [-l outputFile] [-b|-allocation-log logFile] [-z allocationSmoothness (0 to 1.0)] [-p rampUpSeconds ]";
+        assertEquals(expected,e.getMessage());
+    }
 }

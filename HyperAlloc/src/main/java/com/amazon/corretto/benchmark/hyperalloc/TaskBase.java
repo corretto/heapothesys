@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;

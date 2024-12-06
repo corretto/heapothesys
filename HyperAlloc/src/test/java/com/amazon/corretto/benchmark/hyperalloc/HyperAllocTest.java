@@ -4,9 +4,7 @@ package com.amazon.corretto.benchmark.hyperalloc;
 
 import org.junit.jupiter.api.Test;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.*;
 
 class HyperAllocTest {
 
@@ -21,9 +19,11 @@ class HyperAllocTest {
     }
 
     @Test
-    void UnknownRunTypeTest() throws Exception {
-        int status = catchSystemExit(
-                () -> HyperAlloc.main(new String[]{"-u", "unknown", "-a", "5"}));
-        assertThat(status, is(1));
+    void UnknownRunTypeTest() {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> {
+            HyperAlloc.runner(new String[]{"-u", "unknown", "-a", "5"});
+        });
+        String expected = "Unknown run type (-u unknown), supported type is -u simple.";
+        assertEquals(expected,e.getMessage());
     }
 }

@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.benchmark.hyperalloc;
 
+import org.openjdk.jol.info.ClassLayout;
+import org.openjdk.jol.info.GraphLayout;
+
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -10,24 +13,19 @@ import java.util.concurrent.atomic.LongAdder;
  * to another AllocObject to allow us creating a complex reachability graph among them.
  */
 class AllocObject {
-    private static ObjectOverhead objectOverhead = ObjectOverhead.CompressedOops;
-
+    private static final ObjectOverhead objectOverhead = new ObjectOverhead();
     private static final LongAdder BytesAllocated = new LongAdder();
 
-    /**
-     * Set the object overhead. By default it assumes that compressedOops is enabled.
-     * @param overhead Object size overhead in heap.
-     */
-    static void setOverhead(final ObjectOverhead overhead) {
-        objectOverhead = overhead;
-    }
 
     private AllocObject next;
-    private byte[] data;
+    private final byte[] data;
+
+    AllocObject(final int size) {
+        this.data = new byte[size];
+        this.next = null;
+    }
 
     AllocObject(final int size, final AllocObject ref) {
-        assert size >= objectOverhead.getOverhead()
-                : "The object size cannot be smaller than the overhead(" + objectOverhead + ").";
         this.data = new byte[size - objectOverhead.getOverhead()];
         this.next = ref;
     }
@@ -96,6 +94,8 @@ class AllocObject {
     }
 
     static AllocObject create(final int size, final AllocObject ref) {
+        assert size >= objectOverhead.getOverhead()
+                : "The object size cannot be smaller than the overhead(" + objectOverhead + ").";
         BytesAllocated.add(size);
         return new AllocObject(size, ref);
     }
@@ -104,24 +104,15 @@ class AllocObject {
         return BytesAllocated.longValue();
     }
 
+    static int getObjectOverhead() {
+        return objectOverhead.overhead;
+    }
+
     /**
      * The enumeration to AllocObject overhead in heap.
      */
-    enum ObjectOverhead {
-        ///  AllocObject: | header (12) | ref to next (4) | ref to array (4) | align (4) |
-        ///  Byte array:  | header (12) | length (4) |
-        CompressedOops(40),
-
-        ///  AllocObject: | header (16) | ref to next (8) | ref to array (8) |
-        ///  Byte array:  | header (16) | length (4) | align (4) |
-        NonCompressedOops(56);
-
-        private int overhead;
-
-        ObjectOverhead(final int overhead) {
-            this.overhead = overhead;
-        }
-
+    static class ObjectOverhead {
+        private final int overhead = (int) GraphLayout.parseInstance(new AllocObject(0)).totalSize();
         int getOverhead() {
             return overhead;
         }

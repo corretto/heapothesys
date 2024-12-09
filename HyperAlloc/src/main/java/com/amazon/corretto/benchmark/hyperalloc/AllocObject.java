@@ -3,6 +3,7 @@
 package com.amazon.corretto.benchmark.hyperalloc;
 
 import org.openjdk.jol.info.ClassLayout;
+import org.openjdk.jol.info.GraphLayout;
 
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.LongAdder;
@@ -19,9 +20,12 @@ class AllocObject {
     private AllocObject next;
     private final byte[] data;
 
+    AllocObject(final int size) {
+        this.data = new byte[size];
+        this.next = null;
+    }
+
     AllocObject(final int size, final AllocObject ref) {
-        assert size >= objectOverhead.getOverhead()
-                : "The object size cannot be smaller than the overhead(" + objectOverhead + ").";
         this.data = new byte[size - objectOverhead.getOverhead()];
         this.next = ref;
     }
@@ -90,6 +94,8 @@ class AllocObject {
     }
 
     static AllocObject create(final int size, final AllocObject ref) {
+        assert size >= objectOverhead.getOverhead()
+                : "The object size cannot be smaller than the overhead(" + objectOverhead + ").";
         BytesAllocated.add(size);
         return new AllocObject(size, ref);
     }
@@ -106,8 +112,7 @@ class AllocObject {
      * The enumeration to AllocObject overhead in heap.
      */
     static class ObjectOverhead {
-        private final int overhead = (int) ClassLayout.parseClass(AllocObject.class).instanceSize();
-
+        private final int overhead = (int) GraphLayout.parseInstance(new AllocObject(0)).totalSize();
         int getOverhead() {
             return overhead;
         }

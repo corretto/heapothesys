@@ -39,8 +39,6 @@ public class SimpleRunner extends TaskBase {
     public void start() {
         System.out.println("Starting a SimpleRunner");
         try {
-            AllocObject.setOverhead(config.isUseCompressedOops() ? AllocObject.ObjectOverhead.CompressedOops
-                    : AllocObject.ObjectOverhead.NonCompressedOops);
             final ObjectStore store = new ObjectStore(config.getLongLivedInMb(), config.getPruneRatio(),
                     config.getReshuffleRatio());
             final Thread storeThread = new Thread(store);

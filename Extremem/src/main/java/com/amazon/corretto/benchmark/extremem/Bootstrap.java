@@ -459,7 +459,7 @@ public class Bootstrap extends ExtrememThread {
     int customer_thread_count = config.CustomerThreads();
     RelativeTime customer_period = config.CustomerPeriod();
     RelativeTime simulation_duration = config.SimulationDuration();
-    int activations_per_thread = (int) simulation_duration.divideBy(this, customer_period);
+    int activations_per_thread = (int) simulation_duration.divideBy(customer_period);
     int expected_activations = customer_thread_count * activations_per_thread;
     int actual_activations = customer_accumulator.engagements();
 

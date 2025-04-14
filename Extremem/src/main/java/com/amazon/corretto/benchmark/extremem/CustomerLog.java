@@ -168,6 +168,10 @@ class CustomerLog extends ExtrememObject {
     delta.garbageFootprint(t);
   }
 
+  int engagements() {
+    return engagements;
+  }
+
   void report(ExtrememThread t, String label, boolean reportCSV) {
     String s;
     int l;

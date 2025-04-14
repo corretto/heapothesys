@@ -455,7 +455,27 @@ public class Bootstrap extends ExtrememThread {
 
     server_accumulator.reportPercentiles(this, config.ReportCSV());
     customer_accumulator.reportPercentiles(this, config.ReportCSV());
-      
+
+    int customer_thread_count = config.CustomerThreads();
+    RelativeTime customer_period = config.CustomerPeriod();
+    RelativeTime simulation_duration = config.SimulationDuration();
+    int activations_per_thread = (int) simulation_duration.divideBy(customer_period);
+    int expected_activations = customer_thread_count * activations_per_thread;
+    int actual_activations = customer_accumulator.engagements();
+
+    Report.acquireReportLock();
+    Report.output();
+    if (config.ReportCSV()) {
+      Report.output("Observed Customer Transactions, Expected Customer Transactions");
+      Report.output(String.valueOf(actual_activations), ", ", String.valueOf(expected_activations));
+    } else {
+      String judgement = (actual_activations >= expected_activations)? "Looks good: ": "PROBLEM: ";
+      Report.output(judgement, "observed ", String.valueOf(actual_activations),
+		      " customer interactions out of at least ", String.valueOf(expected_activations), " expected transactions");
+    }
+    Report.output();
+    Report.releaseReportLock();
+
     customer_accumulator = null;
     customer_alloc_accumulator  = null;
     customer_garbage_accumulator = null;

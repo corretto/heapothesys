@@ -246,7 +246,7 @@ class RelativeTime extends HighResolutionTime {
 
   /**
    * Return a new Ephemeral RelativeTime instance representing the
-   * quotient of dividing this by factor.
+   * quotient of dividing this by divisor.
    *
    * The code that invokes this service is expected to account for the
    * returned RelativeTime object's memory eventually becoming garbage,
@@ -257,6 +257,15 @@ class RelativeTime extends HighResolutionTime {
     long ns = this.ns / (long) divisor;
     long s = this.s / divisor;
     return new RelativeTime(t, s, (int) ns);
+  }
+
+  /**
+   * Return a primitive double representing the quotient of dividing this by divisor.
+   */
+  double divideBy(RelativeTime divisor) {
+    double my_time = this.s + this.ns / 1_000_000_000.0;
+    double divisor_time = divisor.s + divisor.ns / 1_000_000_000.0;
+    return my_time / divisor_time;
   }
 
   /**

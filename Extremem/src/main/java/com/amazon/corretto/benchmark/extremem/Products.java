@@ -750,6 +750,21 @@ class Products extends ExtrememObject {
 
   // Rebuild Products data base from change_log.  Return the number of products actually replaced.
   long rebuildProductsPhasedUpdates(ExtrememThread t) {
+
+    String s;
+    AbsoluteTime now = AbsoluteTime.now(t);
+    if (config.ReportCSV()) {
+      s = Long.toString(now.microseconds());
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Product Database Start Time, ", s);
+    } else {
+      s = now.toString(t);
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Product Database Start Time: ", s);
+    }
+    Util.abandonEphemeralString(t, s);
+    now.garbageFootprint(t);
+
     ArrayletOflong new_product_ids;
     TreeMap <Long, Product> new_product_map;
     TreeMap <String, ExtrememHashSet<Long>> new_name_index;
@@ -793,6 +808,20 @@ class Products extends ExtrememObject {
       addToIndicesPhasedUpdates(t, product, new_name_index, new_description_index);
     }
     establishUpdatedDataBase(t, new_product_ids, new_product_map, new_name_index, new_description_index);
+
+    now = AbsoluteTime.now(t);
+    if (config.ReportCSV()) {
+      s = Long.toString(now.microseconds());
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Product Database Finish Time, ", s);
+    } else {
+      s = now.toString(t);
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Product Database Finish Time: ", s);
+    }
+    Util.abandonEphemeralString(t, s);
+    now.garbageFootprint(t);
+
     return tally;
   }
 

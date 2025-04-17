@@ -121,6 +121,20 @@ class Report {
   }
 
   static void output(String s1, String s2, String s3, String s4, String s5,
+                     String s6, String s7, String s8, String s9, String s10) {
+    out.print(s1);
+    out.print(s2);
+    out.print(s3);
+    out.print(s4);
+    out.print(s5);
+    out.print(s6);
+    out.print(s7);
+    out.print(s8);
+    out.print(s9);
+    out.println(s10);
+  }
+
+  static void output(String s1, String s2, String s3, String s4, String s5,
                      String s6, String s7, String s8, String s9, String s10,
                      String s11, String s12, String s13, String s14,
                      String s15) {

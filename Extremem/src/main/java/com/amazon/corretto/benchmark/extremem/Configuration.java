@@ -50,6 +50,13 @@ class Configuration {
   static final int DefaultProductDescriptionLength = 24;
 
   static final int DefaultMaxArrayLength = 0;
+  static final int DefaultMaxP50CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP95CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP99CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP99_9CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP99_99CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP99_999CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP100CustomerPrepMicroseconds = 0;
   static final int DefaultNumCustomers = 10000;
   static final int DefaultCustomerThreads = 1440;
   static final int DefaultCustomerPeriodMinutes = 4;
@@ -86,6 +93,13 @@ class Configuration {
   private int DictionarySize;
   private int ResponseTimeMeasurements;
   private int MaxArrayLength;
+  private int MaxP50CustomerPrepMicroseconds;
+  private int MaxP95CustomerPrepMicroseconds;
+  private int MaxP99CustomerPrepMicroseconds;
+  private int MaxP99_9CustomerPrepMicroseconds;
+  private int MaxP99_99CustomerPrepMicroseconds;
+  private int MaxP99_999CustomerPrepMicroseconds;
+  private int MaxP100CustomerPrepMicroseconds;
   private int NumCustomers;
   private int NumProducts;
   private int ProductNameLength;
@@ -163,9 +177,9 @@ class Configuration {
                    Polarity.Expand, 1);
 
     // Account for
-    //  17 int fields: DictionarySize, ResponseTimeMeasurements,
-    //                 MaxArrayLength, NumCustomers,
-    //                 NumProducts, ProductNameLength,
+    //  24 int fields: DictionarySize, ResponseTimeMeasurements,
+    //                 MaxArrayLength, MaxP???CustomerPrepMicroseconds (7 fields),
+    //                 NumCustomers, NumProducts, ProductNameLength,
     //                 ProductDescriptionLength, ProductReviewLength,
     //                 RandomSeed, KeywordSearchCount,
     //                 CustomerThreads, ServerThreads, 
@@ -177,7 +191,7 @@ class Configuration {
     //   2 float fields: BuyThreshold, SaveForLaterThreshold;
     //   2 boolean fields: ReportIndividualThreads, ReportCSV
     log.accumulate(LifeSpan.NearlyForever, MemoryFlavor.ObjectRSB,
-                   Polarity.Expand, 17 * Util.SizeOfInt +
+                   Polarity.Expand, 24 * Util.SizeOfInt +
                    2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
     // Account for 10 reference fields: args, dictionary,
@@ -196,6 +210,13 @@ class Configuration {
                      Polarity.Expand, DictionaryFile.length());
 
     MaxArrayLength = DefaultMaxArrayLength;
+    MaxP50CustomerPrepMicroseconds = DefaultMaxP50CustomerPrepMicroseconds;
+    MaxP95CustomerPrepMicroseconds = DefaultMaxP95CustomerPrepMicroseconds;
+    MaxP99CustomerPrepMicroseconds = DefaultMaxP99CustomerPrepMicroseconds;
+    MaxP99_9CustomerPrepMicroseconds = DefaultMaxP99_9CustomerPrepMicroseconds;
+    MaxP99_99CustomerPrepMicroseconds = DefaultMaxP99_99CustomerPrepMicroseconds;
+    MaxP99_999CustomerPrepMicroseconds = DefaultMaxP99_999CustomerPrepMicroseconds;
+    MaxP100CustomerPrepMicroseconds = DefaultMaxP100CustomerPrepMicroseconds;
     NumCustomers = DefaultNumCustomers;
     NumProducts = DefaultNumProducts;
     ProductNameLength = DefaultProductNameLength;
@@ -272,6 +293,13 @@ class Configuration {
     "DictionarySize",
     "KeywordSearchCount",
     "MaxArrayLength",
+    "MaxP50CustomerPrepMicroseconds",
+    "MaxP95CustomerPrepMicroseconds",
+    "MaxP99CustomerPrepMicroseconds",
+    "MaxP99_9CustomerPrepMicroseconds",
+    "MaxP99_99CustomerPrepMicroseconds",
+    "MaxP99_999CustomerPrepMicroseconds",
+    "MaxP100CustomerPrepMicroseconds",
     "NumCustomers",
     "NumProducts",
     "ProductDescriptionLength",
@@ -427,56 +455,91 @@ class Configuration {
           break;
         }
       case 6:
+        if (keyword.equals("MaxP50CustomerPrepMicroseconds")) {
+          MaxP50CustomerPrepMicroseconds = u;
+          break;
+        }
+      case 7:
+        if (keyword.equals("MaxP95CustomerPrepMicroseconds")) {
+          MaxP95CustomerPrepMicroseconds = u;
+          break;
+        }
+      case 8:
+        if (keyword.equals("MaxP99CustomerPrepMicroseconds")) {
+          MaxP99CustomerPrepMicroseconds = u;
+          break;
+        }
+      case 9:
+        if (keyword.equals("MaxP99_9CustomerPrepMicroseconds")) {
+          MaxP99_9CustomerPrepMicroseconds = u;
+          break;
+        }
+      case 10:
+        if (keyword.equals("MaxP99_99CustomerPrepMicroseconds")) {
+          MaxP99_99CustomerPrepMicroseconds = u;
+          break;
+        }
+      case 11:
+        if (keyword.equals("MaxP99_999CustomerPrepMicroseconds")) {
+          MaxP99_999CustomerPrepMicroseconds = u;
+          break;
+        }
+      case 12:
+        if (keyword.equals("MaxP100CustomerPrepMicroseconds")) {
+          MaxP100CustomerPrepMicroseconds = u;
+          break;
+        }
+      case 13:
         if (keyword.equals("NumCustomers")) {
           NumCustomers = u;
           break;
         }
-      case 7:
+      case 14:
         if (keyword.equals("NumProducts")) {
           NumProducts = u;
           break;
         }
-      case 8:
+      case 15:
         if (keyword.equals("ProductDescriptionLength")) {
           ProductDescriptionLength = u;
           break;
         }
-      case 9:
+      case 16:
         if (keyword.equals("ProductNameLength")) {
           ProductNameLength = u;
           break;
         }
-      case 10:
+      case 17:
         if (keyword.equals("ProductReplacementCount")) {
           ProductReplacementCount = u;
           break;
         }
-      case 11:
+      case 18:
         if (keyword.equals("ProductReviewLength")) {
           ProductReviewLength = u;
           break;
         }
-      case 12:
+      case 19:
         if (keyword.equals("RandomSeed")) {
           RandomSeed = u;
           break;
         }
-      case 13:
+      case 20:
         if (keyword.equals("ResponseTimeMeasurements")) {
           ResponseTimeMeasurements = u;
           break;
         }
-      case 14:
+      case 21:
         if (keyword.equals("SalesTransactionQueueCount")) {
           SalesTransactionQueueCount = u;
           break;
         }
-      case 15:
+      case 22:
         if (keyword.equals("SelectionCriteriaCount")) {
           SelectionCriteriaCount = u;
           break;
         }
-      case 16:
+      case 23:
         if (keyword.equals("ServerThreads")) {
           ServerThreads = u;
           break;
@@ -764,6 +827,40 @@ class Configuration {
     return MaxArrayLength;
   }
 
+  boolean SearchForMaximumTransactionRate() {
+    return ((MaxP50CustomerPrepMicroseconds > 0) || (MaxP95CustomerPrepMicroseconds > 0) || (MaxP99CustomerPrepMicroseconds > 0) ||
+	    (MaxP99_9CustomerPrepMicroseconds > 0) || (MaxP99_99CustomerPrepMicroseconds > 0) ||
+	    (MaxP99_999CustomerPrepMicroseconds > 0) || (MaxP100CustomerPrepMicroseconds > 0));
+  }
+
+  int MaxP50CustomerPrepMicroseconds() {
+    return MaxP50CustomerPrepMicroseconds;
+  }
+
+  int MaxP95CustomerPrepMicroseconds() {
+    return MaxP95CustomerPrepMicroseconds;
+  }
+
+  int MaxP99CustomerPrepMicroseconds() {
+    return MaxP99CustomerPrepMicroseconds;
+  }
+
+  int MaxP99_9CustomerPrepMicroseconds() {
+    return MaxP99_9CustomerPrepMicroseconds;
+  }
+
+  int MaxP99_99CustomerPrepMicroseconds() {
+    return MaxP99_99CustomerPrepMicroseconds;
+  }
+
+  int MaxP99_999CustomerPrepMicroseconds() {
+    return MaxP99_999CustomerPrepMicroseconds;
+  }
+
+  int MaxP100CustomerPrepMicroseconds() {
+    return MaxP100CustomerPrepMicroseconds;
+  }
+
   int NumCustomers() {
     return NumCustomers;
   }
@@ -931,6 +1028,48 @@ class Configuration {
     l = s.length();
     Util.ephemeralString(t, l);
     Report.output("ResponseTimeMeasurements,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP50CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP50CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP95CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP95CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP99CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_9CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP99_9CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_99CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP99_99CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_999CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP99_999CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP100CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP100CustomerPrepMicroseconds,", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(DictionarySize);
@@ -1133,6 +1272,48 @@ class Configuration {
     l = s.length();
     Util.ephemeralString(t, l);
     Report.output("             Maximum array length (MaxArrayLength): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP50CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("    Max p50 latency (MaxP50CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP95CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("    Max p95 latency (MaxP95CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("    Max p99 latency (MaxP99CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_9CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("   Max p99_9 latency (MaxP99_9CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_99CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output(" Max p99_99 latency (MaxP99_999CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_999CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("    Max p99_999 latency (MaxP99_999CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP100CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("    Max p100 latency (MaxP100CustomerPrepMicroseconds): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(ResponseTimeMeasurements);

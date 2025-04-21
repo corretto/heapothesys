@@ -23,6 +23,8 @@ class ResponseTimeMeasurements extends ExtrememObject {
   // Each log entry is typically represented in microsecond units.
   private final long[] log;
 
+  private boolean needs_preparation = true;
+
   // If more than max_entries are logged, some (arbitrarily selected)
   // entries will be overwritten and will not contribute to final results.
   public ResponseTimeMeasurements(ExtrememThread t, LifeSpan ls, int max_entries) {
@@ -58,6 +60,7 @@ class ResponseTimeMeasurements extends ExtrememObject {
 
   // value may be negative due to imprecision in behavior of sleep()
   void addToLog(long microseconds) {
+      needs_preparation = true;
     if (total_entries > 0) {
       if (logged_entries == 0) {
         max_logged = min_logged = microseconds;
@@ -91,6 +94,77 @@ class ResponseTimeMeasurements extends ExtrememObject {
       log[0] = min_logged;
       log[logged_entries - 1] = max_logged;
     }
+    needs_preparation = false;
+  }
+
+  long getP50() {
+    if (logged_entries > 0) {
+      if (needs_preparation) {
+        prep_for_reporting();
+      }
+      return (logged_entries > 1)? log[(int)(logged_entries * 0.50 - 1)]: -1;
+    }
+    return 0;
+  }
+
+  long getP95() {
+    if (logged_entries > 0) {
+      if (needs_preparation) {
+        prep_for_reporting();
+      }
+      return (logged_entries >= 100)? log[(int)(logged_entries * 0.95 - 1)]: -1;
+    }
+    return 0;
+  }
+
+  long getP99() {
+    if (logged_entries > 0) {
+      if (needs_preparation) {
+        prep_for_reporting();
+      }
+      return (logged_entries >= 100)? log[(int)(logged_entries * 0.99 - 1)]: -1;
+    }
+    return 0;
+  }
+
+  long getP99_9() {
+    if (logged_entries > 0) {
+      if (needs_preparation) {
+        prep_for_reporting();
+      }
+      return (logged_entries >= 1000)? log[(int)(logged_entries * 0.999 - 1)]: -1;
+    }
+    return 0;
+  }
+
+  long getP99_99() {
+    if (logged_entries > 0) {
+      if (needs_preparation) {
+        prep_for_reporting();
+      }
+      return (logged_entries >= 10000)? log[(int)(logged_entries * 0.9999 - 1)]: -1;
+    }
+    return 0;
+  }
+
+  long getP99_999() {
+    if (logged_entries > 0) {
+      if (needs_preparation) {
+        prep_for_reporting();
+      }
+      return (logged_entries >= 100000)? log[(int)(logged_entries * 0.99999 - 1)]: -1;
+    }
+    return 0;
+  }
+
+  long getP100() {
+    if (logged_entries > 0) {
+      if (needs_preparation) {
+        prep_for_reporting();
+      }
+      return log[logged_entries - 1];
+    }
+    return 0;
   }
 
   void report(ExtrememThread t, boolean reportCSV) {
@@ -98,14 +172,17 @@ class ResponseTimeMeasurements extends ExtrememObject {
     int l;
 
     if (logged_entries > 0) {
-      prep_for_reporting();
-      long p100     = log[logged_entries - 1];
-      long  p50     = (logged_entries > 1)? log[(int)(logged_entries * 0.50 - 1)]: -1;
-      long  p95     = (logged_entries >= 100)? log[(int)(logged_entries * 0.95 - 1)]: -1;
-      long  p99     = (logged_entries >= 100)? log[(int)(logged_entries * 0.99 - 1)]: -1;
-      long  p99_9   = (logged_entries >= 1000)? log[(int)(logged_entries * 0.999 - 1)]: -1;
-      long  p99_99  = (logged_entries >= 10000)? log[(int)(logged_entries * 0.9999 - 1)]: -1;
-      long  p99_999 = (logged_entries >= 100000)? log[(int)(logged_entries * 0.99999 - 1)]: -1;
+      if (needs_preparation) {
+        prep_for_reporting();
+      }
+
+      long p100     = getP100();
+      long  p50     = getP50();
+      long  p95     = getP95();
+      long  p99     = getP99();
+      long  p99_9   = getP99_9();
+      long  p99_99  = getP99_99();
+      long  p99_999 = getP99_999();
     
       if (reportCSV) {
         Report.outputNoLine(", ");

@@ -1222,8 +1222,6 @@ class Configuration {
     Util.ephemeralString(t, l);
     Report.output("ProductReviewLength,", s);
     Util.abandonEphemeralString(t, l);
-
-
   }
 
   void dump(ExtrememThread t) {
@@ -1239,63 +1237,65 @@ class Configuration {
       Report.output(listOfArguments.get(i));
 
     Report.output();
-    Report.output("Individual thread report (ReportIndividualThreads): ",
+    Report.output("      Individual thread report (ReportIndividualThreads): ",
                   ReportIndividualThreads? "true": "false");
-    Report.output("                    Exporting to Excel (ReportCSV): ",
+    Report.output("                          Exporting to Excel (ReportCSV): ",
                   ReportCSV? "true": "false");
 
     Report.output();
     Report.output("Simulation configuration");
 
-    Report.output("  Fine-grain locking of data base (FastAndFurious): ", FastAndFurious? "true": "false");
-    Report.output("       Rebuild data base in phases (PhasedUpdates): ", PhasedUpdates? "true": "false");
+    Report.output("        Fine-grain locking of data base (FastAndFurious): ", FastAndFurious? "true": "false");
+    Report.output("             Rebuild data base in phases (PhasedUpdates): ", PhasedUpdates? "true": "false");
     Report.output();
     s = PhasedUpdateInterval.toString(t);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("  Time between data rebuild (PhasedUpdateInterval): ", s);
+    Report.output("        Time between data rebuild (PhasedUpdateInterval): ", s);
     Util.abandonEphemeralString(t, l);
 
 
     s = Integer.toString(RandomSeed);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Seed for random number generation (RandomSeed): ", s);
+    Report.output("          Seed for random number generation (RandomSeed): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = SimulationDuration.toString(t);
     l = s.length();
-    Report.output("                     Duration (SimulationDuration): ", s);
+    Report.output("                           Duration (SimulationDuration): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(MaxArrayLength);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("             Maximum array length (MaxArrayLength): ", s);
+    Report.output("                   Maximum array length (MaxArrayLength): ", s);
     Util.abandonEphemeralString(t, l);
+
+    Report.output();
 
     s = Integer.toString(MaxP50CustomerPrepMicroseconds);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Max p50 latency (MaxP50CustomerPrepMicroseconds): ", s);
+    Report.output("        Max p50 latency (MaxP50CustomerPrepMicroseconds): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(MaxP95CustomerPrepMicroseconds);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Max p95 latency (MaxP95CustomerPrepMicroseconds): ", s);
+    Report.output("        Max p95 latency (MaxP95CustomerPrepMicroseconds): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(MaxP99CustomerPrepMicroseconds);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Max p99 latency (MaxP99CustomerPrepMicroseconds): ", s);
+    Report.output("        Max p99 latency (MaxP99CustomerPrepMicroseconds): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(MaxP99_9CustomerPrepMicroseconds);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("   Max p99_9 latency (MaxP99_9CustomerPrepMicroseconds): ", s);
+    Report.output("    Max p99_9 latency (MaxP99_9CustomerPrepMicroseconds): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(MaxP99_99CustomerPrepMicroseconds);
@@ -1307,40 +1307,42 @@ class Configuration {
     s = Integer.toString(MaxP99_999CustomerPrepMicroseconds);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Max p99_999 latency (MaxP99_999CustomerPrepMicroseconds): ", s);
+    Report.output("Max p99_999 latency (MaxP99_999CustomerPrepMicroseconds): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(MaxP100CustomerPrepMicroseconds);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Max p100 latency (MaxP100CustomerPrepMicroseconds): ", s);
+    Report.output("      Max p100 latency (MaxP100CustomerPrepMicroseconds): ", s);
     Util.abandonEphemeralString(t, l);
+
+    Report.output();
 
     s = Integer.toString(ResponseTimeMeasurements);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("   Remembered responses (ResponseTimeMeasurements): ", s);
+    Report.output("         Remembered responses (ResponseTimeMeasurements): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(DictionarySize);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("              Words in dictionary (DictionarySize): ", s);
+    Report.output("                    Words in dictionary (DictionarySize): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = DictionaryFile;
-    Report.output("Full path name of dictionary file (DictionaryFile): ", s);
+    Report.output("      Full path name of dictionary file (DictionaryFile): ", s);
 
     s = Integer.toString(BrowsingHistoryQueueCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Browsing queue qty (BrowsingHistoryQueueCount): ", s);
+    Report.output("          Browsing queue qty (BrowsingHistoryQueueCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(SalesTransactionQueueCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("Transaction queue qty (SalesTransactionQueueCount): ", s);
+    Report.output("      Transaction queue qty (SalesTransactionQueueCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("");
@@ -1349,36 +1351,36 @@ class Configuration {
     s = Integer.toString(ServerThreads);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("           Number of server threads (ServerThreads): ", s);
+    Report.output("                Number of server threads (ServerThreads): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = ServerPeriod.toString(t);
     l = s.length();
-    Report.output("                Server thread period (ServerPeriod): ", s);
+    Report.output("                     Server thread period (ServerPeriod): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("Customer maintenance");
 
     s = CustomerReplacementPeriod.toString(t);
-    Report.output("     Replacement period (CustomerReplacementPeriod): ", s);
+    Report.output("          Replacement period (CustomerReplacementPeriod): ", s);
     Util.abandonEphemeralString(t, s);
 
     s = Integer.toString(CustomerReplacementCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("       Replacement count (CustomerReplacementCount): ", s);
+    Report.output("            Replacement count (CustomerReplacementCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("Product maintenance");
 
     s = ProductReplacementPeriod.toString(t);
-    Report.output("      Replacement period (ProductReplacementPeriod): ", s);
+    Report.output("           Replacement period (ProductReplacementPeriod): ", s);
     Util.abandonEphemeralString(t, s);
 
     s = Integer.toString(ProductReplacementCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("        Replacement count (ProductReplacementCount): ", s);
+    Report.output("             Replacement count (ProductReplacementCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("");
@@ -1387,19 +1389,19 @@ class Configuration {
     s = Integer.toString(CustomerThreads);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("                Number of threads (CustomerThreads): ", s);
+    Report.output("                     Number of threads (CustomerThreads): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = CustomerPeriod.toString(t);
-    Report.output("                     Thread period (CustomerPeriod): ", s);
+    Report.output("                          Thread period (CustomerPeriod): ", s);
     Util.abandonEphemeralString(t, s);
 
     s = CustomerThinkTime.toString(t);
-    Report.output("                     Think time (CustomerThinkTime): ", s);
+    Report.output("                          Think time (CustomerThinkTime): ", s);
     Util.abandonEphemeralString(t, s);
 
     s = BrowsingExpiration.toString(t);
-    Report.output("       Save-for-later duration (BrowsingExpiration): ", s);
+    Report.output("            Save-for-later duration (BrowsingExpiration): ", s);
     Util.abandonEphemeralString(t, s);
 
     Report.output("");
@@ -1408,19 +1410,19 @@ class Configuration {
     s = Integer.toString(NumCustomers);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("                              Number (NumCustomers): ", s);
+    Report.output("                                   Number (NumCustomers): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(KeywordSearchCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("                Words in query (KeywordSearchCount): ", s);
+    Report.output("                     Words in query (KeywordSearchCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(SelectionCriteriaCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("           Words to select (SelectionCriteriaCount): ", s);
+    Report.output("                Words to select (SelectionCriteriaCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output(" Decision ratios:");
@@ -1448,25 +1450,25 @@ class Configuration {
     s = Integer.toString(NumProducts);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("                               Number (NumProducts): ", s);
+    Report.output("                                    Number (NumProducts): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(ProductNameLength);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("                  Words in name (ProductNameLength): ", s);
+    Report.output("                       Words in name (ProductNameLength): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(ProductDescriptionLength);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Words in description (ProductDescriptionLength): ", s);
+    Report.output("         Words in description (ProductDescriptionLength): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(ProductReviewLength);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("              Words in review (ProductReviewLength): ", s);
+    Report.output("                   Words in review (ProductReviewLength): ", s);
     Util.abandonEphemeralString(t, l);
   }
 

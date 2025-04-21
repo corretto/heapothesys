@@ -22,7 +22,8 @@ public class Bootstrap extends ExtrememThread {
   private MemoryLog _all_threads_accumulator;
   private AbsoluteTime _start_time;
   private AbsoluteTime _end_time;
-
+  private RelativeTime _customer_period;
+  private RelativeTime _customer_think_time;
 
   Bootstrap(Configuration config, long random_seed) {
     super(config, random_seed);
@@ -120,6 +121,10 @@ public class Bootstrap extends ExtrememThread {
     Trace.msg(4, "all_customers established");
 
     for (boolean max_config_found = false; !max_config_found; ) {
+
+      _customer_period = _config.CustomerPeriod();
+      _customer_think_time = _config.CustomerThinkTime();
+
       configure_simulation_threads();
       boolean success = run_one_experiment();
       if (success) {
@@ -180,9 +185,10 @@ public class Bootstrap extends ExtrememThread {
     int bq_no = _config.BrowsingHistoryQueueCount() - 1;
     int sq_no = _config.SalesTransactionQueueCount() - 1;
     for (int i = 0; i < _config.CustomerThreads(); i++) {
-      _customer_threads[i] = new CustomerThread(_config, randomLong(), i, _all_products, _all_customers, _browsing_queues[bq_no],
-                                               _sales_queues[sq_no], _customer_accumulator, _customer_alloc_accumulator,
-                                               _customer_garbage_accumulator);
+      _customer_threads[i] = new CustomerThread(_config, _customer_period, _customer_think_time,
+						randomLong(), i, _all_products, _all_customers, _browsing_queues[bq_no],
+						_sales_queues[sq_no], _customer_accumulator, _customer_alloc_accumulator,
+						_customer_garbage_accumulator);
       if (bq_no-- == 0) {
         bq_no = _config.BrowsingHistoryQueueCount() - 1;
       }
@@ -489,7 +495,7 @@ public class Bootstrap extends ExtrememThread {
     _customer_accumulator.reportPercentiles(this, _config.ReportCSV());
 
     int customer_thread_count = _config.CustomerThreads();
-    RelativeTime customer_period = _config.CustomerPeriod();
+    RelativeTime customer_period = _customer_period;;
     RelativeTime simulation_duration = _config.SimulationDuration();
     int activations_per_thread = (int) simulation_duration.divideBy(customer_period);
     int expected_activations = customer_thread_count * activations_per_thread;

@@ -246,6 +246,23 @@ class RelativeTime extends HighResolutionTime {
 
   /**
    * Return a new Ephemeral RelativeTime instance representing the
+   * product of multiplying this by divisor.
+   *
+   * The code that invokes this service is expected to account for the
+   * returned RelativeTime object's memory eventually becoming garbage,
+   * possibly adjusting the accounting of its LifeSpan along the way
+   * to becoming garbage. 
+   */
+  RelativeTime multiplyBy(ExtrememThread t, double factor) {
+    double original = this.s + this.ns / (1000000000.0);
+    double result = original * factor;
+    long s = (long) result;
+    long ns = (long) ((result - s) * 1000000000);
+    return new RelativeTime(t, s, (int) ns);
+  }
+
+  /**
+   * Return a new Ephemeral RelativeTime instance representing the
    * quotient of dividing this by divisor.
    *
    * The code that invokes this service is expected to account for the

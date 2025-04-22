@@ -34,10 +34,144 @@ public class Bootstrap extends ExtrememThread {
 
   public void runExtreme() {
 
+    // config.initialize() replaces the random number generation seed
+    // of this before generating the dictionary.
+    _config.initialize(this);
+    if (_config.ReportCSV()) {
+      Report.output("All times reported in microseconds");
+      _config.dumpCSV(this);
+    }
+    else {
+      _config.dump(this);
+    }  
+    _all_products = new Products(this, LifeSpan.NearlyForever, _config);
+    Trace.msg(4, "all_products established");
+
+    _all_customers = new Customers(this, LifeSpan.NearlyForever, _config);
+    Trace.msg(4, "all_customers established");
+
+    _customer_period = _config.CustomerPeriod();
+    _customer_think_time = _config.CustomerThinkTime();
+
+    if (_config.SearchForMaximumTransactionRate()) {
+      final int MaxRetries = 5;
+      boolean searching_for_greater_success = false;
+      boolean searching_for_first_success = true;
+      boolean found_top_failure = false;
+      boolean first_try = true;
+      int allowed_retries_for_initial_success = MaxRetries;;
+      int search_backward_increments = 0;
+      while (true) {
+	configure_simulation_threads();
+	boolean success = run_one_experiment(true);
+	if (searching_for_first_success) {
+	  if (success) {
+	    double thread_rate = 1000_000.0 / _customer_period.microseconds();
+	    double transaction_rate = _config.CustomerThreads() * thread_rate;
+	    String s = String.valueOf(transaction_rate);
+	    Report.output("Found first success at ", s, " TPS, searching for higher transaction rate");
+	    searching_for_first_success = false;
+	    searching_for_greater_success = true;
+
+	    // increase transaction rate by 10%.
+	    _customer_period = _customer_period.multiplyBy(this, 0.9);
+	    _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
+	    first_try = true;
+	  } else if (first_try) {
+	    first_try = false;
+	    // try it again
+	  } else {
+	    double thread_rate = 1000_000.0 / _customer_period.microseconds();
+	    double transaction_rate = _config.CustomerThreads() * thread_rate;
+	    String s = String.valueOf(transaction_rate);
+	    if (allowed_retries_for_initial_success-- >= 0) {
+	      Report.output("Failed twice at ", s, " TPS, searching for lower transaction rate");
+	      // Decrease transaction rate by 10%
+	      _customer_period = _customer_period.multiplyBy(this, 1.1);
+	      _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
+	      first_try = true;
+	    } else {
+	      Report.output("Failed to find initial success after ", Integer.toString(MaxRetries), ".  Giving up.");
+	      return;
+	    }
+	  }
+	} else {
+	  // We've already found a first success
+	  if (success) {
+	    double thread_rate = 1000_000.0 / _customer_period.microseconds();
+	    double transaction_rate = _config.CustomerThreads() * thread_rate;
+	    String s = String.valueOf(transaction_rate);
+	    if (searching_for_greater_success) {
+	      Report.output("Found greater success at ", s, " TPS, search for even higher transaction rate");
+
+	      // increase transaction rate by 10%.
+	      _customer_period = _customer_period.multiplyBy(this, 0.9);
+	      _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
+	      searching_for_first_success = false;
+	      searching_for_greater_success = true;
+	      first_try = true;
+	    } else {
+	      Report.output("Found greater success at ", s, " TPS.  This is maximum successful rate");
+	      return;
+	    }
+	  } else if (first_try) {
+	    first_try = false;
+	    // try it again
+	  } else if (searching_for_greater_success) {
+	    double thread_rate = 1000_000.0 / _customer_period.microseconds();
+	    double transaction_rate = _config.CustomerThreads() * thread_rate;
+	    String s = String.valueOf(transaction_rate);
+	    Report.output("Failed twice at ", s, " TPS while searching for higher transaction rate.  Take smaller steps backward");
+
+	    // Decrease transaction rate by 2.5%
+	    _customer_period = _customer_period.multiplyBy(this, 1.025);
+	    _customer_think_time = _customer_think_time.multiplyBy(this, 1.025);
+	    first_try = true;
+
+	    found_top_failure = true;
+	    searching_for_greater_success = false;
+	    search_backward_increments = 0;
+	  } else if (search_backward_increments >= 3) {
+	    Report.output("Search for greater success terminated.  Most recent success is best available.");
+	    return;
+	  } else {
+	    // Decrease transaction rate by 2.5%
+	    _customer_period = _customer_period.multiplyBy(this, 1.025);
+	    _customer_think_time = _customer_think_time.multiplyBy(this, 1.025);
+	    search_backward_increments++;
+	    first_try = true;
+	  }
+	}
+      }
+    } else {
+      configure_simulation_threads();
+      boolean success = run_one_experiment(false);
+      if (success) {
+        Report.output("Simulation was successful");
+      } else {
+        Report.output("Simulation failed");
+      }
+    }
+  }
+
+  public void configure_simulation_threads() {
+    _sales_queues = new SalesTransactionQueue[_config.SalesTransactionQueueCount()];
+    Util.referenceArray(this, LifeSpan.NearlyForever,
+                        _config.SalesTransactionQueueCount());
+    for (int i = 0; i < _config.SalesTransactionQueueCount(); i++)
+      _sales_queues[i] = new SalesTransactionQueue(this,
+                                                  LifeSpan.NearlyForever);
+    _browsing_queues = new BrowsingHistoryQueue[_config.BrowsingHistoryQueueCount()];
+    Util.referenceArray(this, LifeSpan.NearlyForever,
+                        _config.BrowsingHistoryQueueCount());
+    for (int i = 0; i < _config.BrowsingHistoryQueueCount(); i++)
+      _browsing_queues[i] = new BrowsingHistoryQueue(this,
+                                                    LifeSpan.NearlyForever);
+    Trace.msg(4, "_browsing_queues and _sales_queues established");
+
     // Memory accounting: I have no more fields than parent class
     // ExtrememThread.  So my memory usage is accounted for during my
     // construction.
-      
     _memory = memoryLog();
     _garbage = garbageLog();
     _all_threads_accumulator = new MemoryLog(LifeSpan.NearlyForever);
@@ -51,16 +185,6 @@ public class Bootstrap extends ExtrememThread {
               ": Bootstrap.garbageLog()");
     Trace.msg(1, "@ ", Integer.toString(_all_threads_accumulator.hashCode()),
               ": Bootstrap._all_threads_accumulator");
-      
-    // config.initialize() replaces the random number generation seed
-    // of this before generating the dictionary.
-    _config.initialize(this);
-    if (_config.ReportCSV()) {
-      Report.output("All times reported in microseconds");
-      _config.dumpCSV(this);
-    }
-    else
-      _config.dump(this);
       
     _customer_accumulator = new CustomerLogAccumulator(this, LifeSpan.NearlyForever, _config.ResponseTimeMeasurements());
     _server_accumulator = new ServerLogAccumulator(this, LifeSpan.NearlyForever, _config.ResponseTimeMeasurements());
@@ -100,47 +224,8 @@ public class Bootstrap extends ExtrememThread {
       _server_garbage_accumulator = null;
     }
       
-    _sales_queues = new SalesTransactionQueue[_config.SalesTransactionQueueCount()];
-    Util.referenceArray(this, LifeSpan.NearlyForever,
-                        _config.SalesTransactionQueueCount());
-    for (int i = 0; i < _config.SalesTransactionQueueCount(); i++)
-      _sales_queues[i] = new SalesTransactionQueue(this,
-                                                  LifeSpan.NearlyForever);
-    _browsing_queues = new BrowsingHistoryQueue[_config.BrowsingHistoryQueueCount()];
-    Util.referenceArray(this, LifeSpan.NearlyForever,
-                        _config.BrowsingHistoryQueueCount());
-    for (int i = 0; i < _config.BrowsingHistoryQueueCount(); i++)
-      _browsing_queues[i] = new BrowsingHistoryQueue(this,
-                                                    LifeSpan.NearlyForever);
-    Trace.msg(4, "_browsing_queues and _sales_queues established");
-      
-    _all_products = new Products(this, LifeSpan.NearlyForever, _config);
-    Trace.msg(4, "all_products established");
-
-    _all_customers = new Customers(this, LifeSpan.NearlyForever, _config);
-    Trace.msg(4, "all_customers established");
-
-    for (boolean max_config_found = false; !max_config_found; ) {
-
-      _customer_period = _config.CustomerPeriod();
-      _customer_think_time = _config.CustomerThinkTime();
-
-      configure_simulation_threads();
-      boolean success = run_one_experiment();
-      if (success) {
-        Report.output("Simulation was successful");
-      } else {
-        Report.output("Simulation failed");
-      }
-      // first pass, keep it simple
-      max_config_found = true;
-    }
-  }
-
-  public void configure_simulation_threads() {
     RelativeTime customer_stagger = null;
     RelativeTime server_stagger = null;
-      
     if (_config.CustomerThreads() > 0) {
       // Stagger the Customer threads so they are not all triggered at
       // the same moment in time.
@@ -174,11 +259,9 @@ public class Bootstrap extends ExtrememThread {
                                                    _config.ServerThreads()));
       Trace.msg(3, "Server stagger set to: ", server_stagger.toString(this));
     }
-      
+
     Trace.msg(2, "starting up CustomerThreads: ", Integer.toString(_config.CustomerThreads()));
-      
-    // Initialize and startup all of the threads as specified in
-    // _config.
+    // Initialize and startup all of the threads as specified in _config.
     _customer_threads = new CustomerThread[_config.CustomerThreads()];
     Util.referenceArray(this, LifeSpan.NearlyForever, _config.CustomerThreads());
       
@@ -199,9 +282,8 @@ public class Bootstrap extends ExtrememThread {
     if (customer_stagger != null) {
       customer_stagger.garbageFootprint(this);
     }
-    Trace.msg(2, "starting up ServerThreads: ",
-              Integer.toString(_config.ServerThreads()));
-      
+
+    Trace.msg(2, "starting up ServerThreads: ", Integer.toString(_config.ServerThreads()));
     _server_threads = new ServerThread[_config.ServerThreads()];
     Util.referenceArray(this, LifeSpan.NearlyForever, _config.ServerThreads());
       
@@ -279,7 +361,6 @@ public class Bootstrap extends ExtrememThread {
       staggered_product_replacement = staggered_product_replacement.addRelative(this, product_replacement_stagger);
       _server_threads[i].start(); // will wait for first release
     }
-
     staggered_start.garbageFootprint(this);
     staggered_start = null;
 
@@ -338,8 +419,7 @@ public class Bootstrap extends ExtrememThread {
   }
 
   // Returns true iff the test was considered successful
-  public boolean run_one_experiment() {
-      
+  public boolean run_one_experiment(bool preserve_customers_and_products) {
     Trace.msg(2, "Joining with customer threads");
     // Each thread will terminate when the _end_time is reached.
     for (int i = 0; i < _config.CustomerThreads(); i++) {
@@ -349,7 +429,6 @@ public class Bootstrap extends ExtrememThread {
         i--;                    // just try it again
       }
     }
-      
     Trace.msg(2, "Joining with server threads");
     for (int i = 0; i < _config.ServerThreads(); i++) {
       try {
@@ -358,7 +437,6 @@ public class Bootstrap extends ExtrememThread {
         i--;                    // just try it again
       }
     }
-
     if (_update_thread != null) {
       Trace.msg(2, "Joining with update thread");
       boolean retry = false;
@@ -371,7 +449,6 @@ public class Bootstrap extends ExtrememThread {
         }
       } while (retry);
     }
-
     Trace.msg(2, "Program simulation has ended");
     _all_products.report(this);
     _all_customers.report(this);
@@ -436,12 +513,13 @@ public class Bootstrap extends ExtrememThread {
     _customer_threads = null;
     _server_threads = null;
 
-    _all_customers.garbageFootprint(this);
-    _all_customers = null;
-      
-    _all_products.garbageFootprint(this);
-    _all_products = null;
-      
+    if (!preserve_customers_and_products) {
+      _all_customers.garbageFootprint(this);
+      _all_customers = null;
+      _all_products.garbageFootprint(this);
+      _all_products = null;
+    }
+
     for (int i = 0; i < _config.BrowsingHistoryQueueCount(); i++) {
       _browsing_queues[i].garbageFootprint(this);
       _browsing_queues[i] = null;
@@ -457,7 +535,7 @@ public class Bootstrap extends ExtrememThread {
     Util.abandonReferenceArray(this, LifeSpan.NearlyForever,
                                _config.SalesTransactionQueueCount());
     _sales_queues = null;
-      
+
     // While these objects may not be garbage quite yet, treat them as
     // if they were, so that report on net memory allocations balance
     // out to zero.

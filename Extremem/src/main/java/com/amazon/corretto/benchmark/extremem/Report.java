@@ -59,6 +59,19 @@ class Report {
     out.print(s2);
   }
 
+  static void outputNoLine(String s1, String s2, String s3) {
+    out.print(s1);
+    out.print(s2);
+    out.print(s3);
+  }
+
+  static void outputNoLine(String s1, String s2, String s3, String s4) {
+    out.print(s1);
+    out.print(s2);
+    out.print(s3);
+    out.print(s4);
+  }
+
   static void output(String s1, String s2) {
     out.print(s1);
     out.println(s2);

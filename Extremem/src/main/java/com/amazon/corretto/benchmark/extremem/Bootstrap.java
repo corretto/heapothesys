@@ -465,13 +465,22 @@ public class Bootstrap extends ExtrememThread {
 
     Report.acquireReportLock();
     Report.output();
+    // Allow observed count to be no more than customer_thread_count less than the expected activations.
+    // It may be less, depending on when particular threads receive their termination signal at the end of simulation.
+    String judgement = (actual_activations + customer_thread_count >= expected_activations)? "Looks good: ": "PROBLEM: ";
     if (config.ReportCSV()) {
-      Report.output("Observed Customer Transactions, Expected Customer Transactions");
-      Report.output(String.valueOf(actual_activations), ", ", String.valueOf(expected_activations));
+      Report.output(judgement,
+		    "Observed customer transactions should be no less than expected customer transactions minus",
+		    " the number of customer threads");
+      Report.output("Observed Customer Transactions, Expected Customer Transactions, CustomerThreads");
+      Report.output(String.valueOf(actual_activations), ", ", String.valueOf(expected_activations),
+		    ", ", String.valueOf(customer_thread_count));
     } else {
-      String judgement = (actual_activations >= expected_activations)? "Looks good: ": "PROBLEM: ";
       Report.output(judgement, "observed ", String.valueOf(actual_activations),
-		      " customer interactions out of at least ", String.valueOf(expected_activations), " expected transactions");
+		    " customer interactions out of at least (",
+		    String.valueOf(expected_activations - customer_thread_count), " = ",
+		    String.valueOf(expected_activations), " expected transactions minus ",
+		    String.valueOf(customer_thread_count), " customer threads)");
     }
     Report.output();
     Report.releaseReportLock();

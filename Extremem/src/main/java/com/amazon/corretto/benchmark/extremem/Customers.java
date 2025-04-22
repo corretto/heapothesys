@@ -257,6 +257,21 @@ class Customers extends ExtrememObject {
 
   // Rebuild Customers data base from change_log.  Return number of customers changed.
   long rebuildCustomersPhasedUpdates(ExtrememThread t) {
+
+    AbsoluteTime now = AbsoluteTime.now(t);
+    String s;
+    if (config.ReportCSV()) {
+      s = Long.toString(now.microseconds());
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Customer Database Start Time, ", s);
+    } else {
+      s = now.toString(t);
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Customer Database Start Time: ", s);
+    }
+    Util.abandonEphemeralString(t, s);
+    now.garbageFootprint(t);
+
     Arraylet<String> new_customer_names;
     HashMap<String, Customer> new_customer_map;
     int num_customers = config.NumCustomers();
@@ -293,6 +308,20 @@ class Customers extends ExtrememObject {
       // customer replacement request.
     }
     establishUpdatedDataBase(t, new_customer_names, new_customer_map);
+
+    now = AbsoluteTime.now(t);
+    if (config.ReportCSV()) {
+      s = Long.toString(now.microseconds());
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Customer Database Finish Time, ", s);
+    } else {
+      s = now.toString(t);
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Customer Database Finish Time: ", s);
+    }
+    Util.abandonEphemeralString(t, s);
+    now.garbageFootprint(t);
+
     return tally;
   }
 

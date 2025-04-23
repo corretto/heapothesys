@@ -140,7 +140,8 @@ is false, then only products that contain all of the keywords are considered to 
 default value of AllowAnyMatch will generally result in far fewer candidate products to be compared and evaluated.  With some
 product data bases, the difference between AllowAnyMatch = true and AllowAnyMatch = false is over 5,000:1.  Setting this
 parameter to false is especially useful when running with very large Product data bases.  When AllowAnyMatch is false,
-a different more efficient algorithm is used to calculate the intersection of products matching all search criteria.
+a different more efficient algorithm is used to calculate the intersection of products matching all search criteria in
+the PhasedUpdates and FastAndFurious modes of operation.
 
 ### *-dProductReviewLength=32*
 

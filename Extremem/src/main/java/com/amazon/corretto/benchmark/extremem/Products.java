@@ -496,7 +496,7 @@ class Products extends ExtrememObject {
   /**
    * Compute the intersection of sets represented by all_matches[0..all_count-1] and new_matches[0..length()-1]
    *
-   * On entry, all_matches are new_matches are sorted in increasing order.
+   * On entry, all_matches and new_matches are sorted in increasing order.
    *
    * On return, valid entries (entries that were present in both arrays on entry) of the all_matches[] array
    * are sifted to the front of that array.  The return value represents the number of valid entries within

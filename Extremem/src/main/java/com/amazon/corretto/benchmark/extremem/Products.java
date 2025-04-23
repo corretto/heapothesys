@@ -494,7 +494,7 @@ class Products extends ExtrememObject {
   }
 
   /**
-   * Compute the union of sets represented by all_matches[0..all_count-1] and new_matches[0..length()-1]
+   * Compute the intersection of sets represented by all_matches[0..all_count-1] and new_matches[0..length()-1]
    *
    * On entry, all_matches are new_matches are sorted in increasing order.
    *

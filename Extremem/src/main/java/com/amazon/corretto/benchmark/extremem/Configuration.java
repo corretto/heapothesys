@@ -396,98 +396,102 @@ class Configuration {
   }
 
   void doUintArg(int index, String keyword, String uintString) {
-    int u = 0;
+    long u = 0;
     for (int i = 0; i < uintString.length(); i++) {
       char c = uintString.charAt(i);
       if (!Character.isDigit(c))
         usage("Unexpected character in unsigned int encoding");
       u = u * 10 + Character.digit(c, 10);
     }
+    if (u > Integer.MAX_VALUE) {
+      usage("argument must be no greater than Integer.MAX_VALUE: " + Long.toString(u));
+    }
+    int ui = (int) u;
 
     switch (index) {
       case 0:
         if (keyword.equals("BrowsingHistoryQueueCount")) {
-          BrowsingHistoryQueueCount = u;
+          BrowsingHistoryQueueCount = ui;
           break;
         }
       case 1:
         if (keyword.equals("CustomerReplacementCount")) {
-          CustomerReplacementCount = u;
+          CustomerReplacementCount = ui;
           break;
         }
       case 2:
         if (keyword.equals("CustomerThreads")) {
-          CustomerThreads = u;
+          CustomerThreads = ui;
           break;
         }
       case 3:
         if (keyword.equals("DictionarySize")) {
-          DictionarySize = u;
+          DictionarySize = ui;
           break;
         }
       case 4:
         if (keyword.equals("KeywordSearchCount")) {
-          KeywordSearchCount = u;
+          KeywordSearchCount = ui;
           break;
         }
       case 5:
         if (keyword.equals("MaxArrayLength")) {
-          MaxArrayLength = u;
+          MaxArrayLength = ui;
           break;
         }
       case 6:
         if (keyword.equals("NumCustomers")) {
-          NumCustomers = u;
+          NumCustomers = ui;
           break;
         }
       case 7:
         if (keyword.equals("NumProducts")) {
-          NumProducts = u;
+          NumProducts = ui;
           break;
         }
       case 8:
         if (keyword.equals("ProductDescriptionLength")) {
-          ProductDescriptionLength = u;
+          ProductDescriptionLength = ui;
           break;
         }
       case 9:
         if (keyword.equals("ProductNameLength")) {
-          ProductNameLength = u;
+          ProductNameLength = ui;
           break;
         }
       case 10:
         if (keyword.equals("ProductReplacementCount")) {
-          ProductReplacementCount = u;
+          ProductReplacementCount = ui;
           break;
         }
       case 11:
         if (keyword.equals("ProductReviewLength")) {
-          ProductReviewLength = u;
+          ProductReviewLength = ui;
           break;
         }
       case 12:
         if (keyword.equals("RandomSeed")) {
-          RandomSeed = u;
+          RandomSeed = ui;
           break;
         }
       case 13:
         if (keyword.equals("ResponseTimeMeasurements")) {
-          ResponseTimeMeasurements = u;
+          ResponseTimeMeasurements = ui;
           break;
         }
       case 14:
         if (keyword.equals("SalesTransactionQueueCount")) {
-          SalesTransactionQueueCount = u;
+          SalesTransactionQueueCount = ui;
           break;
         }
       case 15:
         if (keyword.equals("SelectionCriteriaCount")) {
-          SelectionCriteriaCount = u;
+          SelectionCriteriaCount = ui;
           break;
         }
       case 16:
         if (keyword.equals("ServerThreads")) {
-          ServerThreads = u;
+          ServerThreads = ui;
           break;
         }
       default:

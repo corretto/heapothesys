@@ -96,12 +96,13 @@ abstract class ExtrememThread extends java.lang.Thread {
   // Assume keywords[0..num_keywords - 2] are independent.  Return true iff keyword[num_keywords - 1] depends
   // on one of the other keywords.  Keywords depend on each other if one is a substring of the other.
   boolean keywords_are_dependent(String[] keywords, int num_keywords) {
+    if (num_keywords <= 1) {
+      return false;
+    }
     String last_keyword = keywords[num_keywords - 1];
     // make sure existing keywords are not substrings of new keyword
     for (int i = 0; i < num_keywords - 1; i++) {
-      if (keywords[i].indexOf(last_keyword) >= 0) {
-	return true;
-      } else if (last_keyword.indexOf(keywords[i]) >= 0) {
+      if (keywords[i].equals(last_keyword)) {
 	return true;
       }
     }
@@ -114,7 +115,7 @@ abstract class ExtrememThread extends java.lang.Thread {
     for (int i = 0; i < count; i++) {
       do {
 	result[i] = randomWord();
-      } while (keywords_are_dependent(result, i));
+      } while (keywords_are_dependent(result, i + 1));
     }
     memory_log.accumulate(LifeSpan.Ephemeral, MemoryFlavor.ArrayObject,
                           Polarity.Expand, 1);

@@ -615,7 +615,7 @@ class Products extends ExtrememObject {
 	  quicksort(new_matches, 0, new_matches_size - 1);
 	  //	  dumpArray("After sorting supplemental array", new_matches, new_matches_size);
 	  intersection_size = filter_out(intersection_size, all_matches, new_matches);
-	  dumpArray("After filtering original array", all_matches, intersection_size);
+	  //      dumpArray("After filtering original array", all_matches, intersection_size);
 	  Util.abandonEphemeralRSBArray(t, new_matches_size, Util.SizeOfLong);
 	}
       }

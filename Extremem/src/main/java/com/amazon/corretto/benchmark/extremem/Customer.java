@@ -208,7 +208,7 @@ class Customer extends ExtrememObject {
     log.accumulate(ls, MemoryFlavor.ObjectReference, p, count * 2);
     // And two long fields: id, purchase_hash, and two int fields: fsfl, csfl
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-                   count * 2 * (Util.SizeOfLong + Util.SizeOfInt));
+                   ((long) count) * 2 * (Util.SizeOfLong + Util.SizeOfInt));
 
     // account for the accumulation of allocated arrays referenced
     // from each Customer's sflq field.

@@ -39,6 +39,7 @@ class Configuration {
   static final boolean DefaultReportCSV = false;
   static final boolean DefaultFastAndFurious = false;
   static final boolean DefaultPhasedUpdates = false;
+  static final boolean DefaultAllowAnyMatch = true;
 
   static final int DefaultDictionarySize = 25000;
   static final String DefaultDictionaryFile = "/usr/share/dict/words";
@@ -97,6 +98,7 @@ class Configuration {
   private int CustomerThreads;
   private int ServerThreads;
 
+  private boolean AllowAnyMatch;
   private boolean FastAndFurious;
   private boolean PhasedUpdates;;
   private boolean ReportIndividualThreads;
@@ -203,6 +205,7 @@ class Configuration {
     ProductReviewLength = DefaultProductReviewLength;
     RandomSeed = DefaultRandomSeed;
 
+    AllowAnyMatch = DefaultAllowAnyMatch;
     FastAndFurious = DefaultFastAndFurious;
     PhasedUpdates = DefaultPhasedUpdates;
 
@@ -259,6 +262,7 @@ class Configuration {
   }
 
   private static String[] boolean_patterns = {
+    "AllowAnyMatch",
     "FastAndFurious",
     "PhasedUpdates",
     "ReportCSV",
@@ -362,21 +366,26 @@ class Configuration {
 
     switch (index) {
       case 0:
+        if (keyword.equals("AllowAnyMatch")) {
+	  AllowAnyMatch = b;
+          break;
+        }
+      case 1:
         if (keyword.equals("FastAndFurious")) {
           FastAndFurious = b;
           break;
         }
-      case 1:
+      case 2:
         if (keyword.equals("PhasedUpdates")) {
           PhasedUpdates = b;
           break;
         }
-      case 2:
+      case 3:
         if (keyword.equals("ReportCSV")) {
           ReportCSV = b;
           break;
         }
-      case 3:
+      case 4:
         if (keyword.equals("ReportIndividualThreads")) {
           ReportIndividualThreads = b;
           break;
@@ -387,98 +396,102 @@ class Configuration {
   }
 
   void doUintArg(int index, String keyword, String uintString) {
-    int u = 0;
+    long u = 0;
     for (int i = 0; i < uintString.length(); i++) {
       char c = uintString.charAt(i);
       if (!Character.isDigit(c))
         usage("Unexpected character in unsigned int encoding");
       u = u * 10 + Character.digit(c, 10);
     }
+    if (u > Integer.MAX_VALUE) {
+      usage("argument must be no greater than Integer.MAX_VALUE: " + Long.toString(u));
+    }
+    int ui = (int) u;
 
     switch (index) {
       case 0:
         if (keyword.equals("BrowsingHistoryQueueCount")) {
-          BrowsingHistoryQueueCount = u;
+          BrowsingHistoryQueueCount = ui;
           break;
         }
       case 1:
         if (keyword.equals("CustomerReplacementCount")) {
-          CustomerReplacementCount = u;
+          CustomerReplacementCount = ui;
           break;
         }
       case 2:
         if (keyword.equals("CustomerThreads")) {
-          CustomerThreads = u;
+          CustomerThreads = ui;
           break;
         }
       case 3:
         if (keyword.equals("DictionarySize")) {
-          DictionarySize = u;
+          DictionarySize = ui;
           break;
         }
       case 4:
         if (keyword.equals("KeywordSearchCount")) {
-          KeywordSearchCount = u;
+          KeywordSearchCount = ui;
           break;
         }
       case 5:
         if (keyword.equals("MaxArrayLength")) {
-          MaxArrayLength = u;
+          MaxArrayLength = ui;
           break;
         }
       case 6:
         if (keyword.equals("NumCustomers")) {
-          NumCustomers = u;
+          NumCustomers = ui;
           break;
         }
       case 7:
         if (keyword.equals("NumProducts")) {
-          NumProducts = u;
+          NumProducts = ui;
           break;
         }
       case 8:
         if (keyword.equals("ProductDescriptionLength")) {
-          ProductDescriptionLength = u;
+          ProductDescriptionLength = ui;
           break;
         }
       case 9:
         if (keyword.equals("ProductNameLength")) {
-          ProductNameLength = u;
+          ProductNameLength = ui;
           break;
         }
       case 10:
         if (keyword.equals("ProductReplacementCount")) {
-          ProductReplacementCount = u;
+          ProductReplacementCount = ui;
           break;
         }
       case 11:
         if (keyword.equals("ProductReviewLength")) {
-          ProductReviewLength = u;
+          ProductReviewLength = ui;
           break;
         }
       case 12:
         if (keyword.equals("RandomSeed")) {
-          RandomSeed = u;
+          RandomSeed = ui;
           break;
         }
       case 13:
         if (keyword.equals("ResponseTimeMeasurements")) {
-          ResponseTimeMeasurements = u;
+          ResponseTimeMeasurements = ui;
           break;
         }
       case 14:
         if (keyword.equals("SalesTransactionQueueCount")) {
-          SalesTransactionQueueCount = u;
+          SalesTransactionQueueCount = ui;
           break;
         }
       case 15:
         if (keyword.equals("SelectionCriteriaCount")) {
-          SelectionCriteriaCount = u;
+          SelectionCriteriaCount = ui;
           break;
         }
       case 16:
         if (keyword.equals("ServerThreads")) {
-          ServerThreads = u;
+          ServerThreads = ui;
           break;
         }
       default:
@@ -659,6 +672,12 @@ class Configuration {
     if (NumCustomers < 1)
       usage("NumCustomers must be greater or equal to 1");
 
+    RelativeTime Zero = new RelativeTime(t);
+    if (PhasedUpdateInterval.compare(Zero) == 0) {
+      usage("PhasedUpdateInterval must be greater than 0");
+    }
+    Zero.garbageFootprint(t);
+
     if (!sufficientVocabulary(DictionarySize, ProductNameLength, NumProducts))
       usage("Dictionary too small to generate unique product names");
 
@@ -754,6 +773,10 @@ class Configuration {
 
   boolean FastAndFurious() {
     return FastAndFurious;
+  }
+
+  boolean AllowAnyMatch() {
+    return AllowAnyMatch;
   }
 
   boolean PhasedUpdates() {
@@ -902,6 +925,7 @@ class Configuration {
                   FastAndFurious? "true": "false");
     Report.output("PhasedUpdates,",
                   PhasedUpdates? "true": "false");
+
     Report.output();
     s = Long.toString(PhasedUpdateInterval.microseconds());
     l = s.length();
@@ -1039,6 +1063,9 @@ class Configuration {
     Report.output("KeywordSearchCount,", s);
     Util.abandonEphemeralString(t, l);
 
+    Report.output("AllowAnyMatch,", 
+                  AllowAnyMatch? "true": "false");
+
     s = Integer.toString(SelectionCriteriaCount);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -1084,7 +1111,6 @@ class Configuration {
     Report.output("ProductReviewLength,", s);
     Util.abandonEphemeralString(t, l);
 
-
   }
 
   void dump(ExtrememThread t) {
@@ -1110,13 +1136,15 @@ class Configuration {
 
     Report.output("  Fine-grain locking of data base (FastAndFurious): ", FastAndFurious? "true": "false");
     Report.output("       Rebuild data base in phases (PhasedUpdates): ", PhasedUpdates? "true": "false");
-    Report.output();
-    s = PhasedUpdateInterval.toString(t);
-    l = s.length();
-    Util.ephemeralString(t, l);
-    Report.output("  Time between data rebuild (PhasedUpdateInterval): ", s);
-    Util.abandonEphemeralString(t, l);
 
+    Report.output();
+    if (PhasedUpdates) {
+      s = PhasedUpdateInterval.toString(t);
+      l = s.length();
+      Util.ephemeralString(t, l);
+      Report.output("  Time between data rebuild (PhasedUpdateInterval): ", s);
+      Util.abandonEphemeralString(t, l);
+    }
 
     s = Integer.toString(RandomSeed);
     l = s.length();
@@ -1235,6 +1263,9 @@ class Configuration {
     Util.ephemeralString(t, l);
     Report.output("                Words in query (KeywordSearchCount): ", s);
     Util.abandonEphemeralString(t, l);
+
+    Report.output("                  Allow lookup to match any keyword\n" +
+		 "(if it fails to match all keywords)  (AllowAnyMatch): ", AllowAnyMatch? "true": "false");
 
     s = Integer.toString(SelectionCriteriaCount);
     l = s.length();

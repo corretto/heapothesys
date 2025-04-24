@@ -94,24 +94,20 @@ public class Bootstrap extends ExtrememThread {
     Util.referenceArray(this, LifeSpan.NearlyForever,
                         config.SalesTransactionQueueCount());
     for (int i = 0; i < config.SalesTransactionQueueCount(); i++)
-      sales_queues[i] = new SalesTransactionQueue(this,
-                                                  LifeSpan.NearlyForever);
-    BrowsingHistoryQueue[] browsing_queues = (
-      new BrowsingHistoryQueue[config.BrowsingHistoryQueueCount()]);
+      sales_queues[i] = new SalesTransactionQueue(this, LifeSpan.NearlyForever);
+    BrowsingHistoryQueue[] browsing_queues = new BrowsingHistoryQueue[config.BrowsingHistoryQueueCount()];
     Util.referenceArray(this, LifeSpan.NearlyForever,
                         config.BrowsingHistoryQueueCount());
     for (int i = 0; i < config.BrowsingHistoryQueueCount(); i++)
-      browsing_queues[i] = new BrowsingHistoryQueue(this,
-                                                    LifeSpan.NearlyForever);
+      browsing_queues[i] = new BrowsingHistoryQueue(this, LifeSpan.NearlyForever);
     Trace.msg(4, "browsing_queues and sales_queues established");
-      
     Products all_products = (
       new Products(this, LifeSpan.NearlyForever, config));
     Trace.msg(4, "all_products established");
-    Customers all_customers = new Customers(this, LifeSpan.NearlyForever,
-                                            config);
+
+    Customers all_customers = new Customers(this, LifeSpan.NearlyForever, config);
     Trace.msg(4, "all_customers established");
-      
+
     if (config.CustomerThreads() > 0) {
       // Stagger the Customer threads so they are not all triggered at
       // the same moment in time.
@@ -172,7 +168,7 @@ public class Bootstrap extends ExtrememThread {
     }
     Trace.msg(2, "starting up ServerThreads: ",
               Integer.toString(config.ServerThreads()));
-      
+
     server_threads = new ServerThread[config.ServerThreads()];
     Util.referenceArray(this, LifeSpan.NearlyForever, config.ServerThreads());
       

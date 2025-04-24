@@ -102,9 +102,8 @@ public class MemoryLog {
     // Tallies should never go negative.  The only reason to decrement
     // a tally is to undo a previous increment.
     if (tallies[ls.ordinal()][mf.ordinal()] < 0)
-      throw new IllegalStateException("Negative memory tally for [" +
-                                      ls + ", " + mf + "] after count "
-                                      + count + " with Polarity " + p );
+      throw new IllegalStateException("Negative memory tally for ["
+				      +  ls + ", " + mf + "] after count " + count + " with Polarity " + p );
   }
 
   void tallyMemory(MemoryLog log, LifeSpan ls, Polarity p) {

@@ -100,6 +100,8 @@ class Products extends ExtrememObject {
     }
   }
 
+  private final boolean do_fast_match_all;
+
   // The change_log is only used if config.PhasedUpdates
   final ChangeLog change_log;
 
@@ -223,6 +225,7 @@ class Products extends ExtrememObject {
 
   Products (ExtrememThread t, LifeSpan ls, Configuration config) {
     super(t, ls);
+    this.do_fast_match_all = !config.AllowAnyMatch();
 
     if (config.PhasedUpdates()) {
       change_log = new ChangeLog();
@@ -490,122 +493,362 @@ class Products extends ExtrememObject {
     // This race is handled elsewhere.
   }
 
-  Product[] lookupProductsMatchingAllPhasedUpdates(ExtrememThread t, String[] keywords, CurrentProductsData current) {
-    ExtrememHashSet<Product> intersection = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
-    for (int i = 0; i < keywords.length; i++) {
-      String keyword = keywords[i];
-      if (i == 0) {
-        ExtrememHashSet<Long> matched_ids;
-        matched_ids = current.nameIndex().get(keyword);
-        if (matched_ids != null) {
-          Util.createEphemeralHashSetIterator(t);
-          for (Long id: matched_ids) {
-            addToSetIfAvailable(t, intersection, id);
-          }
-          Util.abandonEphemeralHashSetIterator(t);
-        }
-        matched_ids = current.descriptionIndex().get(keyword);
-        if (matched_ids != null) {
-          Util.createEphemeralHashSetIterator(t);
-          for (Long id: matched_ids) {
-            addToSetIfAvailable(t, intersection, id);
-          }
-          Util.abandonEphemeralHashSetIterator(t);
-        }
-      } else {
-        ExtrememHashSet<Long> matched_ids;
-        ExtrememHashSet<Product> new_matches = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
-        matched_ids = current.nameIndex().get(keyword);
-        if (matched_ids != null) {
-          Util.createEphemeralHashSetIterator(t);
-          for (Long id: matched_ids) {
-            addToSetIfAvailable(t, new_matches, id);
-          }
-          Util.abandonEphemeralHashSetIterator(t);
-        }
-        matched_ids = current.descriptionIndex().get(keyword);
-        if (matched_ids != null) {
-          Util.createEphemeralHashSetIterator(t);
-          for (Long id: matched_ids) {
-            addToSetIfAvailable(t, new_matches, id);
-          }
-          Util.abandonEphemeralHashSetIterator(t);
-        }
-        ExtrememHashSet<Product> remove_set = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
-        Util.createEphemeralHashSetIterator(t);
-        for (Product p: intersection) {
-          if (!new_matches.contains(p)) {
-            remove_set.add(t, p);
-          }
-        }
-        Util.abandonEphemeralHashSetIterator(t);
-        new_matches.garbageFootprint(t);
-        Util.createEphemeralHashSetIterator(t);
-        for (Product p: remove_set) {
-          intersection.remove(t, p);
-        }
-        Util.abandonEphemeralHashSetIterator(t);
-        remove_set.garbageFootprint(t);
-        if (intersection.size() == 0) {
-          Util.ephemeralReferenceArray(t, 0);
-          // Returning an array with no entries.
-          return new Product[0];
-        }
+  /**
+   * Compute the intersection of sets represented by all_matches[0..all_count-1] and new_matches[0..length()-1]
+   *
+   * On entry, all_matches and new_matches are sorted in increasing order.
+   *
+   * On return, valid entries (entries that were present in both arrays on entry) of the all_matches[] array
+   * are sifted to the front of that array.  The return value represents the number of valid entries within
+   * the union of the two arrays.
+   */
+  int filter_out(int all_count, long all_matches[], long new_matches[]) {
+    int all_idx = 0;
+    int slide_idx = 0;
+    int new_idx = 0;
+    int new_length = new_matches.length;
+
+    while (all_idx < all_count) {
+      long next_all_candidate = all_matches[all_idx];
+      while ((new_idx < new_length) && (new_matches[new_idx] < next_all_candidate)) {
+        new_idx++;
+      }
+      if ((new_idx < new_length) && (new_matches[new_idx] == next_all_candidate)) {  // Preserve this value
+	if (slide_idx < new_idx) {
+          all_matches[slide_idx++] = all_matches[all_idx++];
+	} else {
+	  slide_idx++;
+	  all_idx++;
+	}
+      } else {  // discard this value from all_matches because it's not present in new_matches array
+	all_idx++;
       }
     }
-    Product[] result = new Product[intersection.size()];
-    Util.ephemeralReferenceArray(t, result.length);
-    int j = 0;
-    Util.createEphemeralHashSetIterator(t);
-    for (Product p: intersection)
-      result[j++] = p;
-    Util.abandonEphemeralHashSetIterator(t);
-    intersection.garbageFootprint(t);
+    return slide_idx;
+  }
+
+  int partition(long array[], int first, int last) {
+    long pivot = array[last];
+    int i = first - 1;
+    for (int j = first; j < last; j++) {
+      if (array[j] <= pivot) {
+	i++;
+	long tmp = array[i];
+	array[i] = array[j];
+	array[j] = tmp;
+      }
+    }
+    long tmp = array[i+1];
+    array[i + 1] = array[last];
+    array[last] = tmp;
+    return i + 1;
+  }
+
+  void quicksort(long array[], int first, int last) {
+    if (first < last) {
+      int partition_index = partition(array, first, last);
+      quicksort(array, first, partition_index - 1);
+      quicksort(array, partition_index + 1, last);
+    }
+  }
+
+  void dumpArray(String msg, long array[], int length) {
+      Report.output();
+      Report.outputNoLine(msg, ": dumpArray[", Integer.toString(length), "] ");
+      for (int i = 0; i < length; i++) {
+	  Report.outputNoLine(Long.toString(array[i]), " ");
+      }
+      Report.output();
+  }
+
+  Product[] lookupProductsMatchingAllPhasedUpdates(ExtrememThread t, String[] keywords, CurrentProductsData current) {
+    Product[] result;
+
+    // Note: For proper tally of allocated memory, we should abandon name_matched_ids and description_matched_ids
+    // within each iteration of loop.
+    if (this.do_fast_match_all) {
+      int intersection_size = 0;
+      long all_matches[] = null;
+      for (int i = 0; i < keywords.length; i++) {
+        String keyword = keywords[i];
+
+        ExtrememHashSet<Long> name_matched_ids;
+        name_matched_ids = current.nameIndex().get(keyword);
+
+	ExtrememHashSet<Long> description_matched_ids;
+	description_matched_ids = current.descriptionIndex().get(keyword);
+
+	if (i == 0) {
+	  intersection_size = name_matched_ids.size() + description_matched_ids.size();
+	  Util.ephemeralRSBArray(t, intersection_size, Util.SizeOfLong);
+	  all_matches = new long[intersection_size];
+	  int dest_idx = 0;
+	  Util.createEphemeralHashSetIterator(t);
+	  for (Long id: name_matched_ids) {
+	    all_matches[dest_idx++] = id.longValue();
+	  }
+	  Util.abandonEphemeralHashSetIterator(t);
+	  Util.createEphemeralHashSetIterator(t);
+	  for (Long id: description_matched_ids) {
+	    all_matches[dest_idx++] = id.longValue();
+	  }
+	  Util.abandonEphemeralHashSetIterator(t);
+	  //	  dumpArray("Before sorting initial array", all_matches, intersection_size);
+	  quicksort(all_matches, 0, intersection_size - 1);
+	  //	  dumpArray("After sorting initial array", all_matches, intersection_size);
+	} else {
+	  int new_matches_size = name_matched_ids.size() + description_matched_ids.size();
+	  Util.ephemeralRSBArray(t, new_matches_size, Util.SizeOfLong);
+	  long new_matches[] = new long[new_matches_size];
+	  int dest_idx = 0;
+	  Util.createEphemeralHashSetIterator(t);
+	  for (Long id: name_matched_ids) {
+	    new_matches[dest_idx++] = id.longValue();
+	  }
+	  Util.abandonEphemeralHashSetIterator(t);
+	  Util.createEphemeralHashSetIterator(t);
+	  for (Long id: description_matched_ids) {
+	    new_matches[dest_idx++] = id.longValue();
+	  }
+	  Util.abandonEphemeralHashSetIterator(t);
+	  //	  dumpArray("Before sorting supplemental array", new_matches, new_matches_size);
+	  quicksort(new_matches, 0, new_matches_size - 1);
+	  //	  dumpArray("After sorting supplemental array", new_matches, new_matches_size);
+	  intersection_size = filter_out(intersection_size, all_matches, new_matches);
+	  //      dumpArray("After filtering original array", all_matches, intersection_size);
+	  Util.abandonEphemeralRSBArray(t, new_matches_size, Util.SizeOfLong);
+	}
+      }
+      result = new Product[intersection_size];
+      Util.ephemeralReferenceArray(t, intersection_size);
+      int cancel_count = 0;
+      for (int i = 0; i < intersection_size; i++) {
+	result[i] = product_map.get(all_matches[i]);
+	if (result[i] == null) {
+	  cancel_count++;
+	}
+      }
+      Util.abandonEphemeralRSBArray(t, all_matches.length, Util.SizeOfLong);
+      // In case any products have been cancelled during our concurrent lookup, filter them from the result
+      if (cancel_count > 0) {
+	Product original_result[] = result;
+	Util.ephemeralReferenceArray(t, intersection_size - cancel_count);
+	result = new Product[intersection_size - cancel_count];
+	int i = 0;
+	for (int j = 0; j < intersection_size; j++) {
+	  if (original_result[j] != null) {
+	    result[i++] = original_result[j];
+	  }
+	}
+	Util.abandonEphemeralReferenceArray(t, intersection_size);
+      }
+    } else {
+      // This is the original implementation.  It was written to "make work" and create garbage.  For some workloads,
+      // however, this creates so much work that GC interference gets lost in the noise.  With set sizes of 5,000,
+      // the time spent here is tens of ms.
+      ExtrememHashSet<Product> intersection = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+      for (int i = 0; i < keywords.length; i++) {
+	String keyword = keywords[i];
+
+	if (i == 0) {
+	  ExtrememHashSet<Long> matched_ids;
+	  matched_ids = current.nameIndex().get(keyword);
+	  if (matched_ids != null) {
+	    Util.createEphemeralHashSetIterator(t);
+	    for (Long id: matched_ids) {
+	      addToSetIfAvailable(t, intersection, id);
+	    }
+	    Util.abandonEphemeralHashSetIterator(t);
+	  }
+
+	  matched_ids = current.descriptionIndex().get(keyword);
+	  if (matched_ids != null) {
+	    Util.createEphemeralHashSetIterator(t);
+	    for (Long id: matched_ids) {
+		addToSetIfAvailable(t, intersection, id);
+	    }
+	    Util.abandonEphemeralHashSetIterator(t);
+	  }
+	} else {
+	  ExtrememHashSet<Long> matched_ids;
+	  ExtrememHashSet<Product> new_matches = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+	  matched_ids = current.nameIndex().get(keyword);
+	  if (matched_ids != null) {
+	    Util.createEphemeralHashSetIterator(t);
+	    for (Long id: matched_ids) {
+	      addToSetIfAvailable(t, new_matches, id);
+	    }
+	    Util.abandonEphemeralHashSetIterator(t);
+	  }
+
+	  matched_ids = current.descriptionIndex().get(keyword);
+	  if (matched_ids != null) {
+	    Util.createEphemeralHashSetIterator(t);
+	    for (Long id: matched_ids) {
+	      addToSetIfAvailable(t, new_matches, id);
+	    }
+	    Util.abandonEphemeralHashSetIterator(t);
+	  }
+	  ExtrememHashSet<Product> remove_set = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+	  Util.createEphemeralHashSetIterator(t);
+	  for (Product p: intersection) {
+	    if (!new_matches.contains(p)) {
+	      remove_set.add(t, p);
+	    }
+	  }
+	  Util.abandonEphemeralHashSetIterator(t);
+	  new_matches.garbageFootprint(t);
+	  Util.createEphemeralHashSetIterator(t);
+	  for (Product p: remove_set) {
+	    intersection.remove(t, p);
+	  }
+
+	  Util.abandonEphemeralHashSetIterator(t);
+	  remove_set.garbageFootprint(t);
+	  if (intersection.size() == 0) {
+	    Util.ephemeralReferenceArray(t, 0);
+	    // Returning an array with no entries.
+	    return new Product[0];
+	  }
+	}
+      }
+      result = new Product[intersection.size()];
+      Util.ephemeralReferenceArray(t, result.length);
+      int j = 0;
+      Util.createEphemeralHashSetIterator(t);
+      for (Product p: intersection) {
+	result[j++] = p;
+      }
+      Util.abandonEphemeralHashSetIterator(t);
+      intersection.garbageFootprint(t);
+    }
     return result;
   }
 
-  Product[] lookupProductsMatchingAll(ExtrememThread t, String [] keywords) {
-    if (config.PhasedUpdates()) {
-      CurrentProductsData all_products_currently = getUpdatedDataBase();
-      return lookupProductsMatchingAllPhasedUpdates(t, keywords, all_products_currently);
-    } else if (config.FastAndFurious()) {
-      ExtrememHashSet<Product> intersection = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+  Product[] lookupProductsMatchingAllFastAndFurious(ExtrememThread t, String [] keywords) {
+    if (this.do_fast_match_all) {
+      int intersection_size = 0;
+      long all_matches[] = null;
       for (int i = 0; i < keywords.length; i++) {
         String keyword = keywords[i];
-        if (i == 0) {
-          ExtrememHashSet<Long> matched_ids;
-          synchronized (name_index) {
-            matched_ids = name_index.get(keyword);
-          }
-          if (matched_ids != null) {
+
+        ExtrememHashSet<Long> name_matched_ids;
+	synchronized (name_index) {
+	  name_matched_ids = name_index.get(keyword);
+	}
+	ExtrememHashSet<Long> description_matched_ids;
+	synchronized (description_index) {
+	  description_matched_ids = description_index.get(keyword);
+	}
+	if (i == 0) {
+	  intersection_size = name_matched_ids.size() + description_matched_ids.size();
+	  Util.ephemeralRSBArray(t, intersection_size, Util.SizeOfLong);
+
+	  all_matches = new long[intersection_size];
+	  int dest_idx = 0;
+	  Util.createEphemeralHashSetIterator(t);
+	  synchronized(name_matched_ids) {
+	    for (Long id: name_matched_ids) {
+	      all_matches[dest_idx++] = id.longValue();
+	    }
+	  }
+	  Util.abandonEphemeralHashSetIterator(t);
+	  Util.createEphemeralHashSetIterator(t);
+	  synchronized(description_matched_ids) {
+	    for (Long id: description_matched_ids) {
+	      all_matches[dest_idx++] = id.longValue();
+	    }
+	  }
+	  Util.abandonEphemeralHashSetIterator(t);
+	  //	  dumpArray("Before sorting initial array", all_matches, intersection_size);
+	  quicksort(all_matches, 0, intersection_size - 1);
+	  //	  dumpArray("After sorting initial array", all_matches, intersection_size);
+	} else {
+	  int new_matches_size = name_matched_ids.size() + description_matched_ids.size();
+	  Util.ephemeralRSBArray(t, new_matches_size, Util.SizeOfLong);
+	  long new_matches[] = new long[new_matches_size];
+	  int dest_idx = 0;
+	  Util.createEphemeralHashSetIterator(t);
+	  synchronized(name_matched_ids) {
+	    for (Long id: name_matched_ids) {
+	      new_matches[dest_idx++] = id.longValue();
+	    }
+	  }
+	  Util.abandonEphemeralHashSetIterator(t);
+	  Util.createEphemeralHashSetIterator(t);
+	  synchronized(description_matched_ids) {
+	    for (Long id: description_matched_ids) {
+	      new_matches[dest_idx++] = id.longValue();
+	    }
+	  }
+	  Util.abandonEphemeralHashSetIterator(t);
+	  quicksort(new_matches, 0, new_matches_size - 1);
+	  intersection_size = filter_out(intersection_size, all_matches, new_matches);
+	  Util.abandonEphemeralRSBArray(t, new_matches_size, Util.SizeOfLong);
+	}
+      }
+      Product[] result = new Product[intersection_size];
+      Util.ephemeralReferenceArray(t, intersection_size);
+      int cancel_count = 0;
+      for (int i = 0; i < intersection_size; i++) {
+	result[i] = product_map.get(all_matches[i]);
+	if (result[i] == null) {
+	  cancel_count++;
+	}
+      }
+      Util.abandonEphemeralRSBArray(t, all_matches.length, Util.SizeOfLong);
+      // In case any products have been cancelled during our concurrent lookup, filter them from the result
+      if (cancel_count > 0) {
+	Product original_result[] = result;
+	Util.ephemeralReferenceArray(t, intersection_size - cancel_count);
+	result = new Product[intersection_size - cancel_count];
+	int i = 0;
+	for (int j = 0; j < intersection_size; j++) {
+	  if (original_result[j] != null) {
+	    result[i++] = original_result[j];
+	  }
+	}
+	Util.abandonEphemeralReferenceArray(t, intersection_size);
+      }
+      return result;
+    } else {
+      ExtrememHashSet<Product> intersection = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
+      for (int i = 0; i < keywords.length; i++) {
+	String keyword = keywords[i];
+	if (i == 0) {
+	  ExtrememHashSet<Long> matched_ids;
+	  synchronized (name_index) {
+	    matched_ids = name_index.get(keyword);
+	  }
+	  if (matched_ids != null) {
+	    Util.createEphemeralHashSetIterator(t);
+	    synchronized (matched_ids) {
+	      for (Long id: matched_ids) {
+		addToSetIfAvailable(t, intersection, id);
+	      }
+	    }
+	    Util.abandonEphemeralHashSetIterator(t);
+	  }
+	  synchronized (description_index) {
+	    matched_ids = description_index.get(keyword);
+	  }
+	  if (matched_ids != null) {
             Util.createEphemeralHashSetIterator(t);
-            synchronized (matched_ids) {
-              for (Long id: matched_ids) {
-                addToSetIfAvailable(t, intersection, id);
-              }
-            }
-            Util.abandonEphemeralHashSetIterator(t);
-          }
-          synchronized (description_index) {
-            matched_ids = description_index.get(keyword);
-          }
-          if (matched_ids != null) {
-            Util.createEphemeralHashSetIterator(t);
-            synchronized (matched_ids) {
-              for (Long id: matched_ids) {
-                addToSetIfAvailable(t, intersection, id);
-              }
-            }
-            Util.abandonEphemeralHashSetIterator(t);
-          }
-        } else {
-          ExtrememHashSet<Long> matched_ids;
+	    synchronized (matched_ids) {
+	      for (Long id: matched_ids) {
+		addToSetIfAvailable(t, intersection, id);
+	      }
+	    }
+	    Util.abandonEphemeralHashSetIterator(t);
+	  }
+	} else {
+	  ExtrememHashSet<Long> matched_ids;
           ExtrememHashSet<Product> new_matches = new ExtrememHashSet<Product>(t, LifeSpan.Ephemeral);
           synchronized (name_index) {
             matched_ids = name_index.get(keyword);
           }
           if (matched_ids != null) {
-            Util.createEphemeralHashSetIterator(t);
+	    Util.createEphemeralHashSetIterator(t);
             synchronized (matched_ids) {
               for (Long id: matched_ids) {
                 addToSetIfAvailable(t, new_matches, id);
@@ -646,7 +889,8 @@ class Products extends ExtrememObject {
             return new Product[0];
           }
         }
-      }
+      }    // end for loop
+
       Product[] result = new Product[intersection.size()];
       Util.ephemeralReferenceArray(t, result.length);
       int j = 0;
@@ -656,6 +900,15 @@ class Products extends ExtrememObject {
       Util.abandonEphemeralHashSetIterator(t);
       intersection.garbageFootprint(t);
       return result;
+    }
+  }
+
+  Product[] lookupProductsMatchingAll(ExtrememThread t, String [] keywords) {
+    if (config.PhasedUpdates()) {
+      CurrentProductsData all_products_currently = getUpdatedDataBase();
+      return lookupProductsMatchingAllPhasedUpdates(t, keywords, all_products_currently);
+    } else if (config.FastAndFurious()) {
+      return lookupProductsMatchingAllFastAndFurious(t, keywords);
     } else {
       SearchNamesAll sna = new SearchNamesAll(t, keywords, this);
       cc.actAsReader(sna);
@@ -750,6 +1003,21 @@ class Products extends ExtrememObject {
 
   // Rebuild Products data base from change_log.  Return the number of products actually replaced.
   long rebuildProductsPhasedUpdates(ExtrememThread t) {
+
+    String s;
+    AbsoluteTime now = AbsoluteTime.now(t);
+    if (config.ReportCSV()) {
+      s = Long.toString(now.microseconds());
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Product Database Start Time, ", s);
+    } else {
+      s = now.toString(t);
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Product Database Start Time: ", s);
+    }
+    Util.abandonEphemeralString(t, s);
+    now.garbageFootprint(t);
+
     ArrayletOflong new_product_ids;
     TreeMap <Long, Product> new_product_map;
     TreeMap <String, ExtrememHashSet<Long>> new_name_index;
@@ -793,6 +1061,20 @@ class Products extends ExtrememObject {
       addToIndicesPhasedUpdates(t, product, new_name_index, new_description_index);
     }
     establishUpdatedDataBase(t, new_product_ids, new_product_map, new_name_index, new_description_index);
+
+    now = AbsoluteTime.now(t);
+    if (config.ReportCSV()) {
+      s = Long.toString(now.microseconds());
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Product Database Finish Time, ", s);
+    } else {
+      s = now.toString(t);
+      Util.ephemeralString(t, s.length());
+      Report.output("Phase Rebuild of Product Database Finish Time: ", s);
+    }
+    Util.abandonEphemeralString(t, s);
+    now.garbageFootprint(t);
+
     return tally;
   }
 

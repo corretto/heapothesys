@@ -216,6 +216,17 @@ Each transaction rate is given two opportunities to succeed before that rate is 
 
 Each customer inquiry consists of a string of this many randomly selected words.  Increasing this number results in an increase in the memory allocated during formulation of each customer inquiry and generally results in an increased number of candidate products that match the inquiry.  This in turn results in more transient memory allocation and more effort in deciding between multiple alternative products that match a given decision criteria.
 
+### *-dAllowAnyMatch=true*
+
+By default, each customer inquiry searches the Products data base for products that match the randomly generated keywords.
+If AllowAnyMatch is true, then products containing at least one of the keywords are considered a search match.  If AllowAnyMatch
+is false, then only products that contain all of the keywords are considered to match the inquiry.  Note that overriding the
+default value of AllowAnyMatch will generally result in far fewer candidate products to be compared and evaluated.  With some
+product data bases, the difference between AllowAnyMatch = true and AllowAnyMatch = false is over 5,000:1.  Setting this
+parameter to false is especially useful when running with very large Product data bases.  When AllowAnyMatch is false,
+a different more efficient algorithm is used to calculate the intersection of products matching all search criteria in
+the PhasedUpdates and FastAndFurious modes of operation.
+
 ### *-dProductReviewLength=32*
 
 Each time a product is found to match a particular customer inquiry, the simulation randomly generates a product review containing this many words.  Product reviews represent thread-local data that is allocated before the customer begins to think about the choice between multiple candidate products.  The data is not discarded until after the customer has made this choice.  The final selection between multiple candidate products depends on how well the respective product reviews match the customer's selection criteria.  Increasing this value results in an increase in ephemeral and transient memory allocation and an increase in the effort required to compute the goodness of matches against the customer's selection criteria.

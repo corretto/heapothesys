@@ -657,22 +657,30 @@ public class Bootstrap extends ExtrememThread {
     int activations_per_thread = (int) simulation_duration.divideBy(customer_period);
     int expected_activations = customer_thread_count * activations_per_thread;
     int actual_activations = _customer_accumulator.engagements();
-    boolean result = actual_activations + customer_thread_count >= expected_activations;
 
+    // Allow observed count to be no more than customer_thread_count less than the expected activations.
+    // It may be less, depending on when particular threads receive their termination signal at the end of simulation.
+    boolean result = actual_activations + customer_thread_count >= expected_activations;
     Report.acquireReportLock();
     Report.output();
     String judgement = result? "Looks good: ": "PROBLEM: ";
+    Report.errout(judgement, "observed ", String.valueOf(actual_activations),
+		    " customer interactions out of at least (",
+		    String.valueOf(expected_activations - customer_thread_count), " = ",
+		    String.valueOf(expected_activations), " expected transactions minus ",
+		    String.valueOf(customer_thread_count), " customer threads)");
     if (_config.ReportCSV()) {
-      Report.output(judgement);
-      Report.output("Observed Customer Transactions, Expected Customer Transactions");
-      Report.output(String.valueOf(actual_activations), ", ", String.valueOf(expected_activations));
-      Report.errout("Observed Customer Transactions, Expected Customer Transactions");
-      Report.errout(String.valueOf(actual_activations), ", ", String.valueOf(expected_activations));
+      Report.output(judgement, "Observed customer transactions should be no less than expected customer transactions minus",
+		    " the number of customer threads");
+      Report.output("Observed Customer Transactions, Expected Customer Transactions, CustomerThreads");
+      Report.output(String.valueOf(actual_activations), ", ", String.valueOf(expected_activations),
+		    ", ", String.valueOf(customer_thread_count));
     } else {
       Report.output(judgement, "observed ", String.valueOf(actual_activations),
-                    " customer interactions out of at least ", String.valueOf(expected_activations), " expected transactions");
-      Report.errout(judgement, "observed ", String.valueOf(actual_activations),
-                    " customer interactions out of at least ", String.valueOf(expected_activations), " expected transactions");
+		    " customer interactions out of at least (",
+		    String.valueOf(expected_activations - customer_thread_count), " = ",
+		    String.valueOf(expected_activations), " expected transactions minus ",
+		    String.valueOf(customer_thread_count), " customer threads)");
     }
     Report.output();
     Report.releaseReportLock();

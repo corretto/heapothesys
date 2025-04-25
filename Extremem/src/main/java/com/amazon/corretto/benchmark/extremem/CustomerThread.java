@@ -111,7 +111,12 @@ class CustomerThread extends ExtrememThread {
       // keywords, all, any are all treated as Ephemeral.
       String[] keywords = randomKeywords(config.KeywordSearchCount());
       Product[] all = all_products.lookupProductsMatchingAll(this, keywords);
-      Product[] any = all_products.lookupProductsMatchingAny(this, keywords);
+      Product[] any;
+      if (config.AllowAnyMatch()) {
+	any = all_products.lookupProductsMatchingAny(this, keywords);
+      } else {
+	any = new Product[0];
+      }
       
       int all_count = all.length;
       int any_count = any.length;

@@ -69,7 +69,7 @@ class Product extends ExtrememObject {
     log.accumulate(ls, MemoryFlavor.ObjectReference, p, count * 2);
     // Account for id, available
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p,
-                   count * (Util.SizeOfLong + Util.SizeOfBoolean));
+                   ((long) count) * (Util.SizeOfLong + Util.SizeOfBoolean));
 
   }
 

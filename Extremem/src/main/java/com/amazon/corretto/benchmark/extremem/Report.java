@@ -80,6 +80,20 @@ class Report {
     err.println(s6);
   }
 
+  static void errout(String s1, String s2, String s3, String s4, String s5,
+                     String s6, String s7, String s8, String s9, String s10) {
+    err.print(s1);
+    err.print(s2);
+    err.print(s3);
+    err.print(s4);
+    err.print(s5);
+    err.print(s6);
+    err.print(s7);
+    err.print(s8);
+    err.print(s9);
+    err.println(s10);
+  }
+
   static void output() {
     out.println("");
   }
@@ -95,6 +109,19 @@ class Report {
   static void outputNoLine(String s1, String s2) {
     out.print(s1);
     out.print(s2);
+  }
+
+  static void outputNoLine(String s1, String s2, String s3) {
+    out.print(s1);
+    out.print(s2);
+    out.print(s3);
+  }
+
+  static void outputNoLine(String s1, String s2, String s3, String s4) {
+    out.print(s1);
+    out.print(s2);
+    out.print(s3);
+    out.print(s4);
   }
 
   static void output(String s1, String s2) {
@@ -156,6 +183,20 @@ class Report {
     out.print(s7);
     out.print(s8);
     out.println(s9);
+  }
+
+  static void output(String s1, String s2, String s3, String s4, String s5,
+                     String s6, String s7, String s8, String s9, String s10) {
+    out.print(s1);
+    out.print(s2);
+    out.print(s3);
+    out.print(s4);
+    out.print(s5);
+    out.print(s6);
+    out.print(s7);
+    out.print(s8);
+    out.print(s9);
+    out.println(s10);
   }
 
   static void output(String s1, String s2, String s3, String s4, String s5,

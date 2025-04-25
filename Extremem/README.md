@@ -128,6 +128,90 @@ Each Customer thread waits this amount of time between starts of simulated custo
 
 Between the moment when a customer is presented with the results of a product search inquiry and the moment when the customer actually makes a decision regarding which product, if any, to purchase, the customer simply sleeps for this amount of time.  Shortening this time and shortening the CustomerPeriod allows more transactions to occur more quickly.  Lengthening this time causes an increase in the lifespan of transient objects which might accidentally be promoted into the older generation with certain garbage collection techniques.
 
+### *-dMaxP50CustomerPrepMicroseconds=0s*
+
+If set to a non-zero value, this represents an SLA goal that Customer Preparation Processing P50 latency be lower than the
+specified value.  Setting any SLA goal to a non-zero value causes Extremem to search for a maximum transaction rate that
+satisfies the targeted latency constraint.  If multiple non-zero SLA goals are specified, the search for maximum transaction
+rate finds the maximum rate that satisfies all of the non-zero constraints.  The search begins by running the simulation
+specified by other command-line configuration parameters.  It proceeds by making adjustments to CustomerPeriod and
+CustomerThinkTime in increments of 10% of the current value of each, searching for a maximum rate that satisfies the
+SLA constraints.  Once this maximum rate is found, we test 3 additional higher transaction rates in increments of 2.5% of
+the current values of CustomerPeriod and CustomerThinkTime to refine the report of maximum transaction rate.
+Each transaction rate is given two opportunities to succeed before that rate is denoted a failure.
+
+### *-dMaxP95CustomerPrepMicroseconds=0s*
+
+If set to a non-zero value, this represents an SLA goal that Customer Preparation Processing P95 latency be lower than the
+specified value.  Setting any SLA goal to a non-zero value causes Extremem to search for a maximum transaction rate that
+satisfies the targeted latency constraint.  If multiple non-zero SLA goals are specified, the search for maximum transaction
+rate finds the maximum rate that satisfies all of the non-zero constraints.  The search begins by running the simulation
+specified by other command-line configuration parameters.  It proceeds by making adjustments to CustomerPeriod and
+CustomerThinkTime in increments of 10% of the current value of each, searching for a maximum rate that satisfies the
+SLA constraints.  Once this maximum rate is found, we test 3 additional higher transaction rates in increments of 2.5% of
+the current values of CustomerPeriod and CustomerThinkTime to refine the report of maximum transaction rate.
+Each transaction rate is given two opportunities to succeed before that rate is denoted a failure.
+
+### *-dMaxP99CustomerPrepMicroseconds=0s*
+
+If set to a non-zero value, this represents an SLA goal that Customer Preparation Processing P99 latency be lower than the
+specified value.  Setting any SLA goal to a non-zero value causes Extremem to search for a maximum transaction rate that
+satisfies the targeted latency constraint.  If multiple non-zero SLA goals are specified, the search for maximum transaction
+rate finds the maximum rate that satisfies all of the non-zero constraints.  The search begins by running the simulation
+specified by other command-line configuration parameters.  It proceeds by making adjustments to CustomerPeriod and
+CustomerThinkTime in increments of 10% of the current value of each, searching for a maximum rate that satisfies the
+SLA constraints.  Once this maximum rate is found, we test 3 additional higher transaction rates in increments of 2.5% of
+the current values of CustomerPeriod and CustomerThinkTime to refine the report of maximum transaction rate.
+Each transaction rate is given two opportunities to succeed before that rate is denoted a failure.
+
+### *-dMaxP99_9CustomerPrepMicroseconds=0s*
+
+If set to a non-zero value, this represents an SLA goal that Customer Preparation Processing P99_9 latency be lower than the
+specified value.  Setting any SLA goal to a non-zero value causes Extremem to search for a maximum transaction rate that
+satisfies the targeted latency constraint.  If multiple non-zero SLA goals are specified, the search for maximum transaction
+rate finds the maximum rate that satisfies all of the non-zero constraints.  The search begins by running the simulation
+specified by other command-line configuration parameters.  It proceeds by making adjustments to CustomerPeriod and
+CustomerThinkTime in increments of 10% of the current value of each, searching for a maximum rate that satisfies the
+SLA constraints.  Once this maximum rate is found, we test 3 additional higher transaction rates in increments of 2.5% of
+the current values of CustomerPeriod and CustomerThinkTime to refine the report of maximum transaction rate.
+Each transaction rate is given two opportunities to succeed before that rate is denoted a failure.
+
+### *-dMaxP99_99CustomerPrepMicroseconds=0s*
+
+If set to a non-zero value, this represents an SLA goal that Customer Preparation Processing P99_99 latency be lower than the
+specified value.  Setting any SLA goal to a non-zero value causes Extremem to search for a maximum transaction rate that
+satisfies the targeted latency constraint.  If multiple non-zero SLA goals are specified, the search for maximum transaction
+rate finds the maximum rate that satisfies all of the non-zero constraints.  The search begins by running the simulation
+specified by other command-line configuration parameters.  It proceeds by making adjustments to CustomerPeriod and
+CustomerThinkTime in increments of 10% of the current value of each, searching for a maximum rate that satisfies the
+SLA constraints.  Once this maximum rate is found, we test 3 additional higher transaction rates in increments of 2.5% of
+the current values of CustomerPeriod and CustomerThinkTime to refine the report of maximum transaction rate.
+Each transaction rate is given two opportunities to succeed before that rate is denoted a failure.
+
+### *-dMaxP99_999CustomerPrepMicroseconds=0s*
+
+If set to a non-zero value, this represents an SLA goal that Customer Preparation Processing P99_999 latency be lower than the
+specified value.  Setting any SLA goal to a non-zero value causes Extremem to search for a maximum transaction rate that
+satisfies the targeted latency constraint.  If multiple non-zero SLA goals are specified, the search for maximum transaction
+rate finds the maximum rate that satisfies all of the non-zero constraints.  The search begins by running the simulation
+specified by other command-line configuration parameters.  It proceeds by making adjustments to CustomerPeriod and
+CustomerThinkTime in increments of 10% of the current value of each, searching for a maximum rate that satisfies the
+SLA constraints.  Once this maximum rate is found, we test 3 additional higher transaction rates in increments of 2.5% of
+the current values of CustomerPeriod and CustomerThinkTime to refine the report of maximum transaction rate.
+Each transaction rate is given two opportunities to succeed before that rate is denoted a failure.
+
+### *-dMaxP100CustomerPrepMicroseconds=0s*
+
+If set to a non-zero value, this represents an SLA goal that Customer Preparation Processing P100 latency be lower than the
+specified value.  Setting any SLA goal to a non-zero value causes Extremem to search for a maximum transaction rate that
+satisfies the targeted latency constraint.  If multiple non-zero SLA goals are specified, the search for maximum transaction
+rate finds the maximum rate that satisfies all of the non-zero constraints.  The search begins by running the simulation
+specified by other command-line configuration parameters.  It proceeds by making adjustments to CustomerPeriod and
+CustomerThinkTime in increments of 10% of the current value of each, searching for a maximum rate that satisfies the
+SLA constraints.  Once this maximum rate is found, we test 3 additional higher transaction rates in increments of 2.5% of
+the current values of CustomerPeriod and CustomerThinkTime to refine the report of maximum transaction rate.
+Each transaction rate is given two opportunities to succeed before that rate is denoted a failure.
+
 ### *-dKeywordSearchCount=5*
 
 Each customer inquiry consists of a string of this many randomly selected words.  Increasing this number results in an increase in the memory allocated during formulation of each customer inquiry and generally results in an increased number of candidate products that match the inquiry.  This in turn results in more transient memory allocation and more effort in deciding between multiple alternative products that match a given decision criteria.

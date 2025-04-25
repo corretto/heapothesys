@@ -469,37 +469,37 @@ class Configuration {
         }
       case 6:
         if (keyword.equals("MaxP50CustomerPrepMicroseconds")) {
-          MaxP50CustomerPrepMicroseconds = u;
+          MaxP50CustomerPrepMicroseconds = ui;
           break;
         }
       case 7:
         if (keyword.equals("MaxP95CustomerPrepMicroseconds")) {
-          MaxP95CustomerPrepMicroseconds = u;
+          MaxP95CustomerPrepMicroseconds = ui;
           break;
         }
       case 8:
         if (keyword.equals("MaxP99CustomerPrepMicroseconds")) {
-          MaxP99CustomerPrepMicroseconds = u;
+          MaxP99CustomerPrepMicroseconds = ui;
           break;
         }
       case 9:
         if (keyword.equals("MaxP99_9CustomerPrepMicroseconds")) {
-          MaxP99_9CustomerPrepMicroseconds = u;
+          MaxP99_9CustomerPrepMicroseconds = ui;
           break;
         }
       case 10:
         if (keyword.equals("MaxP99_99CustomerPrepMicroseconds")) {
-          MaxP99_99CustomerPrepMicroseconds = u;
+          MaxP99_99CustomerPrepMicroseconds = ui;
           break;
         }
       case 11:
         if (keyword.equals("MaxP99_999CustomerPrepMicroseconds")) {
-          MaxP99_999CustomerPrepMicroseconds = u;
+          MaxP99_999CustomerPrepMicroseconds = ui;
           break;
         }
       case 12:
         if (keyword.equals("MaxP100CustomerPrepMicroseconds")) {
-          MaxP100CustomerPrepMicroseconds = u;
+          MaxP100CustomerPrepMicroseconds = ui;
           break;
         }
       case 13:

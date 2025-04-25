@@ -61,48 +61,61 @@ public class Bootstrap extends ExtrememThread {
       boolean first_try = true;
       int allowed_retries_for_initial_success = MaxRetries;;
       int search_backward_increments = 0;
+      boolean retreating_during_search_for_first_success = false;
       while (true) {
 	configure_simulation_threads();
 	boolean success = run_one_experiment(true);
 	if (searching_for_first_success) {
+	  double thread_rate = 1000_000.0 / _customer_period.microseconds();
+          double transaction_rate = _config.CustomerThreads() * thread_rate;
+          String s = String.valueOf(transaction_rate);
 	  if (success) {
-	    double thread_rate = 1000_000.0 / _customer_period.microseconds();
-	    double transaction_rate = _config.CustomerThreads() * thread_rate;
-	    String s = String.valueOf(transaction_rate);
-	    Report.output("Found first success at ", s, " TPS, searching for higher transaction rate");
-	    searching_for_first_success = false;
-	    searching_for_greater_success = true;
 
-	    // increase transaction rate by 10%.
-	    _customer_period = _customer_period.multiplyBy(this, 0.9);
-	    _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
-	    first_try = true;
+            if (retreating_during_search_for_first_success) {
+              Report.errout("Found first success at ", s,
+                            " TPS after retreating for failures at higher transaction rates.  Take smaller steps forward.");
+
+              first_try = true;
+              found_top_failure = true;
+              searching_for_greater_success = false;
+              search_backward_increments = 0;
+              _customer_period = _customer_period.multiplyBy(this, 0.9);
+              _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
+            } else {
+              Report.errout("Found first success at ", s, " TPS, searching for higher transaction rate");
+
+              // Decrease transaction rate by 7.5%
+              _customer_period = _customer_period.multiplyBy(this, 1.075);
+              _customer_think_time = _customer_think_time.multiplyBy(this, 1.075);
+              searching_for_first_success = false;
+              searching_for_greater_success = true;
+            }
+            first_try = true;
 	  } else if (first_try) {
+            Report.errout("Failed once at ", s, " TPS.  Retry.");
 	    first_try = false;
 	    // try it again
 	  } else {
-	    double thread_rate = 1000_000.0 / _customer_period.microseconds();
-	    double transaction_rate = _config.CustomerThreads() * thread_rate;
-	    String s = String.valueOf(transaction_rate);
-	    if (allowed_retries_for_initial_success-- >= 0) {
-	      Report.output("Failed twice at ", s, " TPS, searching for lower transaction rate");
+	    if (allowed_retries_for_initial_success-- > 0) {
+	      Report.errout("Failed twice at ", s, " TPS, searching for lower transaction rate");
 	      // Decrease transaction rate by 10%
 	      _customer_period = _customer_period.multiplyBy(this, 1.1);
 	      _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
 	      first_try = true;
+              retreating_during_search_for_first_success = false;
 	    } else {
-	      Report.output("Failed to find initial success after ", Integer.toString(MaxRetries), ".  Giving up.");
+	      Report.errout("Failed to find initial success after ", Integer.toString(MaxRetries), " retries.  Giving up.");
 	      return;
 	    }
 	  }
 	} else {
 	  // We've already found a first success
+          double thread_rate = 1000_000.0 / _customer_period.microseconds();
+          double transaction_rate = _config.CustomerThreads() * thread_rate;
+          String s = String.valueOf(transaction_rate);
 	  if (success) {
-	    double thread_rate = 1000_000.0 / _customer_period.microseconds();
-	    double transaction_rate = _config.CustomerThreads() * thread_rate;
-	    String s = String.valueOf(transaction_rate);
 	    if (searching_for_greater_success) {
-	      Report.output("Found greater success at ", s, " TPS, search for even higher transaction rate");
+	      Report.errout("Found greater success at ", s, " TPS, search for even higher transaction rate");
 
 	      // increase transaction rate by 10%.
 	      _customer_period = _customer_period.multiplyBy(this, 0.9);
@@ -111,30 +124,30 @@ public class Bootstrap extends ExtrememThread {
 	      searching_for_greater_success = true;
 	      first_try = true;
 	    } else {
-	      Report.output("Found greater success at ", s, " TPS.  This is maximum successful rate");
+	      Report.errout("Found greater success at ", s, " TPS.  This is maximum successful rate");
 	      return;
 	    }
 	  } else if (first_try) {
+            Report.errout("Failed once at ", s, " TPS.  Retry.");
 	    first_try = false;
 	    // try it again
 	  } else if (searching_for_greater_success) {
-	    double thread_rate = 1000_000.0 / _customer_period.microseconds();
-	    double transaction_rate = _config.CustomerThreads() * thread_rate;
-	    String s = String.valueOf(transaction_rate);
-	    Report.output("Failed twice at ", s, " TPS while searching for higher transaction rate.  Take smaller steps backward");
+	    Report.errout("Failed twice at ", s,
+                          " TPS while searching for higher transaction rate.  Take smaller steps backward.");
 
 	    // Decrease transaction rate by 2.5%
 	    _customer_period = _customer_period.multiplyBy(this, 1.025);
 	    _customer_think_time = _customer_think_time.multiplyBy(this, 1.025);
 	    first_try = true;
-
 	    found_top_failure = true;
 	    searching_for_greater_success = false;
 	    search_backward_increments = 0;
 	  } else if (search_backward_increments >= 3) {
-	    Report.output("Search for greater success terminated.  Most recent success is best available.");
+              Report.errout("Search for greater success terminated.  Most recent success is best available.");
 	    return;
 	  } else {
+	    Report.errout("Failed twice at ", s,
+                          " TPS while taking small steps backward.  Try another small step backward.");
 	    // Decrease transaction rate by 2.5%
 	    _customer_period = _customer_period.multiplyBy(this, 1.025);
 	    _customer_think_time = _customer_think_time.multiplyBy(this, 1.025);
@@ -419,7 +432,7 @@ public class Bootstrap extends ExtrememThread {
   }
 
   // Returns true iff the test was considered successful
-  public boolean run_one_experiment(bool preserve_customers_and_products) {
+  public boolean run_one_experiment(boolean preserve_customers_and_products) {
     Trace.msg(2, "Joining with customer threads");
     // Each thread will terminate when the _end_time is reached.
     for (int i = 0; i < _config.CustomerThreads(); i++) {

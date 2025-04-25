@@ -8,6 +8,9 @@ class CustomerThread extends ExtrememThread {
   private static final int SaveProductForLater = 1;
   private static final int AbandonProduct = 2;
 
+  private final RelativeTime period;
+  private final RelativeTime think_time;
+
   private final Customers all_customers;
   private final Products all_products;
   private AbsoluteTime next_release_time;
@@ -33,13 +36,10 @@ class CustomerThread extends ExtrememThread {
    * The Bootstrap thread accounts for this CustomerThread instance's
    * garbage.
    */
-  CustomerThread (Configuration config, long random_seed, int sequence_no,
-                  Products all_products, Customers all_customers,
-                  BrowsingHistoryQueue browsing_queue,
-                  SalesTransactionQueue sales_queue,
-                  CustomerLogAccumulator accumulator,
-                  MemoryLog alloc_accumulator,
-                  MemoryLog garbage_accumulator) {
+  CustomerThread (Configuration config, RelativeTime period, RelativeTime think_time, long random_seed, int sequence_no,
+                  Products all_products, Customers all_customers, BrowsingHistoryQueue browsing_queue,
+                  SalesTransactionQueue sales_queue,  CustomerLogAccumulator accumulator,
+                  MemoryLog alloc_accumulator, MemoryLog garbage_accumulator) {
     super (config, random_seed);
     MemoryLog log = this.memoryLog();
     MemoryLog garbage = this.garbageLog();
@@ -53,6 +53,10 @@ class CustomerThread extends ExtrememThread {
               ": CustomerThread[", label, "].garbageLog()");
     
     Util.convertEphemeralString(this, LifeSpan.NearlyForever, label.length());
+
+    this.period = period;
+    this.think_time = think_time;
+
     this.all_customers = all_customers;
     this.all_products = all_products;
     this.browsing_queue = browsing_queue;
@@ -183,8 +187,7 @@ class CustomerThread extends ExtrememThread {
         Util.convertStringArray(this, LifeSpan.TransientShort,
                                 selectors.length);
 
-        AbsoluteTime end_think = (
-          next_release_time.addRelative(this, config.CustomerThinkTime()));
+        AbsoluteTime end_think = next_release_time.addRelative(this, this.think_time);
         end_think.changeLifeSpan(this, LifeSpan.TransientShort);
         history.logPrepareToThink(this, next_release_time,
                                   all_count, any_count, saved_count);
@@ -298,9 +301,7 @@ class CustomerThread extends ExtrememThread {
         history.logNoChoice(this, next_release_time);
       }
       next_release_time.garbageFootprint(this);
-      next_release_time = next_release_time.addRelative(this,
-                                                        config.
-                                                        CustomerPeriod());
+      next_release_time = next_release_time.addRelative(this, this.period);
     }
     Trace.msg(2, "Customer thread ", label, " terminating.  Time is up.");
 

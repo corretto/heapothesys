@@ -19,6 +19,7 @@ import java.io.PrintStream;
 class Report {
   private static final Object locker = new Object();
   private static final PrintStream out = System.out;
+  private static final PrintStream err = System.err;
   private static int num_writers;
 
   // "varargs" formats avoid autoboxing and catenation costs
@@ -40,6 +41,57 @@ class Report {
       num_writers--;
       locker.notifyAll();
     }
+  }
+
+  static void errout() {
+    err.println("");
+  }
+
+  static void errout(String s1) {
+    err.println(s1);
+  }
+
+  static void errout(String s1, String s2) {
+    err.print(s1);
+    err.println(s2);
+  }
+
+  static void errout(String s1, String s2, String s3) {
+    err.print(s1);
+    err.print(s2);
+    err.println(s3);
+  }
+
+  static void errout(String s1, String s2, String s3, String s4, String s5) {
+    err.print(s1);
+    err.print(s2);
+    err.print(s3);
+    err.print(s4);
+    err.println(s5);
+  }
+
+  static void errout(String s1, String s2, String s3,
+                     String s4, String s5, String s6) {
+    err.print(s1);
+    err.print(s2);
+    err.print(s3);
+    err.print(s4);
+    err.print(s5);
+    err.println(s6);
+  }
+
+  static void errout(String s1, String s2, String s3, String s4, String s5,
+                     String s6, String s7, String s8, String s9, String s10) {
+    err.print(s1);
+    err.print(s2);
+    err.print(s3);
+    err.print(s4);
+    err.print(s5);
+    err.print(s6);
+    err.print(s7);
+    err.print(s8);
+    err.print(s9);
+    err.println(s10);
   }
 
   static void output() {

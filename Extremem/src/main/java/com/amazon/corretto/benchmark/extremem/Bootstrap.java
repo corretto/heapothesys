@@ -5,117 +5,314 @@ package com.amazon.corretto.benchmark.extremem;
 
 public class Bootstrap extends ExtrememThread {
   private static final long NanosPerSecond = 1000000000L;
+  private Configuration _config;
+  private UpdateThread _update_thread;
+  private CustomerThread[] _customer_threads;
+  private ServerThread[] _server_threads;
+  private Products _all_products;
+  private Customers _all_customers;
+  private CustomerLogAccumulator _customer_accumulator;
+  private ServerLogAccumulator _server_accumulator;
+  private MemoryLog _customer_alloc_accumulator, _customer_garbage_accumulator;
+  private MemoryLog _server_alloc_accumulator, _server_garbage_accumulator;
+  private BrowsingHistoryQueue[] _browsing_queues;
+  private SalesTransactionQueue[] _sales_queues;
+  private MemoryLog _memory;
+  private MemoryLog _garbage;
+  private MemoryLog _all_threads_accumulator;
+  private AbsoluteTime _start_time;
+  private AbsoluteTime _end_time;
+  private RelativeTime _customer_period;
+  private RelativeTime _customer_think_time;
 
   Bootstrap(Configuration config, long random_seed) {
     super(config, random_seed);
     this.setLabel("Bootstrap");
+    _config = config;
+    
   }
 
   public void runExtreme() {
-    UpdateThread update_thread;
-    CustomerThread[] customer_threads;
-    ServerThread[] server_threads;
 
-    RelativeTime customer_stagger = null;
-    RelativeTime server_stagger = null;
+    // config.initialize() replaces the random number generation seed
+    // of this before generating the dictionary.
+    _config.initialize(this);
+    if (_config.ReportCSV()) {
+      Report.output("All times reported in microseconds");
+      _config.dumpCSV(this);
+    }
+    else {
+      _config.dump(this);
+    }  
+    _all_products = new Products(this, LifeSpan.NearlyForever, _config);
+    Trace.msg(4, "all_products established");
+
+    _all_customers = new Customers(this, LifeSpan.NearlyForever, _config);
+    Trace.msg(4, "all_customers established");
+
+    _customer_period = _config.CustomerPeriod();
+    _customer_think_time = _config.CustomerThinkTime();
+
+    if (_config.SearchForMaximumTransactionRate()) {
+      final int MaxRetries = 5;
+      boolean searching_for_greater_success = false;
+      boolean searching_for_first_success = true;
+      boolean found_top_failure = false;
+      boolean first_try = true;
+      int allowed_retries_for_initial_success = MaxRetries;;
+      int search_backward_increments = 0;
+      boolean retreating_during_search_for_first_success = false;
+      while (true) {
+	configure_simulation_threads();
+	boolean success = run_one_experiment(true);
+	if (searching_for_first_success) {
+	  double thread_rate = 1000_000.0 / _customer_period.microseconds();
+          double transaction_rate = _config.CustomerThreads() * thread_rate;
+          String s = String.valueOf(transaction_rate);
+	  if (success) {
+
+            if (retreating_during_search_for_first_success) {
+              Report.errout("Found first success at ", s,
+                            " TPS after retreating for failures at higher transaction rates.  Take smaller steps forward.");
+              if (_config.ReportCSV()) {
+                Report.output("First success at TPS:, ", s,
+                              ", (after retreating for failures at higher transaction rates -- taking smaller steps forward)");
+
+              } else {
+                Report.output("Found first success at ", s,
+                              " TPS after retreating for failures at higher transaction rates.  Take smaller steps forward.");
+              }
+              first_try = true;
+              found_top_failure = true;
+              searching_for_greater_success = false;
+              search_backward_increments = 0;
+              _customer_period = _customer_period.multiplyBy(this, 0.9);
+              _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
+            } else {
+              Report.errout("Found first success at ", s, " TPS, searching for higher transaction rate.");
+              if (_config.ReportCSV()) {
+                Report.output("First success at TPS:, ", s,
+                              ", (taking smaller steps forward)");
+
+              } else {
+                Report.output("Found first success at ", s, " TPS, searching for higher transaction rate.");
+              }
+
+              // Decrease transaction rate by 7.5%
+              _customer_period = _customer_period.multiplyBy(this, 1.075);
+              _customer_think_time = _customer_think_time.multiplyBy(this, 1.075);
+              searching_for_first_success = false;
+              searching_for_greater_success = true;
+            }
+            first_try = true;
+	  } else if (first_try) {
+            Report.errout("Failed once at ", s, " TPS.  Retry.");
+            if (_config.ReportCSV()) {
+              Report.output("Failed once at TPS:, ", s, ", (retry)");
+            } else {
+              Report.output("Failed once at ", s, " TPS.  Retry.");
+            }
+	    first_try = false;
+	    // try it again
+	  } else {
+	    if (allowed_retries_for_initial_success-- > 0) {
+	      Report.errout("Failed twice at ", s, " TPS, searching for lower transaction rate");
+	      // Decrease transaction rate by 10%
+              if (_config.ReportCSV()) {
+                Report.output("Failed twice at TPS:, ", s, ", (searching for a lower transaction rate)");
+              } else {
+                Report.output("Failed twice at ", s, " TPS, searching for lower transaction rate");
+              }
+	      _customer_period = _customer_period.multiplyBy(this, 1.1);
+	      _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
+	      first_try = true;
+              retreating_during_search_for_first_success = false;
+	    } else {
+	      Report.errout("Failed to find initial success after ", Integer.toString(MaxRetries), " retries.  Giving up.");
+              Report.errout("Last attempted rate: ", s, " TPS");
+              if (_config.ReportCSV()) {
+                Report.output("Giving up after failed at TPS: ", s, " too many failed attempts: ", Integer.toString(MaxRetries));
+              } else {
+	        Report.output("Failed to find initial success after ", Integer.toString(MaxRetries), " retries.  Giving up.");
+                Report.output("Last attempted rate: ", s, " TPS");
+              }
+	      return;
+	    }
+	  }
+	} else {
+	  // We've already found a first success
+          double thread_rate = 1000_000.0 / _customer_period.microseconds();
+          double transaction_rate = _config.CustomerThreads() * thread_rate;
+          String s = String.valueOf(transaction_rate);
+	  if (success) {
+	    if (searching_for_greater_success) {
+	      Report.errout("Found greater success at ", s, " TPS, search for even higher transaction rate");
+              if (_config.ReportCSV()) {
+                Report.output("Found greater success at TPS:, ", s, ", (search for even higher transaction rate)");
+              } else {
+                Report.output("Found greater success at ", s, " TPS, search for even higher transaction rate");
+              }
+	      // increase transaction rate by 10%.
+	      _customer_period = _customer_period.multiplyBy(this, 0.9);
+	      _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
+	      searching_for_first_success = false;
+	      searching_for_greater_success = true;
+	      first_try = true;
+	    } else {
+	      Report.errout("Found greater success at ", s, " TPS.  This is maximum successful rate");
+              if (_config.ReportCSV()) {
+                Report.output("Found greater success at TPS:, ", s, ", (this is maximum successful rate)");
+              } else {
+                Report.output("Found greater success at ", s, " TPS.  This is maximum successful rate");
+              }
+	      return;
+	    }
+	  } else if (first_try) {
+            Report.errout("Failed once at ", s, " TPS.  Retry.");
+            if (_config.ReportCSV()) {
+              Report.output("Failed once at TPS: ,", s, ", (retry)");
+            } else {
+              Report.output("Failed once at ", s, " TPS.  Retry.");
+            }
+	    first_try = false;
+	    // try it again
+	  } else if (searching_for_greater_success) {
+	    Report.errout("Failed twice at ", s,
+                          " TPS while searching for higher transaction rate.  Take smaller steps backward.");
+            if (_config.ReportCSV()) {
+              Report.output("Failed twice at TPS: ,", s,
+                            ", (while searching for higher transaction rate -- taking smaller steps backward)");
+            } else {
+              Report.output("Failed twice at ", s,
+                            " TPS while searching for higher transaction rate.  Take smaller steps backward.");
+            }
+	    // Decrease transaction rate by 2.5%
+	    _customer_period = _customer_period.multiplyBy(this, 1.025);
+	    _customer_think_time = _customer_think_time.multiplyBy(this, 1.025);
+	    first_try = true;
+	    found_top_failure = true;
+	    searching_for_greater_success = false;
+	    search_backward_increments = 0;
+	  } else if (search_backward_increments >= 3) {
+            Report.errout("Failed twice at ", s,
+                          ".  Small-step search for greater success terminated.  Most recent success is best available.");
+            if (_config.ReportCSV()) {
+              Report.output("Failed twice at TPS: ,", s,
+                            ", (in small-step searching for higher transaction rate -- most recent success is best available)");
+            } else {
+              Report.output("Failed twice at ", s,
+                            ".  Small-step search for greater success terminated.  Most recent success is best available.");
+            }
+	    return;
+	  } else {
+	    Report.errout("Failed twice at ", s,
+                          " TPS while taking small steps backward.  Try another small step backward.");
+            if (_config.ReportCSV()) {
+              Report.output("Failed twice at TPS: ,", s,
+                            ", (in small-step searching for higher transaction rate -- try another small step backward)");
+            } else {
+              Report.output("Failed twice at ", s,
+                            " TPS while taking small steps backward.  Try another small step backward.");
+            }
+	    // Decrease transaction rate by 2.5%
+	    _customer_period = _customer_period.multiplyBy(this, 1.025);
+	    _customer_think_time = _customer_think_time.multiplyBy(this, 1.025);
+	    search_backward_increments++;
+	    first_try = true;
+	  }
+	}
+      }
+    } else {
+      configure_simulation_threads();
+      boolean success = run_one_experiment(false);
+      if (success) {
+        Report.output("Simulation was successful");
+      } else {
+        Report.output("Simulation failed");
+      }
+    }
+  }
+
+  public void configure_simulation_threads() {
+    _sales_queues = new SalesTransactionQueue[_config.SalesTransactionQueueCount()];
+    Util.referenceArray(this, LifeSpan.NearlyForever,
+                        _config.SalesTransactionQueueCount());
+    for (int i = 0; i < _config.SalesTransactionQueueCount(); i++)
+      _sales_queues[i] = new SalesTransactionQueue(this,
+                                                  LifeSpan.NearlyForever);
+    _browsing_queues = new BrowsingHistoryQueue[_config.BrowsingHistoryQueueCount()];
+    Util.referenceArray(this, LifeSpan.NearlyForever,
+                        _config.BrowsingHistoryQueueCount());
+    for (int i = 0; i < _config.BrowsingHistoryQueueCount(); i++)
+      _browsing_queues[i] = new BrowsingHistoryQueue(this,
+                                                    LifeSpan.NearlyForever);
+    Trace.msg(4, "_browsing_queues and _sales_queues established");
 
     // Memory accounting: I have no more fields than parent class
     // ExtrememThread.  So my memory usage is accounted for during my
     // construction.
-      
-    MemoryLog memory = memoryLog();
-    MemoryLog garbage = garbageLog();
-    MemoryLog all_threads_accumulator = new MemoryLog(LifeSpan.NearlyForever);
-    all_threads_accumulator.memoryFootprint(this);
+    _memory = memoryLog();
+    _garbage = garbageLog();
+    _all_threads_accumulator = new MemoryLog(LifeSpan.NearlyForever);
+    _all_threads_accumulator.memoryFootprint(this);
       
     Trace.msg(1, "@ ",
-              Integer.toString(memory.hashCode()),
+              Integer.toString(_memory.hashCode()),
               ": Bootstrap.memoryLog()");
     Trace.msg(1, "@ ",
-              Integer.toString(garbage.hashCode()),
+              Integer.toString(_garbage.hashCode()),
               ": Bootstrap.garbageLog()");
-    Trace.msg(1, "@ ", Integer.toString(all_threads_accumulator.hashCode()),
-              ": Bootstrap.all_threads_accumulator");
+    Trace.msg(1, "@ ", Integer.toString(_all_threads_accumulator.hashCode()),
+              ": Bootstrap._all_threads_accumulator");
       
-    // config.initialize() replaces the random number generation seed
-    // of this before generating the dictionary.
-    config.initialize(this);
-    if (config.ReportCSV()) {
-      Report.output("All times reported in microseconds");
-      config.dumpCSV(this);
-    }
-    else
-      config.dump(this);
-      
-    CustomerLogAccumulator customer_accumulator;
-    ServerLogAccumulator server_accumulator;
-    MemoryLog customer_alloc_accumulator, customer_garbage_accumulator;
-    MemoryLog server_alloc_accumulator, server_garbage_accumulator;
-    customer_accumulator = new CustomerLogAccumulator(this, LifeSpan.NearlyForever, config.ResponseTimeMeasurements());
-    server_accumulator = new ServerLogAccumulator(this, LifeSpan.NearlyForever, config.ResponseTimeMeasurements());
+    _customer_accumulator = new CustomerLogAccumulator(this, LifeSpan.NearlyForever, _config.ResponseTimeMeasurements());
+    _server_accumulator = new ServerLogAccumulator(this, LifeSpan.NearlyForever, _config.ResponseTimeMeasurements());
 
-    if (!config.ReportIndividualThreads()) {
-      customer_alloc_accumulator = new MemoryLog(LifeSpan.NearlyForever);
-      customer_alloc_accumulator.memoryFootprint(this);
+    if (!_config.ReportIndividualThreads()) {
+      _customer_alloc_accumulator = new MemoryLog(LifeSpan.NearlyForever);
+      _customer_alloc_accumulator.memoryFootprint(this);
 
       Trace.msg(1, "@ ",
-                Integer.toString(customer_alloc_accumulator.hashCode()),
-                ": Bootstrap.customer_alloc_accumulator");
+                Integer.toString(_customer_alloc_accumulator.hashCode()),
+                ": Bootstrap._customer_alloc_accumulator");
 
-      customer_garbage_accumulator = new MemoryLog(LifeSpan.NearlyForever);
-      customer_garbage_accumulator.memoryFootprint(this);
+      _customer_garbage_accumulator = new MemoryLog(LifeSpan.NearlyForever);
+      _customer_garbage_accumulator.memoryFootprint(this);
       
       Trace.msg(1, "@ ",
-                Integer.toString(customer_garbage_accumulator.hashCode()),
-                ": Bootstrap.customer_garbage_accumulator");
+                Integer.toString(_customer_garbage_accumulator.hashCode()),
+                ": Bootstrap._customer_garbage_accumulator");
 
-      server_alloc_accumulator = new MemoryLog(LifeSpan.NearlyForever);
-      server_alloc_accumulator.memoryFootprint(this);
-
-      Trace.msg(1, "@ ",
-                Integer.toString(server_alloc_accumulator.hashCode()),
-                ": Bootstrap.server_alloc_accumulator");
-
-      server_garbage_accumulator = new MemoryLog(LifeSpan.NearlyForever);
-      server_garbage_accumulator.memoryFootprint(this);
+      _server_alloc_accumulator = new MemoryLog(LifeSpan.NearlyForever);
+      _server_alloc_accumulator.memoryFootprint(this);
 
       Trace.msg(1, "@ ",
-                Integer.toString(server_garbage_accumulator.hashCode()),
+                Integer.toString(_server_alloc_accumulator.hashCode()),
+                ": Bootstrap._server_alloc_accumulator");
+
+      _server_garbage_accumulator = new MemoryLog(LifeSpan.NearlyForever);
+      _server_garbage_accumulator.memoryFootprint(this);
+
+      Trace.msg(1, "@ ",
+                Integer.toString(_server_garbage_accumulator.hashCode()),
                 ": Bootstrap.server_garbage__accumulator");
     } else {
-      customer_alloc_accumulator = null;
-      customer_garbage_accumulator = null;
-      server_alloc_accumulator = null;
-      server_garbage_accumulator = null;
+      _customer_alloc_accumulator = null;
+      _customer_garbage_accumulator = null;
+      _server_alloc_accumulator = null;
+      _server_garbage_accumulator = null;
     }
       
-    SalesTransactionQueue[] sales_queues = (
-      new SalesTransactionQueue[config.SalesTransactionQueueCount()]);
-    Util.referenceArray(this, LifeSpan.NearlyForever,
-                        config.SalesTransactionQueueCount());
-    for (int i = 0; i < config.SalesTransactionQueueCount(); i++)
-      sales_queues[i] = new SalesTransactionQueue(this, LifeSpan.NearlyForever);
-    BrowsingHistoryQueue[] browsing_queues = new BrowsingHistoryQueue[config.BrowsingHistoryQueueCount()];
-    Util.referenceArray(this, LifeSpan.NearlyForever,
-                        config.BrowsingHistoryQueueCount());
-    for (int i = 0; i < config.BrowsingHistoryQueueCount(); i++)
-      browsing_queues[i] = new BrowsingHistoryQueue(this, LifeSpan.NearlyForever);
-    Trace.msg(4, "browsing_queues and sales_queues established");
-    Products all_products = (
-      new Products(this, LifeSpan.NearlyForever, config));
-    Trace.msg(4, "all_products established");
-
-    Customers all_customers = new Customers(this, LifeSpan.NearlyForever, config);
-    Trace.msg(4, "all_customers established");
-
-    if (config.CustomerThreads() > 0) {
+    RelativeTime customer_stagger = null;
+    RelativeTime server_stagger = null;
+    if (_config.CustomerThreads() > 0) {
       // Stagger the Customer threads so they are not all triggered at
       // the same moment in time.
-      RelativeTime period = config.CustomerPeriod();
+      RelativeTime period = _config.CustomerPeriod();
       long period_ns = (
         period.nanoseconds() +
-        (config.CustomerPeriod().seconds() * NanosPerSecond));
-      long stagger = period_ns / config.CustomerThreads();
+        (_config.CustomerPeriod().seconds() * NanosPerSecond));
+      long stagger = period_ns / _config.CustomerThreads();
       customer_stagger = new RelativeTime(this, stagger / NanosPerSecond,
                                           (int) (stagger % NanosPerSecond));
       Trace.msg(3, "Customer stagger set to: ",
@@ -124,100 +321,97 @@ public class Bootstrap extends ExtrememThread {
       
     RelativeTime customer_replacement_stagger = null;
     RelativeTime product_replacement_stagger = null;
-      
-    if (config.ServerThreads() > 0) {
+    if (_config.ServerThreads() > 0) {
       // Stagger the Server threads so they are not all triggered at the
       // same moment in time.
-      RelativeTime period = config.ServerPeriod();
+      RelativeTime period = _config.ServerPeriod();
       long period_ns = (period.nanoseconds() +
-                        (config.ServerPeriod().seconds() * NanosPerSecond));
-      long stagger = period_ns / config.ServerThreads();
+                        (_config.ServerPeriod().seconds() * NanosPerSecond));
+      long stagger = period_ns / _config.ServerThreads();
       server_stagger = new RelativeTime(this, stagger / NanosPerSecond,
                                         (int) (stagger % NanosPerSecond));
       customer_replacement_stagger = (
-        config.CustomerReplacementPeriod().divideBy(this,
-                                                    config.ServerThreads()));
+        _config.CustomerReplacementPeriod().divideBy(this,
+                                                    _config.ServerThreads()));
       product_replacement_stagger = (
-        config.ProductReplacementPeriod().divideBy(this,
-                                                   config.ServerThreads()));
+        _config.ProductReplacementPeriod().divideBy(this,
+                                                   _config.ServerThreads()));
       Trace.msg(3, "Server stagger set to: ", server_stagger.toString(this));
     }
+
+    Trace.msg(2, "starting up CustomerThreads: ", Integer.toString(_config.CustomerThreads()));
+    // Initialize and startup all of the threads as specified in _config.
+    _customer_threads = new CustomerThread[_config.CustomerThreads()];
+    Util.referenceArray(this, LifeSpan.NearlyForever, _config.CustomerThreads());
       
-    Trace.msg(2, "starting up CustomerThreads: ", Integer.toString(config.CustomerThreads()));
-      
-    // Initialize and startup all of the threads as specified in
-    // config.
-    customer_threads = new CustomerThread[config.CustomerThreads()];
-    Util.referenceArray(this, LifeSpan.NearlyForever, config.CustomerThreads());
-      
-    int bq_no = config.BrowsingHistoryQueueCount() - 1;
-    int sq_no = config.SalesTransactionQueueCount() - 1;
-    for (int i = 0; i < config.CustomerThreads(); i++) {
-      customer_threads[i] = new CustomerThread(config, randomLong(), i, all_products, all_customers, browsing_queues[bq_no],
-                                               sales_queues[sq_no], customer_accumulator, customer_alloc_accumulator,
-                                               customer_garbage_accumulator);
+    int bq_no = _config.BrowsingHistoryQueueCount() - 1;
+    int sq_no = _config.SalesTransactionQueueCount() - 1;
+    for (int i = 0; i < _config.CustomerThreads(); i++) {
+      _customer_threads[i] = new CustomerThread(_config, _customer_period, _customer_think_time,
+						randomLong(), i, _all_products, _all_customers, _browsing_queues[bq_no],
+						_sales_queues[sq_no], _customer_accumulator, _customer_alloc_accumulator,
+						_customer_garbage_accumulator);
       if (bq_no-- == 0) {
-        bq_no = config.BrowsingHistoryQueueCount() - 1;
+        bq_no = _config.BrowsingHistoryQueueCount() - 1;
       }
       if (sq_no-- == 0) {
-        sq_no = config.SalesTransactionQueueCount() - 1;
+        sq_no = _config.SalesTransactionQueueCount() - 1;
       }
     }
     if (customer_stagger != null) {
       customer_stagger.garbageFootprint(this);
     }
-    Trace.msg(2, "starting up ServerThreads: ",
-              Integer.toString(config.ServerThreads()));
 
-    server_threads = new ServerThread[config.ServerThreads()];
-    Util.referenceArray(this, LifeSpan.NearlyForever, config.ServerThreads());
+    Trace.msg(2, "starting up ServerThreads: ", Integer.toString(_config.ServerThreads()));
+    _server_threads = new ServerThread[_config.ServerThreads()];
+    Util.referenceArray(this, LifeSpan.NearlyForever, _config.ServerThreads());
       
-    bq_no = config.BrowsingHistoryQueueCount() - 1;
-    sq_no = config.SalesTransactionQueueCount() - 1;
-    for (int i = 0; i < config.ServerThreads(); i++) {
-      server_threads[i] = new ServerThread(config, randomLong(), i, all_products, all_customers, browsing_queues[bq_no],
-                                           sales_queues[sq_no], server_accumulator, server_alloc_accumulator,
-                                           server_garbage_accumulator);
+    bq_no = _config.BrowsingHistoryQueueCount() - 1;
+    sq_no = _config.SalesTransactionQueueCount() - 1;
+    for (int i = 0; i < _config.ServerThreads(); i++) {
+      _server_threads[i] = new ServerThread(_config, randomLong(), i, _all_products, _all_customers, _browsing_queues[bq_no],
+                                           _sales_queues[sq_no], _server_accumulator, _server_alloc_accumulator,
+                                           _server_garbage_accumulator);
       if (bq_no-- == 0)
-        bq_no = config.BrowsingHistoryQueueCount() - 1;
+        bq_no = _config.BrowsingHistoryQueueCount() - 1;
       if (sq_no-- == 0)
-        sq_no = config.SalesTransactionQueueCount() - 1;
+        sq_no = _config.SalesTransactionQueueCount() - 1;
     }
     
-    if (config.PhasedUpdates()) {
-      update_thread = new UpdateThread(config, randomLong(), all_products, all_customers);
+    if (_config.PhasedUpdates()) {
+      _update_thread = new UpdateThread(_config, randomLong(), _all_products, _all_customers);
     } else {
-      update_thread = null;
+      _update_thread = null;
     }
   
     AbsoluteTime now = AbsoluteTime.now(this);
 
     // Add 4 ms to conservatively approximate the time required to establish start times and start() each thread
-    AbsoluteTime start_time = now.addMillis(this, 4 * (config.CustomerThreads() + config.ServerThreads()));
-    AbsoluteTime end_time =  start_time.addRelative(this, config.SimulationDuration());
+    _start_time = now.addMillis(this, 4 * (_config.CustomerThreads() + _config.ServerThreads()));
+     _end_time =  _start_time.addRelative(this, _config.SimulationDuration());
 
-    AbsoluteTime staggered_customer_replacement = new AbsoluteTime(this, start_time);
-    AbsoluteTime staggered_product_replacement = new AbsoluteTime(this, start_time);
+    AbsoluteTime staggered_customer_replacement = new AbsoluteTime(this, _start_time);
+    AbsoluteTime staggered_product_replacement = new AbsoluteTime(this, _start_time);
 
     String s;
-    if (config.ReportCSV()) {
-      s = Long.toString(start_time.microseconds());
+    if (_config.ReportCSV()) {
+      s = Long.toString(_start_time.microseconds());
       Util.ephemeralString(this, s.length());
       Report.output("Simulation start time,", s);
     } else {
-      s = start_time.toString(this);
+      s = _start_time.toString(this);
       Report.output("  Simulation starts: ", s);
     }
     Trace.msg(2, "");
     Trace.msg(2, "  Simulation starts: ", s);
     Util.abandonEphemeralString(this, s);
       
-    if (config.ReportCSV()) {
-      s = Long.toString(end_time.microseconds());
+    if (_config.ReportCSV()) {
+      s = Long.toString(_end_time.microseconds());
       Util.ephemeralString(this, s.length());
       Report.output("Simulation end time,", s);
     } else {
-      s = end_time.toString(this);
+      s = _end_time.toString(this);
       Report.output("End simulation time: ", s);
     }
     Trace.msg(2, "End simulation time: ", s);
@@ -225,28 +419,27 @@ public class Bootstrap extends ExtrememThread {
     Util.abandonEphemeralString(this, s);
 
     // startup the customer threads
-    AbsoluteTime staggered_start = start_time.addMinutes(this, 0);
-    for (int i = 0; i < config.CustomerThreads(); i++) {
-      customer_threads[i].setStartAndStop(staggered_start, end_time);
+    AbsoluteTime staggered_start = _start_time.addMinutes(this, 0);
+    for (int i = 0; i < _config.CustomerThreads(); i++) {
+      _customer_threads[i].setStartAndStop(staggered_start, _end_time);
       staggered_start.garbageFootprint(this);
-      customer_threads[i].start(); // will wait for first release
+      _customer_threads[i].start(); // will wait for first release
       staggered_start = staggered_start.addRelative(this, customer_stagger);
     }
 
     // startup the server threads
-    staggered_start = start_time.addMinutes(this, 0);
-    for (int i = 0; i < config.ServerThreads(); i++) {
-      server_threads[i].setStartsAndStop(staggered_start, staggered_customer_replacement, staggered_product_replacement,
-                                         end_time);
+    staggered_start = _start_time.addMinutes(this, 0);
+    for (int i = 0; i < _config.ServerThreads(); i++) {
+      _server_threads[i].setStartsAndStop(staggered_start, staggered_customer_replacement, staggered_product_replacement,
+                                         _end_time);
       staggered_start.garbageFootprint(this);
       staggered_start = staggered_start.addRelative(this, server_stagger);
       staggered_customer_replacement.garbageFootprint(this);
       staggered_customer_replacement = staggered_customer_replacement.addRelative(this, customer_replacement_stagger);
       staggered_product_replacement.garbageFootprint(this);
       staggered_product_replacement = staggered_product_replacement.addRelative(this, product_replacement_stagger);
-      server_threads[i].start(); // will wait for first release
+      _server_threads[i].start(); // will wait for first release
     }
-
     staggered_start.garbageFootprint(this);
     staggered_start = null;
 
@@ -256,27 +449,30 @@ public class Bootstrap extends ExtrememThread {
     staggered_product_replacement.garbageFootprint(this);
     staggered_product_replacement = null;
 
-    if (server_stagger != null)
+    if (server_stagger != null) {
       server_stagger.garbageFootprint(this);
+    }
       
-    if (customer_replacement_stagger != null)
+    if (customer_replacement_stagger != null) {
       customer_replacement_stagger.garbageFootprint(this);
+    }
     customer_replacement_stagger = null;
       
-    if (product_replacement_stagger != null)
+    if (product_replacement_stagger != null) {
       product_replacement_stagger.garbageFootprint(this);
+    }
     product_replacement_stagger = null;
 
-    if (config.PhasedUpdates()) {
-      staggered_start = start_time.addRelative(this, config.PhasedUpdateInterval());
-      update_thread.setStartAndStop(staggered_start, end_time);
-      update_thread.start();    // will wait for first release
+    if (_config.PhasedUpdates()) {
+      staggered_start = _start_time.addRelative(this, _config.PhasedUpdateInterval());
+      _update_thread.setStartAndStop(staggered_start, _end_time);
+      _update_thread.start();    // will wait for first release
       staggered_start.garbageFootprint(this);
       staggered_start = null;
     }
 
     now = AbsoluteTime.now(this);
-    if (config.ReportCSV()) {
+    if (_config.ReportCSV()) {
       s = Long.toString(now.microseconds());
       Util.ephemeralString(this, s.length());
       Report.output("Initialization completion time,", s);
@@ -287,186 +483,194 @@ public class Bootstrap extends ExtrememThread {
     }
     Util.abandonEphemeralString(this, s);
 
-    if (now.compare(start_time) > 0) {
+    if (now.compare(_start_time) > 0) {
       Report.output("Warning!  Consumed more than 4 ms to start each thread.");
-      s = start_time.toString(this);
+      s = _start_time.toString(this);
       Report.output(" Planned to start at: ", s);
       s = now.toString(this);
       Report.output("Actually starting at: ", s);
     }
-    start_time.garbageFootprint(this);
-    start_time = null;
-    end_time.changeLifeSpan(this, LifeSpan.NearlyForever);
+    _start_time.garbageFootprint(this);
+    _start_time = null;
+    _end_time.changeLifeSpan(this, LifeSpan.NearlyForever);
     now.garbageFootprint(this);
     now = null;
-      
-    Trace.msg(2, "Joining with customer threads");
-    // Each thread will terminate when the end_time is reached.
-    for (int i = 0; i < config.CustomerThreads(); i++) {
-      try {
-        customer_threads[i].join();
-      } catch (InterruptedException x) {
-        i--;                    // just try it again
-      }
-    }
-      
-    Trace.msg(2, "Joining with server threads");
-    for (int i = 0; i < config.ServerThreads(); i++) {
-      try {
-        server_threads[i].join();
-      } catch (InterruptedException x) {
-        i--;                    // just try it again
-      }
-    }
+  }
 
-    if (update_thread != null) {
+  // Returns true iff the test was considered successful
+  public boolean run_one_experiment(boolean preserve_customers_and_products) {
+    Trace.msg(2, "Joining with customer threads");
+    // Each thread will terminate when the _end_time is reached.
+    for (int i = 0; i < _config.CustomerThreads(); i++) {
+      try {
+        _customer_threads[i].join();
+      } catch (InterruptedException x) {
+        i--;                    // just try it again
+      }
+    }
+    Trace.msg(2, "Joining with server threads");
+    for (int i = 0; i < _config.ServerThreads(); i++) {
+      try {
+        _server_threads[i].join();
+      } catch (InterruptedException x) {
+        i--;                    // just try it again
+      }
+    }
+    if (_update_thread != null) {
       Trace.msg(2, "Joining with update thread");
       boolean retry = false;
       do {
         try {
-          update_thread.join();
+          _update_thread.join();
           retry = false;
         } catch (InterruptedException x) {
           retry = true;
         }
       } while (retry);
     }
-
     Trace.msg(2, "Program simulation has ended");
-    all_products.report(this);
-    all_customers.report(this);
-    if (!config.ReportIndividualThreads()) {
+    _all_products.report(this);
+    _all_customers.report(this);
+    if (!_config.ReportIndividualThreads()) {
         
       Report.acquireReportLock();
-      customer_accumulator.report(this, "(all customer threads)",
-                                  config.ReportCSV());
-      MemoryLog.report(this, config.ReportCSV(), customer_alloc_accumulator,
-                       customer_garbage_accumulator);
+      _customer_accumulator.report(this, "(all customer threads)",
+                                  _config.ReportCSV());
+      MemoryLog.report(this, _config.ReportCSV(), _customer_alloc_accumulator,
+                       _customer_garbage_accumulator);
         
       Report.output("");
       Report.output("Bootstrap thread after reporting customer accumulator");
-      MemoryLog.report(this, config.ReportCSV(), memory, garbage);
+      MemoryLog.report(this, _config.ReportCSV(), _memory, _garbage);
         
-      server_accumulator.report(this, "(all server threads)",
-                                config.ReportCSV());
-      MemoryLog.report(this, config.ReportCSV(), server_alloc_accumulator,
-                       server_garbage_accumulator);
+      _server_accumulator.report(this, "(all server threads)",
+                                _config.ReportCSV());
+      MemoryLog.report(this, _config.ReportCSV(), _server_alloc_accumulator,
+                       _server_garbage_accumulator);
         
-      customer_alloc_accumulator.foldInto(server_alloc_accumulator);
-      customer_alloc_accumulator.foldOutof(customer_garbage_accumulator);
-      customer_alloc_accumulator.foldOutof(server_garbage_accumulator);
+      _customer_alloc_accumulator.foldInto(_server_alloc_accumulator);
+      _customer_alloc_accumulator.foldOutof(_customer_garbage_accumulator);
+      _customer_alloc_accumulator.foldOutof(_server_garbage_accumulator);
         
-      all_threads_accumulator.foldInto(customer_alloc_accumulator);
+      _all_threads_accumulator.foldInto(_customer_alloc_accumulator);
         
       Report.output();
       Report.output("Customer/Server thread Net Allocation (expect zero)");
-      MemoryLog.reportCumulative(this, config.ReportCSV(),
-                                 customer_alloc_accumulator);
+      MemoryLog.reportCumulative(this, _config.ReportCSV(),
+                                 _customer_alloc_accumulator);
 
       Report.releaseReportLock();
     } else {
       // Individual threads have printed their individual reports.
-      for (int i = 0; i < config.CustomerThreads(); i++) {
-        all_threads_accumulator.foldInto(customer_threads[i].memoryLog());
-        all_threads_accumulator.foldOutof(customer_threads[i].garbageLog());
+      for (int i = 0; i < _config.CustomerThreads(); i++) {
+        _all_threads_accumulator.foldInto(_customer_threads[i].memoryLog());
+        _all_threads_accumulator.foldOutof(_customer_threads[i].garbageLog());
       }
-      for (int i = 0; i < config.ServerThreads(); i++) {
-        all_threads_accumulator.foldInto(server_threads[i].memoryLog());
-        all_threads_accumulator.foldOutof(server_threads[i].garbageLog());
+      for (int i = 0; i < _config.ServerThreads(); i++) {
+        _all_threads_accumulator.foldInto(_server_threads[i].memoryLog());
+        _all_threads_accumulator.foldOutof(_server_threads[i].garbageLog());
       }
     }
       
-    for (int i = 0; i < config.ServerThreads(); i++)
-      server_threads[i].garbageFootprint(this);
-    server_threads = null;
+    for (int i = 0; i < _config.ServerThreads(); i++) {
+      _server_threads[i].garbageFootprint(this);
+    }
+    _server_threads = null;
     Util.abandonReferenceArray(this, LifeSpan.NearlyForever,
-                               config.ServerThreads());
+                               _config.ServerThreads());
       
-    for (int i = 0; i < config.CustomerThreads(); i++)
-      customer_threads[i].garbageFootprint(this);
-    customer_threads = null;
+    for (int i = 0; i < _config.CustomerThreads(); i++) {
+      _customer_threads[i].garbageFootprint(this);
+    }
+    _customer_threads = null;
     Util.abandonReferenceArray(this, LifeSpan.NearlyForever,
-                               config.CustomerThreads());
+                               _config.CustomerThreads());
       
-    end_time.garbageFootprint(this);
-    end_time = null;
+    _end_time.garbageFootprint(this);
+    _end_time = null;
       
-    customer_threads = null;
-    server_threads = null;
+    _customer_threads = null;
+    _server_threads = null;
 
-    all_customers.garbageFootprint(this);
-    all_customers = null;
-      
-    all_products.garbageFootprint(this);
-    all_products = null;
-      
-    for (int i = 0; i < config.BrowsingHistoryQueueCount(); i++) {
-      browsing_queues[i].garbageFootprint(this);
-      browsing_queues[i] = null;
+    if (!preserve_customers_and_products) {
+      _all_customers.garbageFootprint(this);
+      _all_customers = null;
+      _all_products.garbageFootprint(this);
+      _all_products = null;
+    }
+
+    for (int i = 0; i < _config.BrowsingHistoryQueueCount(); i++) {
+      _browsing_queues[i].garbageFootprint(this);
+      _browsing_queues[i] = null;
     }
     Util.abandonReferenceArray(this, LifeSpan.NearlyForever,
-                               config.BrowsingHistoryQueueCount());
-    browsing_queues = null;
+                               _config.BrowsingHistoryQueueCount());
+    _browsing_queues = null;
       
-    for (int i = 0; i < config.SalesTransactionQueueCount(); i++) {
-      sales_queues[i].garbageFootprint(this);
-      sales_queues[i] = null;
+    for (int i = 0; i < _config.SalesTransactionQueueCount(); i++) {
+      _sales_queues[i].garbageFootprint(this);
+      _sales_queues[i] = null;
     }
     Util.abandonReferenceArray(this, LifeSpan.NearlyForever,
-                               config.SalesTransactionQueueCount());
-    sales_queues = null;
-      
+                               _config.SalesTransactionQueueCount());
+    _sales_queues = null;
+
     // While these objects may not be garbage quite yet, treat them as
     // if they were, so that report on net memory allocations balance
     // out to zero.
       
-    if (!config.ReportIndividualThreads()) {
-      server_garbage_accumulator.garbageFootprint(this);
-      server_alloc_accumulator.garbageFootprint(this);
-      customer_garbage_accumulator.garbageFootprint(this);
-      customer_alloc_accumulator.garbageFootprint(this);
+    if (!_config.ReportIndividualThreads()) {
+      _server_garbage_accumulator.garbageFootprint(this);
+      _server_alloc_accumulator.garbageFootprint(this);
+      _customer_garbage_accumulator.garbageFootprint(this);
+      _customer_alloc_accumulator.garbageFootprint(this);
     } 
-    server_accumulator.garbageFootprint(this);
-    customer_accumulator.garbageFootprint(this);
+    _server_accumulator.garbageFootprint(this);
+    _customer_accumulator.garbageFootprint(this);
 
-    config.garbageFootprint(this);
-    all_threads_accumulator.garbageFootprint(this);
+    _config.garbageFootprint(this);
+    _all_threads_accumulator.garbageFootprint(this);
     this.garbageFootprint(this);
       
     // This should be empty
     Report.output("");
     Report.output("Bootstrap thread after discarding this");
-    MemoryLog.report(this, config.ReportCSV(), memory, garbage);
+    MemoryLog.report(this, _config.ReportCSV(), _memory, _garbage);
       
-    all_threads_accumulator.foldInto(memory);
-    all_threads_accumulator.foldOutof(garbage);
+    _all_threads_accumulator.foldInto(_memory);
+    _all_threads_accumulator.foldOutof(_garbage);
     
     Report.acquireReportLock();
     Report.output();
     Report.output("Net allocation for all threads (should be zero)");
-    MemoryLog.reportCumulative(this, config.ReportCSV(),
-                               all_threads_accumulator);
-    all_threads_accumulator = null;
+    MemoryLog.reportCumulative(this, _config.ReportCSV(),
+                               _all_threads_accumulator);
+    _all_threads_accumulator = null;
     Report.releaseReportLock();
 
-    server_accumulator.reportPercentiles(this, config.ReportCSV());
-    customer_accumulator.reportPercentiles(this, config.ReportCSV());
+    _server_accumulator.reportPercentiles(this, _config.ReportCSV());
+    _customer_accumulator.reportPercentiles(this, _config.ReportCSV());
 
-    int customer_thread_count = config.CustomerThreads();
-    RelativeTime customer_period = config.CustomerPeriod();
-    RelativeTime simulation_duration = config.SimulationDuration();
+    int customer_thread_count = _config.CustomerThreads();
+    RelativeTime customer_period = _customer_period;;
+    RelativeTime simulation_duration = _config.SimulationDuration();
     int activations_per_thread = (int) simulation_duration.divideBy(customer_period);
     int expected_activations = customer_thread_count * activations_per_thread;
-    int actual_activations = customer_accumulator.engagements();
+    int actual_activations = _customer_accumulator.engagements();
 
-    Report.acquireReportLock();
-    Report.output();
     // Allow observed count to be no more than customer_thread_count less than the expected activations.
     // It may be less, depending on when particular threads receive their termination signal at the end of simulation.
-    String judgement = (actual_activations + customer_thread_count >= expected_activations)? "Looks good: ": "PROBLEM: ";
-    if (config.ReportCSV()) {
-      Report.output(judgement,
-		    "Observed customer transactions should be no less than expected customer transactions minus",
+    boolean result = actual_activations + customer_thread_count >= expected_activations;
+    Report.acquireReportLock();
+    Report.output();
+    String judgement = result? "Looks good: ": "PROBLEM: ";
+    Report.errout(judgement, "observed ", String.valueOf(actual_activations),
+		    " customer interactions out of at least (",
+		    String.valueOf(expected_activations - customer_thread_count), " = ",
+		    String.valueOf(expected_activations), " expected transactions minus ",
+		    String.valueOf(customer_thread_count), " customer threads)");
+    if (_config.ReportCSV()) {
+      Report.output(judgement, "Observed customer transactions should be no less than expected customer transactions minus",
 		    " the number of customer threads");
       Report.output("Observed Customer Transactions, Expected Customer Transactions, CustomerThreads");
       Report.output(String.valueOf(actual_activations), ", ", String.valueOf(expected_activations),
@@ -481,12 +685,121 @@ public class Bootstrap extends ExtrememThread {
     Report.output();
     Report.releaseReportLock();
 
-    customer_accumulator = null;
-    customer_alloc_accumulator  = null;
-    customer_garbage_accumulator = null;
-    server_accumulator = null;
-    server_alloc_accumulator = null;
-    server_garbage_accumulator = null;
+    long p50_goal = _config.MaxP50CustomerPrepMicroseconds();
+    if (p50_goal > 0) {
+      long p50_actual = _customer_accumulator.getPreparationResponseTimes().getP50();
+      if (p50_actual > p50_goal) {
+        if (_config.ReportCSV()) {
+          Report.output("Failed p50 test because measured us:, ", String.valueOf(p50_actual),
+                        ", greater than goal us:, ", String.valueOf(p50_goal));
+        } else {
+          Report.output("Failed p50 test: ", String.valueOf(p50_actual), " us > goal: ", String.valueOf(p50_goal), " us");
+        }
+        Report.errout("Failed p50 test: ", String.valueOf(p50_actual), " us > goal: ", String.valueOf(p50_goal), " us");
+        result = false;
+      }
+    }
+
+    long p95_goal = _config.MaxP95CustomerPrepMicroseconds();
+    if (p95_goal > 0) {
+      long p95_actual = _customer_accumulator.getPreparationResponseTimes().getP95();
+      if (p95_actual > p95_goal) {
+        if (_config.ReportCSV()) {
+          Report.output("Failed p95 test because measured us:, ", String.valueOf(p95_actual),
+                        ", greater than goal us:, ", String.valueOf(p95_goal));
+        } else {
+          Report.output("Failed p95 test: ", String.valueOf(p95_actual), " us > goal: ", String.valueOf(p95_goal), " us");
+        }
+        Report.errout("Failed p95 test: ", String.valueOf(p95_actual), " us > goal: ", String.valueOf(p95_goal), " us");
+        result = false;
+      }
+    }
+
+    long p99_goal = _config.MaxP99CustomerPrepMicroseconds();
+    if (p99_goal > 0) {
+      long p99_actual = _customer_accumulator.getPreparationResponseTimes().getP99();
+      if (p99_actual > p99_goal) {
+        if (_config.ReportCSV()) {
+          Report.output("Failed p99 test because measured us:, ", String.valueOf(p99_actual),
+                        ", greater than goal us:, ", String.valueOf(p99_goal));
+        } else {
+          Report.output("Failed p99 test: ", String.valueOf(p99_actual), " us > goal: ", String.valueOf(p99_goal), " us");
+        }
+        Report.errout("Failed p99 test: ", String.valueOf(p99_actual), " us > goal: ", String.valueOf(p99_goal), " us");
+        result = false;
+      }
+    }
+
+    long p99_9_goal = _config.MaxP99_9CustomerPrepMicroseconds();
+    if (p99_9_goal > 0) {
+      long p99_9_actual = _customer_accumulator.getPreparationResponseTimes().getP99_9();
+      if (p99_9_actual > p99_9_goal) {
+        if (_config.ReportCSV()) {
+          Report.output("Failed p99_9 test because measured us:, ", String.valueOf(p99_9_actual),
+                        ", greater than goal us:, ", String.valueOf(p99_9_goal));
+        } else {
+          Report.output("Failed p99_9 test: ", String.valueOf(p99_9_actual), " us > goal: ", String.valueOf(p99_9_goal), " us");
+        }
+        Report.errout("Failed p99_9 test: ", String.valueOf(p99_9_actual), " us > goal: ", String.valueOf(p99_9_goal), " us");
+        result = false;
+      }
+    }
+
+    long p99_99_goal = _config.MaxP99_99CustomerPrepMicroseconds();
+    if (p99_99_goal > 0) {
+      long p99_99_actual = _customer_accumulator.getPreparationResponseTimes().getP99_99();
+      if (p99_99_actual > p99_99_goal) {
+        if (_config.ReportCSV()) {
+          Report.output("Failed p99_99 test because measured us:, ", String.valueOf(p99_99_actual),
+                        ", greater than goal us:, ", String.valueOf(p99_99_goal));
+        } else {
+          Report.output("Failed p99_99 test: ", String.valueOf(p99_99_actual), " us > goal: ", String.valueOf(p99_99_goal), " us");
+        }
+        Report.errout("Failed p99_99 test: ", String.valueOf(p99_99_actual), " us > goal: ", String.valueOf(p99_99_goal), " us");
+        result = false;
+      }
+    }
+
+    long p99_999_goal = _config.MaxP99_999CustomerPrepMicroseconds();
+    if (p99_999_goal > 0) {
+      long p99_999_actual = _customer_accumulator.getPreparationResponseTimes().getP99_999();
+      if (p99_999_actual > p99_999_goal) {
+        if (_config.ReportCSV()) {
+          Report.output("Failed p99_999 test because measured us:, ", String.valueOf(p99_999_actual),
+                        ", greater than goal us:, ", String.valueOf(p99_999_goal));
+        } else {
+          Report.output("Failed p99_999 test: ", String.valueOf(p99_999_actual),
+                        " us > goal: ", String.valueOf(p99_999_goal), " us");
+        }
+        Report.errout("Failed p99_999 test: ", String.valueOf(p99_999_actual),
+		      " us > goal: ", String.valueOf(p99_999_goal), " us");
+        result = false;
+      }
+    }
+
+    long p100_goal = _config.MaxP100CustomerPrepMicroseconds();
+    if (p100_goal > 0) {
+      long p100_actual = _customer_accumulator.getPreparationResponseTimes().getP100();
+      if (p100_actual > p100_goal) {
+        if (_config.ReportCSV()) {
+          Report.output("Failed p100 test because measured us:, ", String.valueOf(p100_actual),
+                        ", greater than goal us:, ", String.valueOf(p100_goal));
+        } else {
+          Report.output("Failed p100 test: ", String.valueOf(p100_actual), " us > goal: ", String.valueOf(p100_goal), " us");
+        }
+        Report.errout("Failed p100 test: ", String.valueOf(p100_actual), " us > goal: ", String.valueOf(p100_goal), " us");
+        result = false;
+      }
+    }
+
+    _customer_accumulator = null;
+    _customer_alloc_accumulator  = null;
+    _customer_garbage_accumulator = null;
+    _server_accumulator = null;
+    _server_alloc_accumulator = null;
+    _server_garbage_accumulator = null;
+
+    return result;
   }
 
   // No need to override superclass because Bootstrap introduces no

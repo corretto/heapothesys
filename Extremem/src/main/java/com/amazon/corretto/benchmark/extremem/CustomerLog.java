@@ -74,6 +74,10 @@ class CustomerLog extends ExtrememObject {
     do_nothing_response_times = new ResponseTimeMeasurements(t, ls, response_time_measurements);
   }
 
+  public ResponseTimeMeasurements getPreparationResponseTimes() {
+   return prepare_response_times;
+  }
+
   // This information is redundant with purchaser.  I'll gather it
   // here, and ignore it when logging purchases.
   void logPrepareToThink(CustomerThread t, AbsoluteTime release,

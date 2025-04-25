@@ -51,6 +51,13 @@ class Configuration {
   static final int DefaultProductDescriptionLength = 24;
 
   static final int DefaultMaxArrayLength = 0;
+  static final int DefaultMaxP50CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP95CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP99CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP99_9CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP99_99CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP99_999CustomerPrepMicroseconds = 0;
+  static final int DefaultMaxP100CustomerPrepMicroseconds = 0;
   static final int DefaultNumCustomers = 10000;
   static final int DefaultCustomerThreads = 1440;
   static final int DefaultCustomerPeriodMinutes = 4;
@@ -87,6 +94,13 @@ class Configuration {
   private int DictionarySize;
   private int ResponseTimeMeasurements;
   private int MaxArrayLength;
+  private int MaxP50CustomerPrepMicroseconds;
+  private int MaxP95CustomerPrepMicroseconds;
+  private int MaxP99CustomerPrepMicroseconds;
+  private int MaxP99_9CustomerPrepMicroseconds;
+  private int MaxP99_99CustomerPrepMicroseconds;
+  private int MaxP99_999CustomerPrepMicroseconds;
+  private int MaxP100CustomerPrepMicroseconds;
   private int NumCustomers;
   private int NumProducts;
   private int ProductNameLength;
@@ -165,9 +179,9 @@ class Configuration {
                    Polarity.Expand, 1);
 
     // Account for
-    //  17 int fields: DictionarySize, ResponseTimeMeasurements,
-    //                 MaxArrayLength, NumCustomers,
-    //                 NumProducts, ProductNameLength,
+    //  24 int fields: DictionarySize, ResponseTimeMeasurements,
+    //                 MaxArrayLength, MaxP???CustomerPrepMicroseconds (7 fields),
+    //                 NumCustomers, NumProducts, ProductNameLength,
     //                 ProductDescriptionLength, ProductReviewLength,
     //                 RandomSeed, KeywordSearchCount,
     //                 CustomerThreads, ServerThreads, 
@@ -179,7 +193,7 @@ class Configuration {
     //   2 float fields: BuyThreshold, SaveForLaterThreshold;
     //   2 boolean fields: ReportIndividualThreads, ReportCSV
     log.accumulate(LifeSpan.NearlyForever, MemoryFlavor.ObjectRSB,
-                   Polarity.Expand, 17 * Util.SizeOfInt +
+                   Polarity.Expand, 24 * Util.SizeOfInt +
                    2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
     // Account for 10 reference fields: args, dictionary,
@@ -198,6 +212,13 @@ class Configuration {
                      Polarity.Expand, DictionaryFile.length());
 
     MaxArrayLength = DefaultMaxArrayLength;
+    MaxP50CustomerPrepMicroseconds = DefaultMaxP50CustomerPrepMicroseconds;
+    MaxP95CustomerPrepMicroseconds = DefaultMaxP95CustomerPrepMicroseconds;
+    MaxP99CustomerPrepMicroseconds = DefaultMaxP99CustomerPrepMicroseconds;
+    MaxP99_9CustomerPrepMicroseconds = DefaultMaxP99_9CustomerPrepMicroseconds;
+    MaxP99_99CustomerPrepMicroseconds = DefaultMaxP99_99CustomerPrepMicroseconds;
+    MaxP99_999CustomerPrepMicroseconds = DefaultMaxP99_999CustomerPrepMicroseconds;
+    MaxP100CustomerPrepMicroseconds = DefaultMaxP100CustomerPrepMicroseconds;
     NumCustomers = DefaultNumCustomers;
     NumProducts = DefaultNumProducts;
     ProductNameLength = DefaultProductNameLength;
@@ -276,6 +297,13 @@ class Configuration {
     "DictionarySize",
     "KeywordSearchCount",
     "MaxArrayLength",
+    "MaxP50CustomerPrepMicroseconds",
+    "MaxP95CustomerPrepMicroseconds",
+    "MaxP99CustomerPrepMicroseconds",
+    "MaxP99_9CustomerPrepMicroseconds",
+    "MaxP99_99CustomerPrepMicroseconds",
+    "MaxP99_999CustomerPrepMicroseconds",
+    "MaxP100CustomerPrepMicroseconds",
     "NumCustomers",
     "NumProducts",
     "ProductDescriptionLength",
@@ -440,56 +468,91 @@ class Configuration {
           break;
         }
       case 6:
+        if (keyword.equals("MaxP50CustomerPrepMicroseconds")) {
+          MaxP50CustomerPrepMicroseconds = ui;
+          break;
+        }
+      case 7:
+        if (keyword.equals("MaxP95CustomerPrepMicroseconds")) {
+          MaxP95CustomerPrepMicroseconds = ui;
+          break;
+        }
+      case 8:
+        if (keyword.equals("MaxP99CustomerPrepMicroseconds")) {
+          MaxP99CustomerPrepMicroseconds = ui;
+          break;
+        }
+      case 9:
+        if (keyword.equals("MaxP99_9CustomerPrepMicroseconds")) {
+          MaxP99_9CustomerPrepMicroseconds = ui;
+          break;
+        }
+      case 10:
+        if (keyword.equals("MaxP99_99CustomerPrepMicroseconds")) {
+          MaxP99_99CustomerPrepMicroseconds = ui;
+          break;
+        }
+      case 11:
+        if (keyword.equals("MaxP99_999CustomerPrepMicroseconds")) {
+          MaxP99_999CustomerPrepMicroseconds = ui;
+          break;
+        }
+      case 12:
+        if (keyword.equals("MaxP100CustomerPrepMicroseconds")) {
+          MaxP100CustomerPrepMicroseconds = ui;
+          break;
+        }
+      case 13:
         if (keyword.equals("NumCustomers")) {
           NumCustomers = ui;
           break;
         }
-      case 7:
+      case 14:
         if (keyword.equals("NumProducts")) {
           NumProducts = ui;
           break;
         }
-      case 8:
+      case 15:
         if (keyword.equals("ProductDescriptionLength")) {
           ProductDescriptionLength = ui;
           break;
         }
-      case 9:
+      case 16:
         if (keyword.equals("ProductNameLength")) {
           ProductNameLength = ui;
           break;
         }
-      case 10:
+      case 17:
         if (keyword.equals("ProductReplacementCount")) {
           ProductReplacementCount = ui;
           break;
         }
-      case 11:
+      case 18:
         if (keyword.equals("ProductReviewLength")) {
           ProductReviewLength = ui;
           break;
         }
-      case 12:
+      case 19:
         if (keyword.equals("RandomSeed")) {
           RandomSeed = ui;
           break;
         }
-      case 13:
+      case 20:
         if (keyword.equals("ResponseTimeMeasurements")) {
           ResponseTimeMeasurements = ui;
           break;
         }
-      case 14:
+      case 21:
         if (keyword.equals("SalesTransactionQueueCount")) {
           SalesTransactionQueueCount = ui;
           break;
         }
-      case 15:
+      case 22:
         if (keyword.equals("SelectionCriteriaCount")) {
           SelectionCriteriaCount = ui;
           break;
         }
-      case 16:
+      case 23:
         if (keyword.equals("ServerThreads")) {
           ServerThreads = ui;
           break;
@@ -787,6 +850,40 @@ class Configuration {
     return MaxArrayLength;
   }
 
+  boolean SearchForMaximumTransactionRate() {
+    return ((MaxP50CustomerPrepMicroseconds > 0) || (MaxP95CustomerPrepMicroseconds > 0) || (MaxP99CustomerPrepMicroseconds > 0) ||
+	    (MaxP99_9CustomerPrepMicroseconds > 0) || (MaxP99_99CustomerPrepMicroseconds > 0) ||
+	    (MaxP99_999CustomerPrepMicroseconds > 0) || (MaxP100CustomerPrepMicroseconds > 0));
+  }
+
+  int MaxP50CustomerPrepMicroseconds() {
+    return MaxP50CustomerPrepMicroseconds;
+  }
+
+  int MaxP95CustomerPrepMicroseconds() {
+    return MaxP95CustomerPrepMicroseconds;
+  }
+
+  int MaxP99CustomerPrepMicroseconds() {
+    return MaxP99CustomerPrepMicroseconds;
+  }
+
+  int MaxP99_9CustomerPrepMicroseconds() {
+    return MaxP99_9CustomerPrepMicroseconds;
+  }
+
+  int MaxP99_99CustomerPrepMicroseconds() {
+    return MaxP99_99CustomerPrepMicroseconds;
+  }
+
+  int MaxP99_999CustomerPrepMicroseconds() {
+    return MaxP99_999CustomerPrepMicroseconds;
+  }
+
+  int MaxP100CustomerPrepMicroseconds() {
+    return MaxP100CustomerPrepMicroseconds;
+  }
+
   int NumCustomers() {
     return NumCustomers;
   }
@@ -957,6 +1054,48 @@ class Configuration {
     Report.output("ResponseTimeMeasurements,", s);
     Util.abandonEphemeralString(t, l);
 
+    s = Integer.toString(MaxP50CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP50CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP95CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP95CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP99CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_9CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP99_9CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_99CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP99_99CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_999CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP99_999CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP100CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("MaxP100CustomerPrepMicroseconds,", s);
+    Util.abandonEphemeralString(t, l);
+
     s = Integer.toString(DictionarySize);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -1110,7 +1249,6 @@ class Configuration {
     Util.ephemeralString(t, l);
     Report.output("ProductReviewLength,", s);
     Util.abandonEphemeralString(t, l);
-
   }
 
   void dump(ExtrememThread t) {
@@ -1126,68 +1264,113 @@ class Configuration {
       Report.output(listOfArguments.get(i));
 
     Report.output();
-    Report.output("Individual thread report (ReportIndividualThreads): ",
+    Report.output("      Individual thread report (ReportIndividualThreads): ",
                   ReportIndividualThreads? "true": "false");
-    Report.output("                    Exporting to Excel (ReportCSV): ",
+    Report.output("                          Exporting to Excel (ReportCSV): ",
                   ReportCSV? "true": "false");
 
     Report.output();
     Report.output("Simulation configuration");
 
-    Report.output("  Fine-grain locking of data base (FastAndFurious): ", FastAndFurious? "true": "false");
-    Report.output("       Rebuild data base in phases (PhasedUpdates): ", PhasedUpdates? "true": "false");
-
+    Report.output("        Fine-grain locking of data base (FastAndFurious): ", FastAndFurious? "true": "false");
+    Report.output("             Rebuild data base in phases (PhasedUpdates): ", PhasedUpdates? "true": "false");
     Report.output();
     if (PhasedUpdates) {
       s = PhasedUpdateInterval.toString(t);
       l = s.length();
       Util.ephemeralString(t, l);
-      Report.output("  Time between data rebuild (PhasedUpdateInterval): ", s);
+      Report.output("        Time between data rebuild (PhasedUpdateInterval): ", s);
       Util.abandonEphemeralString(t, l);
     }
 
     s = Integer.toString(RandomSeed);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Seed for random number generation (RandomSeed): ", s);
+    Report.output("          Seed for random number generation (RandomSeed): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = SimulationDuration.toString(t);
     l = s.length();
-    Report.output("                     Duration (SimulationDuration): ", s);
+    Report.output("                           Duration (SimulationDuration): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(MaxArrayLength);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("             Maximum array length (MaxArrayLength): ", s);
+    Report.output("                   Maximum array length (MaxArrayLength): ", s);
     Util.abandonEphemeralString(t, l);
+
+    Report.output();
+
+    s = Integer.toString(MaxP50CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("        Max p50 latency (MaxP50CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP95CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("        Max p95 latency (MaxP95CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("        Max p99 latency (MaxP99CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_9CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("    Max p99_9 latency (MaxP99_9CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_99CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output(" Max p99_99 latency (MaxP99_999CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP99_999CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("Max p99_999 latency (MaxP99_999CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Integer.toString(MaxP100CustomerPrepMicroseconds);
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("      Max p100 latency (MaxP100CustomerPrepMicroseconds): ", s);
+    Util.abandonEphemeralString(t, l);
+
+    Report.output();
 
     s = Integer.toString(ResponseTimeMeasurements);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("   Remembered responses (ResponseTimeMeasurements): ", s);
+    Report.output("         Remembered responses (ResponseTimeMeasurements): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(DictionarySize);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("              Words in dictionary (DictionarySize): ", s);
+    Report.output("                    Words in dictionary (DictionarySize): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = DictionaryFile;
-    Report.output("Full path name of dictionary file (DictionaryFile): ", s);
+    Report.output("      Full path name of dictionary file (DictionaryFile): ", s);
 
     s = Integer.toString(BrowsingHistoryQueueCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Browsing queue qty (BrowsingHistoryQueueCount): ", s);
+    Report.output("          Browsing queue qty (BrowsingHistoryQueueCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(SalesTransactionQueueCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("Transaction queue qty (SalesTransactionQueueCount): ", s);
+    Report.output("      Transaction queue qty (SalesTransactionQueueCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("");
@@ -1196,36 +1379,36 @@ class Configuration {
     s = Integer.toString(ServerThreads);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("           Number of server threads (ServerThreads): ", s);
+    Report.output("                Number of server threads (ServerThreads): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = ServerPeriod.toString(t);
     l = s.length();
-    Report.output("                Server thread period (ServerPeriod): ", s);
+    Report.output("                     Server thread period (ServerPeriod): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("Customer maintenance");
 
     s = CustomerReplacementPeriod.toString(t);
-    Report.output("     Replacement period (CustomerReplacementPeriod): ", s);
+    Report.output("          Replacement period (CustomerReplacementPeriod): ", s);
     Util.abandonEphemeralString(t, s);
 
     s = Integer.toString(CustomerReplacementCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("       Replacement count (CustomerReplacementCount): ", s);
+    Report.output("            Replacement count (CustomerReplacementCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("Product maintenance");
 
     s = ProductReplacementPeriod.toString(t);
-    Report.output("      Replacement period (ProductReplacementPeriod): ", s);
+    Report.output("           Replacement period (ProductReplacementPeriod): ", s);
     Util.abandonEphemeralString(t, s);
 
     s = Integer.toString(ProductReplacementCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("        Replacement count (ProductReplacementCount): ", s);
+    Report.output("             Replacement count (ProductReplacementCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("");
@@ -1234,19 +1417,19 @@ class Configuration {
     s = Integer.toString(CustomerThreads);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("                Number of threads (CustomerThreads): ", s);
+    Report.output("                     Number of threads (CustomerThreads): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = CustomerPeriod.toString(t);
-    Report.output("                     Thread period (CustomerPeriod): ", s);
+    Report.output("                          Thread period (CustomerPeriod): ", s);
     Util.abandonEphemeralString(t, s);
 
     s = CustomerThinkTime.toString(t);
-    Report.output("                     Think time (CustomerThinkTime): ", s);
+    Report.output("                          Think time (CustomerThinkTime): ", s);
     Util.abandonEphemeralString(t, s);
 
     s = BrowsingExpiration.toString(t);
-    Report.output("       Save-for-later duration (BrowsingExpiration): ", s);
+    Report.output("            Save-for-later duration (BrowsingExpiration): ", s);
     Util.abandonEphemeralString(t, s);
 
     Report.output("");
@@ -1255,13 +1438,13 @@ class Configuration {
     s = Integer.toString(NumCustomers);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("                              Number (NumCustomers): ", s);
+    Report.output("                                   Number (NumCustomers): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(KeywordSearchCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("                Words in query (KeywordSearchCount): ", s);
+    Report.output("                     Words in query (KeywordSearchCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output("                  Allow lookup to match any keyword\n" +
@@ -1270,7 +1453,7 @@ class Configuration {
     s = Integer.toString(SelectionCriteriaCount);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("           Words to select (SelectionCriteriaCount): ", s);
+    Report.output("                Words to select (SelectionCriteriaCount): ", s);
     Util.abandonEphemeralString(t, l);
 
     Report.output(" Decision ratios:");
@@ -1298,25 +1481,25 @@ class Configuration {
     s = Integer.toString(NumProducts);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("                               Number (NumProducts): ", s);
+    Report.output("                                    Number (NumProducts): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(ProductNameLength);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("                  Words in name (ProductNameLength): ", s);
+    Report.output("                       Words in name (ProductNameLength): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(ProductDescriptionLength);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("    Words in description (ProductDescriptionLength): ", s);
+    Report.output("         Words in description (ProductDescriptionLength): ", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(ProductReviewLength);
     l = s.length();
     Util.ephemeralString(t, l);
-    Report.output("              Words in review (ProductReviewLength): ", s);
+    Report.output("                   Words in review (ProductReviewLength): ", s);
     Util.abandonEphemeralString(t, l);
   }
 

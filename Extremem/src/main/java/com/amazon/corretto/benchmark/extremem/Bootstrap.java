@@ -74,7 +74,14 @@ public class Bootstrap extends ExtrememThread {
             if (retreating_during_search_for_first_success) {
               Report.errout("Found first success at ", s,
                             " TPS after retreating for failures at higher transaction rates.  Take smaller steps forward.");
+              if (_config.ReportCSV()) {
+                Report.output("First success at TPS:, ", s,
+                              ", (after retreating for failures at higher transaction rates -- taking smaller steps forward)");
 
+              } else {
+                Report.output("Found first success at ", s,
+                              " TPS after retreating for failures at higher transaction rates.  Take smaller steps forward.");
+              }
               first_try = true;
               found_top_failure = true;
               searching_for_greater_success = false;
@@ -82,7 +89,14 @@ public class Bootstrap extends ExtrememThread {
               _customer_period = _customer_period.multiplyBy(this, 0.9);
               _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
             } else {
-              Report.errout("Found first success at ", s, " TPS, searching for higher transaction rate");
+              Report.errout("Found first success at ", s, " TPS, searching for higher transaction rate.");
+              if (_config.ReportCSV()) {
+                Report.output("First success at TPS:, ", s,
+                              ", (taking smaller steps forward)");
+
+              } else {
+                Report.output("Found first success at ", s, " TPS, searching for higher transaction rate.");
+              }
 
               // Decrease transaction rate by 7.5%
               _customer_period = _customer_period.multiplyBy(this, 1.075);
@@ -93,18 +107,35 @@ public class Bootstrap extends ExtrememThread {
             first_try = true;
 	  } else if (first_try) {
             Report.errout("Failed once at ", s, " TPS.  Retry.");
+            if (_config.ReportCSV()) {
+              Report.output("Failed once at TPS:, ", s, ", (retry)");
+            } else {
+              Report.output("Failed once at ", s, " TPS.  Retry.");
+            }
 	    first_try = false;
 	    // try it again
 	  } else {
 	    if (allowed_retries_for_initial_success-- > 0) {
 	      Report.errout("Failed twice at ", s, " TPS, searching for lower transaction rate");
 	      // Decrease transaction rate by 10%
+              if (_config.ReportCSV()) {
+                Report.output("Failed twice at TPS:, ", s, ", (searching for a lower transaction rate)");
+              } else {
+                Report.output("Failed twice at ", s, " TPS, searching for lower transaction rate");
+              }
 	      _customer_period = _customer_period.multiplyBy(this, 1.1);
 	      _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
 	      first_try = true;
               retreating_during_search_for_first_success = false;
 	    } else {
 	      Report.errout("Failed to find initial success after ", Integer.toString(MaxRetries), " retries.  Giving up.");
+              Report.errout("Last attempted rate: ", s, " TPS");
+              if (_config.ReportCSV()) {
+                Report.output("Giving up after failed at TPS: ", s, " too many failed attempts: ", Integer.toString(MaxRetries));
+              } else {
+	        Report.output("Failed to find initial success after ", Integer.toString(MaxRetries), " retries.  Giving up.");
+                Report.output("Last attempted rate: ", s, " TPS");
+              }
 	      return;
 	    }
 	  }
@@ -116,7 +147,11 @@ public class Bootstrap extends ExtrememThread {
 	  if (success) {
 	    if (searching_for_greater_success) {
 	      Report.errout("Found greater success at ", s, " TPS, search for even higher transaction rate");
-
+              if (_config.ReportCSV()) {
+                Report.output("Found greater success at TPS:, ", s, ", (search for even higher transaction rate)");
+              } else {
+                Report.output("Found greater success at ", s, " TPS, search for even higher transaction rate");
+              }
 	      // increase transaction rate by 10%.
 	      _customer_period = _customer_period.multiplyBy(this, 0.9);
 	      _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
@@ -125,16 +160,32 @@ public class Bootstrap extends ExtrememThread {
 	      first_try = true;
 	    } else {
 	      Report.errout("Found greater success at ", s, " TPS.  This is maximum successful rate");
+              if (_config.ReportCSV()) {
+                Report.output("Found greater success at TPS:, ", s, ", (this is maximum successful rate)");
+              } else {
+                Report.output("Found greater success at ", s, " TPS.  This is maximum successful rate");
+              }
 	      return;
 	    }
 	  } else if (first_try) {
             Report.errout("Failed once at ", s, " TPS.  Retry.");
+            if (_config.ReportCSV()) {
+              Report.output("Failed once at TPS: ,", s, ", (retry)");
+            } else {
+              Report.output("Failed once at ", s, " TPS.  Retry.");
+            }
 	    first_try = false;
 	    // try it again
 	  } else if (searching_for_greater_success) {
 	    Report.errout("Failed twice at ", s,
                           " TPS while searching for higher transaction rate.  Take smaller steps backward.");
-
+            if (_config.ReportCSV()) {
+              Report.output("Failed twice at TPS: ,", s,
+                            ", (while searching for higher transaction rate -- taking smaller steps backward)");
+            } else {
+              Report.output("Failed twice at ", s,
+                            " TPS while searching for higher transaction rate.  Take smaller steps backward.");
+            }
 	    // Decrease transaction rate by 2.5%
 	    _customer_period = _customer_period.multiplyBy(this, 1.025);
 	    _customer_think_time = _customer_think_time.multiplyBy(this, 1.025);
@@ -143,11 +194,26 @@ public class Bootstrap extends ExtrememThread {
 	    searching_for_greater_success = false;
 	    search_backward_increments = 0;
 	  } else if (search_backward_increments >= 3) {
-              Report.errout("Search for greater success terminated.  Most recent success is best available.");
+            Report.errout("Failed twice at ", s,
+                          ".  Small-step search for greater success terminated.  Most recent success is best available.");
+            if (_config.ReportCSV()) {
+              Report.output("Failed twice at TPS: ,", s,
+                            ", (in small-step searching for higher transaction rate -- most recent success is best available)");
+            } else {
+              Report.output("Failed twice at ", s,
+                            ".  Small-step search for greater success terminated.  Most recent success is best available.");
+            }
 	    return;
 	  } else {
 	    Report.errout("Failed twice at ", s,
                           " TPS while taking small steps backward.  Try another small step backward.");
+            if (_config.ReportCSV()) {
+              Report.output("Failed twice at TPS: ,", s,
+                            ", (in small-step searching for higher transaction rate -- try another small step backward)");
+            } else {
+              Report.output("Failed twice at ", s,
+                            " TPS while taking small steps backward.  Try another small step backward.");
+            }
 	    // Decrease transaction rate by 2.5%
 	    _customer_period = _customer_period.multiplyBy(this, 1.025);
 	    _customer_think_time = _customer_think_time.multiplyBy(this, 1.025);
@@ -600,9 +666,13 @@ public class Bootstrap extends ExtrememThread {
       Report.output(judgement);
       Report.output("Observed Customer Transactions, Expected Customer Transactions");
       Report.output(String.valueOf(actual_activations), ", ", String.valueOf(expected_activations));
+      Report.errout("Observed Customer Transactions, Expected Customer Transactions");
+      Report.errout(String.valueOf(actual_activations), ", ", String.valueOf(expected_activations));
     } else {
       Report.output(judgement, "observed ", String.valueOf(actual_activations),
-		      " customer interactions out of at least ", String.valueOf(expected_activations), " expected transactions");
+                    " customer interactions out of at least ", String.valueOf(expected_activations), " expected transactions");
+      Report.errout(judgement, "observed ", String.valueOf(actual_activations),
+                    " customer interactions out of at least ", String.valueOf(expected_activations), " expected transactions");
     }
     Report.output();
     Report.releaseReportLock();
@@ -611,7 +681,13 @@ public class Bootstrap extends ExtrememThread {
     if (p50_goal > 0) {
       long p50_actual = _customer_accumulator.getPreparationResponseTimes().getP50();
       if (p50_actual > p50_goal) {
-        Report.output("Failed p50 test: ", String.valueOf(p50_actual), " us > goal: ", String.valueOf(p50_goal), " us");
+        if (_config.ReportCSV()) {
+          Report.output("Failed p50 test because measured us:, ", String.valueOf(p50_actual),
+                        ", greater than goal us:, ", String.valueOf(p50_goal));
+        } else {
+          Report.output("Failed p50 test: ", String.valueOf(p50_actual), " us > goal: ", String.valueOf(p50_goal), " us");
+        }
+        Report.errout("Failed p50 test: ", String.valueOf(p50_actual), " us > goal: ", String.valueOf(p50_goal), " us");
         result = false;
       }
     }
@@ -620,7 +696,13 @@ public class Bootstrap extends ExtrememThread {
     if (p95_goal > 0) {
       long p95_actual = _customer_accumulator.getPreparationResponseTimes().getP95();
       if (p95_actual > p95_goal) {
-        Report.output("Failed p95 test: ", String.valueOf(p95_actual), " us > goal: ", String.valueOf(p95_goal), " us");
+        if (_config.ReportCSV()) {
+          Report.output("Failed p95 test because measured us:, ", String.valueOf(p95_actual),
+                        ", greater than goal us:, ", String.valueOf(p95_goal));
+        } else {
+          Report.output("Failed p95 test: ", String.valueOf(p95_actual), " us > goal: ", String.valueOf(p95_goal), " us");
+        }
+        Report.errout("Failed p95 test: ", String.valueOf(p95_actual), " us > goal: ", String.valueOf(p95_goal), " us");
         result = false;
       }
     }
@@ -629,7 +711,13 @@ public class Bootstrap extends ExtrememThread {
     if (p99_goal > 0) {
       long p99_actual = _customer_accumulator.getPreparationResponseTimes().getP99();
       if (p99_actual > p99_goal) {
-        Report.output("Failed p99 test: ", String.valueOf(p99_actual), " us > goal: ", String.valueOf(p99_goal), " us");
+        if (_config.ReportCSV()) {
+          Report.output("Failed p99 test because measured us:, ", String.valueOf(p99_actual),
+                        ", greater than goal us:, ", String.valueOf(p99_goal));
+        } else {
+          Report.output("Failed p99 test: ", String.valueOf(p99_actual), " us > goal: ", String.valueOf(p99_goal), " us");
+        }
+        Report.errout("Failed p99 test: ", String.valueOf(p99_actual), " us > goal: ", String.valueOf(p99_goal), " us");
         result = false;
       }
     }
@@ -638,7 +726,13 @@ public class Bootstrap extends ExtrememThread {
     if (p99_9_goal > 0) {
       long p99_9_actual = _customer_accumulator.getPreparationResponseTimes().getP99_9();
       if (p99_9_actual > p99_9_goal) {
-        Report.output("Failed p99_9 test: ", String.valueOf(p99_9_actual), " us > goal: ", String.valueOf(p99_9_goal), " us");
+        if (_config.ReportCSV()) {
+          Report.output("Failed p99_9 test because measured us:, ", String.valueOf(p99_9_actual),
+                        ", greater than goal us:, ", String.valueOf(p99_9_goal));
+        } else {
+          Report.output("Failed p99_9 test: ", String.valueOf(p99_9_actual), " us > goal: ", String.valueOf(p99_9_goal), " us");
+        }
+        Report.errout("Failed p99_9 test: ", String.valueOf(p99_9_actual), " us > goal: ", String.valueOf(p99_9_goal), " us");
         result = false;
       }
     }
@@ -647,7 +741,13 @@ public class Bootstrap extends ExtrememThread {
     if (p99_99_goal > 0) {
       long p99_99_actual = _customer_accumulator.getPreparationResponseTimes().getP99_99();
       if (p99_99_actual > p99_99_goal) {
-        Report.output("Failed p99_99 test: ", String.valueOf(p99_99_actual), " us > goal: ", String.valueOf(p99_99_goal), " us");
+        if (_config.ReportCSV()) {
+          Report.output("Failed p99_99 test because measured us:, ", String.valueOf(p99_99_actual),
+                        ", greater than goal us:, ", String.valueOf(p99_99_goal));
+        } else {
+          Report.output("Failed p99_99 test: ", String.valueOf(p99_99_actual), " us > goal: ", String.valueOf(p99_99_goal), " us");
+        }
+        Report.errout("Failed p99_99 test: ", String.valueOf(p99_99_actual), " us > goal: ", String.valueOf(p99_99_goal), " us");
         result = false;
       }
     }
@@ -656,7 +756,14 @@ public class Bootstrap extends ExtrememThread {
     if (p99_999_goal > 0) {
       long p99_999_actual = _customer_accumulator.getPreparationResponseTimes().getP99_999();
       if (p99_999_actual > p99_999_goal) {
-        Report.output("Failed p99_999 test: ", String.valueOf(p99_999_actual),
+        if (_config.ReportCSV()) {
+          Report.output("Failed p99_999 test because measured us:, ", String.valueOf(p99_999_actual),
+                        ", greater than goal us:, ", String.valueOf(p99_999_goal));
+        } else {
+          Report.output("Failed p99_999 test: ", String.valueOf(p99_999_actual),
+                        " us > goal: ", String.valueOf(p99_999_goal), " us");
+        }
+        Report.errout("Failed p99_999 test: ", String.valueOf(p99_999_actual),
 		      " us > goal: ", String.valueOf(p99_999_goal), " us");
         result = false;
       }
@@ -666,7 +773,13 @@ public class Bootstrap extends ExtrememThread {
     if (p100_goal > 0) {
       long p100_actual = _customer_accumulator.getPreparationResponseTimes().getP100();
       if (p100_actual > p100_goal) {
-        Report.output("Failed p100 test: ", String.valueOf(p100_actual), " us > goal: ", String.valueOf(p100_goal), " us");
+        if (_config.ReportCSV()) {
+          Report.output("Failed p100 test because measured us:, ", String.valueOf(p100_actual),
+                        ", greater than goal us:, ", String.valueOf(p100_goal));
+        } else {
+          Report.output("Failed p100 test: ", String.valueOf(p100_actual), " us > goal: ", String.valueOf(p100_goal), " us");
+        }
+        Report.errout("Failed p100 test: ", String.valueOf(p100_actual), " us > goal: ", String.valueOf(p100_goal), " us");
         result = false;
       }
     }

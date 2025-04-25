@@ -62,6 +62,24 @@ class Report {
     err.println(s3);
   }
 
+  static void errout(String s1, String s2, String s3, String s4, String s5) {
+    err.print(s1);
+    err.print(s2);
+    err.print(s3);
+    err.print(s4);
+    err.println(s5);
+  }
+
+  static void errout(String s1, String s2, String s3,
+                     String s4, String s5, String s6) {
+    err.print(s1);
+    err.print(s2);
+    err.print(s3);
+    err.print(s4);
+    err.print(s5);
+    err.println(s6);
+  }
+
   static void output() {
     out.println("");
   }

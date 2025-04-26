@@ -574,42 +574,52 @@ class Products extends ExtrememObject {
 
         ExtrememHashSet<Long> name_matched_ids;
         name_matched_ids = current.nameIndex().get(keyword);
+        int name_matches = (name_matched_ids == null)? 0: name_matched_ids.size();
 
 	ExtrememHashSet<Long> description_matched_ids;
 	description_matched_ids = current.descriptionIndex().get(keyword);
+        int description_matches = (description_matched_ids == null)? 0: description_matched_ids.size();
 
 	if (i == 0) {
-	  intersection_size = name_matched_ids.size() + description_matched_ids.size();
+          intersection_size = name_matches + description_matches;
 	  Util.ephemeralRSBArray(t, intersection_size, Util.SizeOfLong);
 	  all_matches = new long[intersection_size];
 	  int dest_idx = 0;
 	  Util.createEphemeralHashSetIterator(t);
-	  for (Long id: name_matched_ids) {
-	    all_matches[dest_idx++] = id.longValue();
-	  }
+          if (name_matched_ids != null) {
+            for (Long id: name_matched_ids) {
+              all_matches[dest_idx++] = id.longValue();
+            }
+          }
 	  Util.abandonEphemeralHashSetIterator(t);
 	  Util.createEphemeralHashSetIterator(t);
-	  for (Long id: description_matched_ids) {
-	    all_matches[dest_idx++] = id.longValue();
-	  }
+          if (description_matched_ids != null) {
+            for (Long id: description_matched_ids) {
+              all_matches[dest_idx++] = id.longValue();
+            }
+          }
 	  Util.abandonEphemeralHashSetIterator(t);
 	  //	  dumpArray("Before sorting initial array", all_matches, intersection_size);
 	  quicksort(all_matches, 0, intersection_size - 1);
 	  //	  dumpArray("After sorting initial array", all_matches, intersection_size);
 	} else {
-	  int new_matches_size = name_matched_ids.size() + description_matched_ids.size();
+          int new_matches_size = name_matches + description_matches;
 	  Util.ephemeralRSBArray(t, new_matches_size, Util.SizeOfLong);
 	  long new_matches[] = new long[new_matches_size];
 	  int dest_idx = 0;
 	  Util.createEphemeralHashSetIterator(t);
-	  for (Long id: name_matched_ids) {
-	    new_matches[dest_idx++] = id.longValue();
-	  }
+          if (name_matched_ids != null) {
+            for (Long id: name_matched_ids) {
+              new_matches[dest_idx++] = id.longValue();
+            }
+          }
 	  Util.abandonEphemeralHashSetIterator(t);
 	  Util.createEphemeralHashSetIterator(t);
-	  for (Long id: description_matched_ids) {
-	    new_matches[dest_idx++] = id.longValue();
-	  }
+          if (description_matched_ids != null) {
+            for (Long id: description_matched_ids) {
+              new_matches[dest_idx++] = id.longValue();
+            }
+          }
 	  Util.abandonEphemeralHashSetIterator(t);
 	  //	  dumpArray("Before sorting supplemental array", new_matches, new_matches_size);
 	  quicksort(new_matches, 0, new_matches_size - 1);
@@ -736,10 +746,12 @@ class Products extends ExtrememObject {
 	synchronized (name_index) {
 	  name_matched_ids = name_index.get(keyword);
 	}
+        int name_matches = (name_matched_ids == null)? 0: name_matched_ids.size();
 	ExtrememHashSet<Long> description_matched_ids;
 	synchronized (description_index) {
 	  description_matched_ids = description_index.get(keyword);
 	}
+        int description_matches = (description_matched_ids == null)? 0: description_matched_ids.size();
 	if (i == 0) {
 	  intersection_size = name_matched_ids.size() + description_matched_ids.size();
 	  Util.ephemeralRSBArray(t, intersection_size, Util.SizeOfLong);
@@ -747,40 +759,48 @@ class Products extends ExtrememObject {
 	  all_matches = new long[intersection_size];
 	  int dest_idx = 0;
 	  Util.createEphemeralHashSetIterator(t);
-	  synchronized(name_matched_ids) {
-	    for (Long id: name_matched_ids) {
-	      all_matches[dest_idx++] = id.longValue();
-	    }
-	  }
+	  if (name_matched_ids != null) {
+            synchronized(name_matched_ids) {
+              for (Long id: name_matched_ids) {
+                all_matches[dest_idx++] = id.longValue();
+              }
+            }
+          }
 	  Util.abandonEphemeralHashSetIterator(t);
 	  Util.createEphemeralHashSetIterator(t);
-	  synchronized(description_matched_ids) {
-	    for (Long id: description_matched_ids) {
-	      all_matches[dest_idx++] = id.longValue();
-	    }
-	  }
+          if (description_matched_ids != null) {
+            synchronized(description_matched_ids) {
+              for (Long id: description_matched_ids) {
+                all_matches[dest_idx++] = id.longValue();
+              }
+            }
+          }
 	  Util.abandonEphemeralHashSetIterator(t);
 	  //	  dumpArray("Before sorting initial array", all_matches, intersection_size);
 	  quicksort(all_matches, 0, intersection_size - 1);
 	  //	  dumpArray("After sorting initial array", all_matches, intersection_size);
 	} else {
-	  int new_matches_size = name_matched_ids.size() + description_matched_ids.size();
+	  int new_matches_size = name_matches + description_matches;
 	  Util.ephemeralRSBArray(t, new_matches_size, Util.SizeOfLong);
 	  long new_matches[] = new long[new_matches_size];
 	  int dest_idx = 0;
 	  Util.createEphemeralHashSetIterator(t);
-	  synchronized(name_matched_ids) {
-	    for (Long id: name_matched_ids) {
-	      new_matches[dest_idx++] = id.longValue();
-	    }
-	  }
+          if (name_matched_ids != null) {
+            synchronized(name_matched_ids) {
+              for (Long id: name_matched_ids) {
+                new_matches[dest_idx++] = id.longValue();
+              }
+            }
+          }
 	  Util.abandonEphemeralHashSetIterator(t);
 	  Util.createEphemeralHashSetIterator(t);
-	  synchronized(description_matched_ids) {
-	    for (Long id: description_matched_ids) {
-	      new_matches[dest_idx++] = id.longValue();
-	    }
-	  }
+          if (description_matched_ids != null) {
+            synchronized(description_matched_ids) {
+              for (Long id: description_matched_ids) {
+                new_matches[dest_idx++] = id.longValue();
+              }
+            }
+          }
 	  Util.abandonEphemeralHashSetIterator(t);
 	  quicksort(new_matches, 0, new_matches_size - 1);
 	  intersection_size = filter_out(intersection_size, all_matches, new_matches);

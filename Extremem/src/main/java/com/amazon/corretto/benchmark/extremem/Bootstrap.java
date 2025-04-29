@@ -70,37 +70,41 @@ public class Bootstrap extends ExtrememThread {
           double transaction_rate = _config.CustomerThreads() * thread_rate;
           String s = String.valueOf(transaction_rate);
 	  if (success) {
-
             if (retreating_during_search_for_first_success) {
-              Report.errout("Found first success at ", s,
-                            " TPS after retreating for failures at higher transaction rates.  Take smaller steps forward.");
+              Report.errout("Found first success at ", s, " TPS after retreating for failures at higher transaction rates.");
+	      Report.errout("Take smaller steps backward from previous failing TPS");
               if (_config.ReportCSV()) {
-                Report.output("First success at TPS:, ", s,
-                              ", (after retreating for failures at higher transaction rates -- taking smaller steps forward)");
-
+		Report.output("First success at TPS:, ", s, ", (after retreating for failures at higher transaction rates)");
+		Report.output(",, Take smaller steps backward from previous failing TPS");
               } else {
-                Report.output("Found first success at ", s,
-                              " TPS after retreating for failures at higher transaction rates.  Take smaller steps forward.");
+                Report.output("Found first success at ", s, " TPS after retreating for failures at higher transaction rates.");
+		Report.output("Take smaller steps backward from previous failing TPS");
               }
               first_try = true;
               found_top_failure = true;
               searching_for_greater_success = false;
               search_backward_increments = 0;
-              _customer_period = _customer_period.multiplyBy(this, 0.9);
-              _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
+
+	      // We retreated by 10% to find success.  Maybe we would have found success at only 2.5% of a retreat from
+	      // previous failure.  
+	      //  Previous period (which failed) was x
+	      //  Current period is 1.1x
+	      //  To get back to the original period, I multiply by 1/1.1 = 0.9091
+	      //  Then I multiply that result by 1.025 to get a transaction rate 2.5 % lower than the last failing rate
+	      //   0.9318 = 0.9091 * 1.025 is
+              _customer_period = _customer_period.multiplyBy(this, 0.9318);
+              _customer_think_time = _customer_think_time.multiplyBy(this, 0.9318);
             } else {
               Report.errout("Found first success at ", s, " TPS, searching for higher transaction rate.");
               if (_config.ReportCSV()) {
-                Report.output("First success at TPS:, ", s,
-                              ", (taking smaller steps forward)");
-
+                Report.output("First success at TPS:, ", s, ", (searching for higher transaction rate)");
               } else {
                 Report.output("Found first success at ", s, " TPS, searching for higher transaction rate.");
               }
 
-              // Decrease transaction rate by 7.5%
-              _customer_period = _customer_period.multiplyBy(this, 1.075);
-              _customer_think_time = _customer_think_time.multiplyBy(this, 1.075);
+	      // Decrease period by 10%
+              _customer_period = _customer_period.multiplyBy(this, 0.9);
+              _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
               searching_for_first_success = false;
               searching_for_greater_success = true;
             }

@@ -172,7 +172,22 @@ class CustomerThread extends ExtrememThread {
       Util.abandonEphemeralReferenceArray(this, saved_count);
       
       // candidate_cnt represents length of candidates array.
-      if (candidate_cnt > 0) {
+      if (candidate_cnt <= 0) {
+        candidates = null;
+        // candidates, known to have length 0, is now garbage.
+        Util.abandonEphemeralReferenceArray(this, 0);
+        
+        // else, search came up empty.  wait for next period.
+        Trace.msg(4, "Customer Thread ", label, " matched no customers");
+        history.logNoChoice(this, next_release_time);
+
+        AbsoluteTime end_think = next_release_time.addRelative(this, this.think_time);
+        end_think.changeLifeSpan(this, LifeSpan.TransientShort);
+        history.logPrepareToThink(this, next_release_time,
+                                  all_count, any_count, saved_count);
+        end_think.sleep(this);
+        end_think.garbageFootprint(this);
+      } else {
         SalesTransaction[] prospects = new SalesTransaction[candidate_cnt];
         Util.referenceArray(this, LifeSpan.TransientShort, candidate_cnt);
         
@@ -292,13 +307,6 @@ class CustomerThread extends ExtrememThread {
             Trace.msg(4, "Customer Thread ", label, ", chose abandon");
             history.logAbandonment(this, end_think);
         }
-      } else {
-        // candidates, known to have length 0, is now garbage.
-        Util.abandonEphemeralReferenceArray(this, 0);
-        
-        // else, search came up empty.  wait for next period.
-        Trace.msg(4, "Customer Thread ", label, " matched no customers");
-        history.logNoChoice(this, next_release_time);
       }
       next_release_time.garbageFootprint(this);
       next_release_time = next_release_time.addRelative(this, this.period);

@@ -128,9 +128,9 @@ public class Bootstrap extends ExtrememThread {
                 Report.output("Failed twice at ", s, " TPS, searching for lower transaction rate");
               }
 	      _customer_period = _customer_period.multiplyBy(this, 1.1);
-	      _customer_think_time = _customer_think_time.multiplyBy(this, 0.9);
+	      _customer_think_time = _customer_think_time.multiplyBy(this, 1.1);
 	      first_try = true;
-              retreating_during_search_for_first_success = false;
+              retreating_during_search_for_first_success = true;
 	    } else {
 	      Report.errout("Failed to find initial success after ", Integer.toString(MaxRetries), " retries.  Giving up.");
               Report.errout("Last attempted rate: ", s, " TPS");

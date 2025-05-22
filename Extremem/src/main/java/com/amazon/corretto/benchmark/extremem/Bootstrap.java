@@ -21,6 +21,7 @@ public class Bootstrap extends ExtrememThread {
   private MemoryLog _garbage;
   private MemoryLog _all_threads_accumulator;
   private AbsoluteTime _start_time;
+  private AbsoluteTime _start_logging_time;
   private AbsoluteTime _end_time;
   private RelativeTime _customer_period;
   private RelativeTime _customer_think_time;
@@ -225,9 +226,13 @@ public class Bootstrap extends ExtrememThread {
 	    first_try = true;
 	  }
 	}
+        // Let the system catchup from report writing and other distractions
+        AbsoluteTime now = AbsoluteTime.now(this);
+        AbsoluteTime delay_until = now.addSeconds(this, 15);
+        delay_until.sleep(this);
       }
     } else {
-      configure_simulation_threads();
+      configure_simulation_threads(true);
       boolean success = run_one_experiment(false);
       if (success) {
         Report.output("Simulation was successful");
@@ -392,7 +397,10 @@ public class Bootstrap extends ExtrememThread {
 
     // Add 4 ms to conservatively approximate the time required to establish start times and start() each thread
     _start_time = now.addMillis(this, 4 * (_config.CustomerThreads() + _config.ServerThreads()));
-     _end_time =  _start_time.addRelative(this, _config.SimulationDuration());
+
+    RelativeTime duration = _config.SimulationDuration().addRelative(this, _config.WarmupDuration());
+    _start_logging_time = _start_time.addRelative(this, _config.WarmupDuration());
+    _end_time =  _start_time.addRelative(this, duration);
 
     AbsoluteTime staggered_customer_replacement = new AbsoluteTime(this, _start_time);
     AbsoluteTime staggered_product_replacement = new AbsoluteTime(this, _start_time);
@@ -425,7 +433,7 @@ public class Bootstrap extends ExtrememThread {
     // startup the customer threads
     AbsoluteTime staggered_start = _start_time.addMinutes(this, 0);
     for (int i = 0; i < _config.CustomerThreads(); i++) {
-      _customer_threads[i].setStartAndStop(staggered_start, _end_time);
+        _customer_threads[i].setStartAndStop(staggered_start, _start_logging_time, _end_time);
       staggered_start.garbageFootprint(this);
       _customer_threads[i].start(); // will wait for first release
       staggered_start = staggered_start.addRelative(this, customer_stagger);
@@ -434,8 +442,8 @@ public class Bootstrap extends ExtrememThread {
     // startup the server threads
     staggered_start = _start_time.addMinutes(this, 0);
     for (int i = 0; i < _config.ServerThreads(); i++) {
-      _server_threads[i].setStartsAndStop(staggered_start, staggered_customer_replacement, staggered_product_replacement,
-                                         _end_time);
+        _server_threads[i].setStartsAndStop(staggered_start, _start_logging_time, staggered_customer_replacement,
+                                            staggered_product_replacement, _end_time);
       staggered_start.garbageFootprint(this);
       staggered_start = staggered_start.addRelative(this, server_stagger);
       staggered_customer_replacement.garbageFootprint(this);
@@ -456,7 +464,7 @@ public class Bootstrap extends ExtrememThread {
     if (server_stagger != null) {
       server_stagger.garbageFootprint(this);
     }
-      
+
     if (customer_replacement_stagger != null) {
       customer_replacement_stagger.garbageFootprint(this);
     }
@@ -497,6 +505,21 @@ public class Bootstrap extends ExtrememThread {
     _start_time.garbageFootprint(this);
     _start_time = null;
     _end_time.changeLifeSpan(this, LifeSpan.NearlyForever);
+
+    if (needs_warmup) {
+      now = _start_logging_time.sleep(this);
+      if (_config.ReportCSV()) {
+        s = Long.toString(now.microseconds());
+        Util.ephemeralString(this, s.length());
+        Report.output("Starting to log results time,", s);
+      } else {
+        s = now.toString(this);
+        Report.output("");
+        Report.output("Starting to log results at time: ", s);
+      }
+      Util.abandonEphemeralString(this, s);
+    }
+
     now.garbageFootprint(this);
     now = null;
   }

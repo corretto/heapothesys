@@ -232,7 +232,7 @@ public class Bootstrap extends ExtrememThread {
         delay_until.sleep(this);
       }
     } else {
-      configure_simulation_threads(true);
+      configure_simulation_threads();
       boolean success = run_one_experiment(false);
       if (success) {
         Report.output("Simulation was successful");
@@ -497,28 +497,33 @@ public class Bootstrap extends ExtrememThread {
 
     if (now.compare(_start_time) > 0) {
       Report.output("Warning!  Consumed more than 4 ms to start each thread.");
-      s = _start_time.toString(this);
-      Report.output(" Planned to start at: ", s);
-      s = now.toString(this);
-      Report.output("Actually starting at: ", s);
+      if (_config.ReportCSV()) {
+        s = Long.toString(_start_time.microseconds());
+        Report.output(" Planned to start at, ", s);
+        s = Long.toString(now.microseconds());
+        Report.output(" Actually starting at, ", s);
+      } else {
+        s = _start_time.toString(this);
+        Report.output(" Planned to start at: ", s);
+        s = now.toString(this);
+        Report.output(" Actually starting at: ", s);
+      }
     }
     _start_time.garbageFootprint(this);
     _start_time = null;
     _end_time.changeLifeSpan(this, LifeSpan.NearlyForever);
 
-    if (needs_warmup) {
-      now = _start_logging_time.sleep(this);
-      if (_config.ReportCSV()) {
-        s = Long.toString(now.microseconds());
-        Util.ephemeralString(this, s.length());
-        Report.output("Starting to log results time,", s);
-      } else {
-        s = now.toString(this);
-        Report.output("");
-        Report.output("Starting to log results at time: ", s);
-      }
-      Util.abandonEphemeralString(this, s);
+    now = _start_logging_time.sleep(this);
+    if (_config.ReportCSV()) {
+      s = Long.toString(now.microseconds());
+      Util.ephemeralString(this, s.length());
+      Report.output("Starting to log results time,", s);
+    } else {
+      s = now.toString(this);
+      Report.output("");
+      Report.output("Starting to log results at time: ", s);
     }
+    Util.abandonEphemeralString(this, s);
 
     now.garbageFootprint(this);
     now = null;

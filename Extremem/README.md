@@ -281,7 +281,16 @@ Each server thread replaces ProductReplacementCount products once every ProductR
 
 ### *-dSimulationDuration=10m*
 
-The simulation ends after all customer and server threads have been running for this amount of time.  The threads do not begin to run until InitializationDelay has passed since the start of execution, assuring that all global and thread-local data structures have been initialized prior to the start of the simulation run.  Thus, the true expected duration of the simulation run equals the total number of server and customer threads multiplied by 500 microseconds, plus the InitializationDelay, plus SimulationDuration, plus whatever additional time is required to produce the report that describes the performance and latency metrics for the simulated workload.  Each customer thread and each server thread terminates as soon as it confirms that the start of its next execution period would occur after the intended end of the simulation.  Thus, it is possible that the simulation will begin reporting results even before the requested end time for the simulation.
+The simulation ends after all customer and server threads have been running for this amount of time.  The simulation begins
+after all shared data structures have been initialized and all threads have been started.  Each customer and server thread
+initially waits until the computed time for the simulation is reached.  Each customer thread and each server thread terminfates
+as soon as it confirms that the start of its next execution period would occur after the intended end of the simulation.
+
+### *-dWarmupDuration=0s*
+
+Specification of a warmup delay allows the simulated workload to run for a specified amount of time before it begins to
+accumulate measured latencies.  The WarmupDuation is added to SimulatedDuration.  When searching for a maximum supported
+transaction rate, the WarmupDuration is applied to each experimental run.
 
 ### *-dReportIndividualThreads=false*
 

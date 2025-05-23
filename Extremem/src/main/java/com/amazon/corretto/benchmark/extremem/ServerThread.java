@@ -21,6 +21,7 @@ class ServerThread extends ExtrememThread {
   private final MemoryLog garbage_accumulator;
 
   private AbsoluteTime next_release_time;
+  private AbsoluteTime start_logging_time;;
   private AbsoluteTime customer_replacement_time;
   private AbsoluteTime product_replacement_time;
   private AbsoluteTime end_simulation_time;
@@ -62,22 +63,23 @@ class ServerThread extends ExtrememThread {
       // Account for reference fields label, all_products,
       // all_customers, sales_queue, browsing_queue,
       // end_simulation_time, history, accumulator, alloc_accumulator,
-      // garbage_accumulator, next_release_time,
+      // garbage_accumulator, next_release_time, start_logging_time,
       // customer_replacement_time, product_replacement_time
       log.accumulate(LifeSpan.NearlyForever,
-                     MemoryFlavor.ObjectReference, Grow, 13);
+                     MemoryFlavor.ObjectReference, Grow, 14);
       // Account for int field attention.
       log.accumulate(LifeSpan.NearlyForever,
                      MemoryFlavor.ObjectRSB, Grow, Util.SizeOfInt);
   }
 
-  public void setStartsAndStop(AbsoluteTime first_release, AbsoluteTime customer_replacement_time,
+  public void setStartsAndStop(AbsoluteTime first_release, AbsoluteTime start_logging_time, AbsoluteTime customer_replacement_time,
                                AbsoluteTime product_replacement_time, AbsoluteTime end_simulation) {
 
     this.next_release_time = new AbsoluteTime(this, first_release);
 
     // Replaced every period, typically less than 2 minutes for ServerThread.
     this.next_release_time.changeLifeSpan(this, LifeSpan.TransientShort);
+    this.start_logging_time = start_logging_time;
     this.customer_replacement_time = new AbsoluteTime(this, customer_replacement_time);
     this.customer_replacement_time.changeLifeSpan(this, LifeSpan.TransientShort);
     this.product_replacement_time = new AbsoluteTime(this, product_replacement_time);
@@ -86,6 +88,7 @@ class ServerThread extends ExtrememThread {
   }
 
   public void runExtreme() {
+    boolean logging = false;
     while (true) {
       // If the simulation will have ended before we wake up, don't
       // even bother to sleep.
@@ -102,8 +105,11 @@ class ServerThread extends ExtrememThread {
       if (now.compare(end_simulation_time) >= 0)
         break;
 
-      Trace.msg(4, "Server ", label, ": attention: ",
-                Integer.toString(attention));
+      if (!logging && (now.compare(start_logging_time) >= 0)) {
+        logging = true;
+      }
+
+      Trace.msg(4, "Server ", label, ": attention: ", Integer.toString(attention));
 
       switch (attention) {
         case 0:
@@ -139,7 +145,9 @@ class ServerThread extends ExtrememThread {
           }
           Trace.msg(4, "Server ", label, ": processed sales transactions: ",
                     Integer.toString(transaction_count));
-          history.logTransactions(this, next_release_time, transaction_count);
+          if (logging) {
+            history.logTransactions(this, next_release_time, transaction_count);
+          }
           break;
         case 1:
           // Statistically, the number of BrowsingHistory instances that
@@ -161,7 +169,9 @@ class ServerThread extends ExtrememThread {
           }
           Trace.msg(4, "Server ", label, ": browsing_expirations: ",
                     Integer.toString(browsing_expirations));
-          history.logHistories(this, next_release_time, browsing_expirations);
+          if (logging) {
+            history.logHistories(this, next_release_time, browsing_expirations);
+          }
           break;
         case 2:
           if (next_release_time.compare(customer_replacement_time) >= 0) {
@@ -182,11 +192,14 @@ class ServerThread extends ExtrememThread {
             Trace.msg(4, "Server ", label, ": replaced ",
                       Integer.toString(config.CustomerReplacementCount()),
                       " customers");
-            history.logCustomers(this, next_release_time,
-                                 config.CustomerReplacementCount());
+            if (logging) {
+              history.logCustomers(this, next_release_time, config.CustomerReplacementCount());
+            }
           } else {
             Trace.msg(4, "Server ", label, ": too early to replace customers");
-            history.logDoNothings(this, next_release_time);
+            if (logging) {
+              history.logDoNothings(this, next_release_time);
+            }
           }
           break;
         case 3:
@@ -202,11 +215,14 @@ class ServerThread extends ExtrememThread {
                                                     LifeSpan.TransientShort);
             Trace.msg(4, "Server ", label, ": replaced products: ",
                       Integer.toString(config.ProductReplacementCount()));
-            history.logProducts(this, next_release_time,
-                                config.ProductReplacementCount());
+            if (logging) {
+              history.logProducts(this, next_release_time, config.ProductReplacementCount());
+            }
           } else {
             Trace.msg(4, "Server ", label, ": too early to replace products");
-            history.logDoNothings(this, next_release_time);
+            if (logging) {
+              history.logDoNothings(this, next_release_time);
+            }
           }
           break;
         default:
@@ -240,9 +256,9 @@ class ServerThread extends ExtrememThread {
     // Account for reference fields label, all_products,
     // all_customers, sales_queue, browsing_queue,
     // end_simulation_time, history, accumulator, alloc_accumulator,
-    // garbage_accumulator, next_release_time,
+    // garbage_accumulator, next_release_time, start_logging_time,
     // customer_replacement_time, product_replacement_time
-    log.accumulate(ls, MemoryFlavor.ObjectReference, p, 13);
+    log.accumulate(ls, MemoryFlavor.ObjectReference, p, 14);
     // Account for int field attention.
     log.accumulate(ls, MemoryFlavor.ObjectRSB, p, Util.SizeOfInt);
     // Account for label.

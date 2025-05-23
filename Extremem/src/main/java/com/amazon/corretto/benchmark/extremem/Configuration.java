@@ -87,6 +87,7 @@ class Configuration {
   static final int DefaultPhasedUpdateIntervalSeconds = 60;
 
   static final long DefaultDurationMinutes = 10;
+  static final long DefaultWarmupSeconds = 0;
 
   /*
    * Instance fields begin here.
@@ -123,6 +124,7 @@ class Configuration {
   private Words dictionary;
 
   private RelativeTime SimulationDuration;
+  private RelativeTime WarmupDuration;
 
   private RelativeTime CustomerPeriod;
   private RelativeTime CustomerThinkTime;
@@ -196,12 +198,12 @@ class Configuration {
                    Polarity.Expand, 24 * Util.SizeOfInt +
                    2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
-    // Account for 10 reference fields: args, dictionary,
-    // DictionaryFile, SimulationDuration,
+    // Account for 11 reference fields: args, dictionary,
+    // DictionaryFile, SimulationDuration, WarmupDuration,
     // CustomerPeriod, CustomerThinkTime, ServerPeriod, BrowsingExpiration,
     // CustomerReplacementPeriod, ProductReplacementPeriod.
     log.accumulate(LifeSpan.NearlyForever,
-                   MemoryFlavor.ObjectReference, Polarity.Expand, 10);
+                   MemoryFlavor.ObjectReference, Polarity.Expand, 11);
 
     ResponseTimeMeasurements = DefaultResponseTimeMeasurements;
     ReportIndividualThreads = DefaultReportIndividualThreads;
@@ -229,6 +231,9 @@ class Configuration {
     AllowAnyMatch = DefaultAllowAnyMatch;
     FastAndFurious = DefaultFastAndFurious;
     PhasedUpdates = DefaultPhasedUpdates;
+
+    WarmupDuration = new RelativeTime(t, DefaultWarmupSeconds, 0);
+    WarmupDuration.changeLifeSpan(t, LifeSpan.NearlyForever);
 
     SimulationDuration = new RelativeTime(t, DefaultDurationMinutes * 60, 0);
     SimulationDuration.changeLifeSpan(t, LifeSpan.NearlyForever);
@@ -332,6 +337,7 @@ class Configuration {
     "ProductReplacementPeriod",
     "ServerPeriod",
     "SimulationDuration",
+    "WarmupDuration",
   };
 
   private static String[] name_patterns = {
@@ -696,6 +702,13 @@ class Configuration {
           SimulationDuration.changeLifeSpan(t, LifeSpan.NearlyForever);
           break;
         }
+      case 9:
+        if (keyword.equals("WarmupDuration")) {
+          WarmupDuration.garbageFootprint(t);
+          WarmupDuration = new RelativeTime(t, secs, nanos);
+          WarmupDuration.changeLifeSpan(t, LifeSpan.NearlyForever);
+          break;
+        }
       default:
         usage("Unexpected internal error in doTimeArg");
     }
@@ -938,6 +951,10 @@ class Configuration {
     return SimulationDuration;
   }
 
+  RelativeTime WarmupDuration() {
+    return WarmupDuration;
+  }
+
   RelativeTime CustomerPeriod() {
     return CustomerPeriod;
   }
@@ -1040,6 +1057,12 @@ class Configuration {
     l = s.length();
     Util.ephemeralString(t, l);
     Report.output("SimulationDuration,", s);
+    Util.abandonEphemeralString(t, l);
+
+    s = Long.toString(WarmupDuration.microseconds());
+    l = s.length();
+    Util.ephemeralString(t, l);
+    Report.output("WarmupDuration,", s);
     Util.abandonEphemeralString(t, l);
 
     s = Integer.toString(MaxArrayLength);
@@ -1294,6 +1317,11 @@ class Configuration {
     Report.output("                           Duration (SimulationDuration): ", s);
     Util.abandonEphemeralString(t, l);
 
+    s = WarmupDuration.toString(t);
+    l = s.length();
+    Report.output("                                 Warmup (WarmupDuration): ", s);
+    Util.abandonEphemeralString(t, l);
+
     s = Integer.toString(MaxArrayLength);
     l = s.length();
     Util.ephemeralString(t, l);
@@ -1523,12 +1551,12 @@ class Configuration {
                        Grow, 17 * Util.SizeOfInt +
                        2 * Util.SizeOfFloat + 2 * Util.SizeOfBoolean);
 
-    // Account for 10 reference fields: args, dictionary, DictionaryFile
-    // SimulationDuration, CustomerPeriod,
+    // Account for 11 reference fields: args, dictionary, DictionaryFile
+    // SimulationDuration, WarmupDuration, CustomerPeriod,
     // CustomerThinkTime, ServerPeriod, BrowsingExpiration,
     // CustomerReplacementPeriod, ProductReplacementPeriod 
     garbage.accumulate(LifeSpan.NearlyForever,
-                       MemoryFlavor.ObjectReference, Polarity.Expand, 10);
+                       MemoryFlavor.ObjectReference, Polarity.Expand, 11);
 
     Util.tallyString(t.garbageLog(), LifeSpan.NearlyForever,
                      Polarity.Expand, DictionaryFile.length());

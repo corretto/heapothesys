@@ -162,6 +162,40 @@ class Customers extends ExtrememObject {
     return Character.toUpperCase(input.charAt(0)) + input.substring(1);
   }
 
+  // This service is invoked only by Phased update rebuild Customers.  No lock is necessary.
+  private String randomDistinctName(ExtrememThread t, HashMap<String, Customer> existing_customers) {
+    String full_name;
+    final Polarity Grow = Polarity.Expand;
+    do {
+      // Potentially infinite loop terminates as soon as we randomly generate a name that is not already in the Customer data
+      // base.  Will normally not require more than a single pass, but having a "very small" dictionary and a very large number of
+      // customers could cause excessive iteration here.
+
+      String first = capitalize(t, config.arbitraryWord(t));
+      int first_len = first.length();
+      String last = capitalize(t, config.arbitraryWord(t));
+      int last_len = last.length();
+
+      // ignore the StringBuilder allocations.  Assume optimized out.
+      full_name = first + " " + last;
+      int capacity = Util.ephemeralStringBuilder(t, first_len);
+      capacity = Util.ephemeralStringBuilderAppend(t, first_len, capacity, 1);
+      capacity = Util.ephemeralStringBuilderAppend(t, first_len, capacity,
+                                                   last_len);
+      int full_name_length = first_len + last_len + 1;
+      Util.ephemeralStringBuilderToString(t, full_name_length, capacity);
+      Util.abandonEphemeralString(t, first_len);
+      Util.abandonEphemeralString(t, last_len);
+
+      if (existing_customers.get(full_name) == null) {
+        // Caller will convert returned String from Ephemeral
+        return full_name;
+      } else {
+        Util.abandonEphemeralString(t, full_name_length);
+      }
+    } while (true);
+  }
+
   // The thread that invokes this method already holds a read or
   // write lock, if necessary.
   private String randomDistinctName (ExtrememThread t) {
@@ -193,8 +227,9 @@ class Customers extends ExtrememObject {
       if (customer_map.get(full_name) == null) {
         // Caller will convert returned String from Ephemeral
         return full_name;
-      } else
+      } else {
         Util.abandonEphemeralString(t, full_name_length);
+      }
     } while (true);
   }
 
@@ -214,8 +249,8 @@ class Customers extends ExtrememObject {
     Customer result;
     if (config.PhasedUpdates()) {
       // no synchronization necessary here
-      int index = t.randomUnsignedInt() % config.NumCustomers();
       CurrentCustomersData frozen_state = getCurrentData();
+      int index = t.randomUnsignedInt() % frozen_state.customerNames().length();
       String name = frozen_state.customerNames().get(index);
       result = frozen_state.customerMap().get(name);
     } else if (config.FastAndFurious()) {
@@ -274,19 +309,44 @@ class Customers extends ExtrememObject {
 
     Arraylet<String> new_customer_names;
     HashMap<String, Customer> new_customer_map;
-    int num_customers = config.NumCustomers();
-    int capacity = Util.computeHashCapacity(num_customers, DefaultLoadFactor, Util.InitialHashMapArraySize);
+    int num_customers = customer_names.length();
     long tally = 0;
 
+    // Negative value of customer_increase denotes customer decrease.
+    int customer_variance = 0;
+    if (config.NumCustomersVariancePercent() > 0) {
+      double  r = (t.randomDouble() * 2) - 1.0;
+      customer_variance = (int) ((r * config.NumCustomersVariancePercent() / 100.0) * config.NumCustomers());
+    }
+
+    int new_customer_count = config.NumCustomers() + customer_variance;
+    int customer_increase = new_customer_count - num_customers;
+
+    String s1 = Long.toString(new_customer_count);
+    String s2 = Long.toString(customer_increase);
+    Util.ephemeralString(t, s1.length());
+    Util.ephemeralString(t, s2.length());
+    if (config.NumCustomersVariancePercent() > 0) {
+      if (config.ReportCSV()) {
+        Report.output("Rebuilding Customer Database customers, ", s1, ", delta, ", s2);
+      } else {
+        Report.output("Rebuilding Customer Database with ", s1, " customers, delta: ", s2);
+      }
+    }
+    int capacity = Util.computeHashCapacity(new_customer_count, DefaultLoadFactor, Util.InitialHashMapArraySize);
     LifeSpan ls = this.intendedLifeSpan();
-    new_customer_names = new Arraylet<String>(t, ls, config.MaxArrayLength(), num_customers);
+    new_customer_names = new Arraylet<String>(t, ls, config.MaxArrayLength(), (int) new_customer_count);
     new_customer_map = new HashMap<String, Customer>(capacity, DefaultLoadFactor);
 
-    // First, copy the existing data base
-    for (int i = 0; i < num_customers; i++) {
+    // First, copy the existing data base, but do not copy entries that should be deleted.
+    // If customer_increase < 0, we skip over the first -customer_increase entries.
+    int next_customer_index = 0;
+    int start_index = (customer_increase < 0)? 0 - customer_increase: 0;
+    for (int i = start_index; i < num_customers; i++) {
       String customer_name = customer_names.get(i);
-      new_customer_names.set(i, customer_name);
-      new_customer_map.put(customer_name, customer_map.get(customer_name));
+      Customer customer = customer_map.get(customer_name);
+      new_customer_names.set(next_customer_index++, customer_name);
+      new_customer_map.put(customer_name, customer);
     }
 
     // Then, modify the data base according to instructions in the change log.
@@ -294,18 +354,47 @@ class Customers extends ExtrememObject {
     while ((change = change_log.pull()) != null) {
       tally++;
       int replacement_index = change.index();
-      Customer replacement_customer = change.customer();
-      String replacement_customer_name = replacement_customer.name();
-      if (new_customer_map.get(replacement_customer_name) == null) {
-        String obsolete_name = new_customer_names.get(replacement_index);
-        new_customer_map.remove(obsolete_name);
-        new_customer_names.set(replacement_index, replacement_customer_name);
-        new_customer_map.put(replacement_customer_name, replacement_customer);
-        // Don't bother to expire the old customer or expunge it from save-for-later queues.  That will happen when the
-        // expiration time is reached, at which time the object will become garbage.
+      if (customer_increase < 0) {
+        if (replacement_index + customer_increase >= 0) {
+          replacement_index += customer_increase; // adding negative number here.
+        } else {
+          // Sentinel denotes this change applies to a Customer that no longer exists.
+          replacement_index = -1;
+        }
       }
-      // else, in the very unlikely event that this new name is redundant with an existing name, skip the
-      // customer replacement request.
+      // Note that a replacement index may be greater than new_customer_count in the case that the replacement was processed
+      // during the previous rebuild cycle and that previous rebuild produced a smaller number of Customers than had existed
+      // prior to that rebuild.
+      if (replacement_index >= new_customer_count) {
+        replacement_index = -1;
+      }
+      if (replacement_index >= 0) {
+        Customer replacement_customer = change.customer();
+        String replacement_customer_name = replacement_customer.name();
+        if (new_customer_map.get(replacement_customer_name) == null) {
+          String original_customer_name = new_customer_names.get(replacement_index);
+          new_customer_map.remove(original_customer_name);
+          new_customer_names.set(replacement_index, replacement_customer_name);
+          new_customer_map.put(replacement_customer_name, replacement_customer);
+          // Don't bother to expire the old customer or expunge it from save-for-later queues.  That will happen when the
+          // expiration time is reached, at which time the object will become garbage.
+        }
+        // else, the replacement customer name collides with an existing customer name in new Customer data base,
+        // so we ignore this replacement request.
+      }
+      // else, this change applies to a Customer that no longer exists; nothing to do
+    }
+
+    // Expand the new_customer data base with randomly generated entries.
+    while (next_customer_index < new_customer_count) {
+      String new_customer_name = randomDistinctName(t, new_customer_map);
+      long new_customer_no;
+      synchronized (this) {
+        new_customer_no = next_customer_no++;
+      }
+      Customer new_customer = new Customer(t, LifeSpan.NearlyForever, new_customer_name, new_customer_no);
+      new_customer_names.set(next_customer_index++, new_customer_name);
+      new_customer_map.put(new_customer_name, new_customer);
     }
     establishUpdatedDataBase(t, new_customer_names, new_customer_map);
 

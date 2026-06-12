@@ -3,6 +3,7 @@
 
 package com.amazon.corretto.benchmark.extremem;
 
+import java.util.HashMap;
 import java.util.TreeMap;
 
 /**
@@ -1045,41 +1046,89 @@ class Products extends ExtrememObject {
     long tally = 0;
 
     LifeSpan ls = this.intendedLifeSpan();
-    int num_products = config.NumProducts();
-    new_product_ids = new ArrayletOflong(t, ls, config.MaxArrayLength(), num_products);
+    int num_products = product_ids.length();
+    int product_variance = 0;
+    if (config.NumProductsVariancePercent() > 0) {
+      double  r = (t.randomDouble() * 2) - 1.0;
+      product_variance = (int) ((r * config.NumProductsVariancePercent() / 100.0) * config.NumProducts());
+    }
+
+    int new_product_count = config.NumProducts() + product_variance;
+    int product_increase = new_product_count - num_products;
+    String s1 = Long.toString(new_product_count);
+    String s2 = Long.toString(product_increase);
+    Util.ephemeralString(t, s1.length());
+    Util.ephemeralString(t, s2.length());
+    if (config.NumProductsVariancePercent() > 0) {
+      if (config.ReportCSV()) {
+        Report.output("Rebuilding Product Database products, ", s1, ", delta, ", s2);
+      } else {
+        Report.output("Rebuilding Product Database with ", s1, " products, delta: ", s2);
+      }
+    }
+    new_product_ids = new ArrayletOflong(t, ls, config.MaxArrayLength(), new_product_count);
     new_product_map = new TreeMap<Long, Product>();
     new_name_index = new TreeMap<String, ExtrememHashSet<Long>>();
     new_description_index = new TreeMap<String, ExtrememHashSet<Long>>();
 
-    // First, copy the existing data base
-    for (int i = 0; i < num_products; i++) {
+    // First, copy the existing data base, but do not copy entries that should be deleted.
+    // If product_increase < 0, we skip over the first -product_increase entries.
+    int next_product_index = 0;
+    int start_index = (product_increase < 0)? 0 - product_increase: 0;
+    for (int i = start_index; i < num_products; i++) {
       long product_id = product_ids.get(i);
       Product product = product_map.get(product_id);
-      new_product_ids.set(i, product_id);
+      new_product_ids.set(next_product_index++, product_id);
       new_product_map.put(product_id, product);
     }
 
     // Then, modify the data base according to content of the change log.
     ChangeLogNode change;
     while ((change = change_log.pull()) != null) {
-      int replacement_index = change.index();
-      long replacement_product_id = product_ids.get(replacement_index);
       tally++;
+      int replacement_index = change.index();
+      if (product_increase < 0) {
+        if (replacement_index + product_increase >= 0) {
+          replacement_index += product_increase; // adding negative number here.
+        } else {
+          // Sentinel denotes this change applies to a Customer that no longer exists.
+          replacement_index = -1;
+        }
+      }
+      // Note that a replacement index may be greater than new_product_count in the case that the replacement was processed
+      // during the previous rebuild cycle and that previous rebuild produced a smaller number of Products than had existed
+      // prior to that rebuild.
+      if (replacement_index >= new_product_count) {
+        replacement_index = -1;
+      }
+      if (replacement_index >= 0) {
+        long original_product_id = new_product_ids.get(replacement_index);
+        Product replacement_product = change.product();
+        long replacement_product_id = replacement_product.id();
+        new_product_map.remove(original_product_id);
+        new_product_ids.set(replacement_index, replacement_product_id);
+        new_product_map.put(replacement_product_id, replacement_product);
+      }
+      // else, this change applies to a Product that no longer exists; nothing to do.
+    }
 
-      new_product_map.remove(replacement_product_id);
-
-      Product new_product = change.product();
-      long new_product_id = new_product.id();
-      new_product_ids.set(replacement_index, new_product_id);
-      new_product_map.put(new_product_id, new_product);
+    while (next_product_index < new_product_count) {
+      // Expand the new_products data base with a randomly generated entry
+      String name = randomName(t);
+      String description = randomDescription(t);
+      long new_id = nextUniqId();
+      Product new_product = new Product(t, LifeSpan.NearlyForever, new_id, name, description);
+      new_product_ids.set(next_product_index++, new_id);
+      new_product_map.put(new_id, new_product);
     }
 
     // Now, build the replacement indexes
-    for (int i = 0; i < num_products; i++) {
+    for (int i = 0; i < new_product_count; i++) {
       long product_id = new_product_ids.get(i);
       Product product = new_product_map.get(product_id);
       addToIndicesPhasedUpdates(t, product, new_name_index, new_description_index);
     }
+
     establishUpdatedDataBase(t, new_product_ids, new_product_map, new_name_index, new_description_index);
 
     now = AbsoluteTime.now(t);

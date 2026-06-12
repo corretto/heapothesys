@@ -73,6 +73,24 @@ When PhasedUpdates is true, a dedicated background thread alternates between reb
 databases.  Each time it finishes building a database, it waits PhasedUpdateInterval amount of time before it begins
 to rebuild the other database.
 
+### *-dNumCustomersVariancePercent=0*
+
+When PhasedUpdates is true, before we rebuild the customer data base for each phased update, we adjust the size of the Customer
+data base by a random percent no greater than this value, either larger or smaller.
+The representation of the Customer data base generally uses two humongous arrays to represent its
+customer names and customer map information.  By varying the sizes of these humongous arrays, we increase the probability that
+humongous allocations may experience fragmentation challenges. When the Customer data base randomly increases, we generate
+random new Customer identities.  When it shrinks, we delete random customers.
+
+### *-dNumProductsVariancePercent=0*
+
+When PhasedUpdates is true, before we rebuild the Products data base for each phased percent, we adjust the size of the Products
+data base by a random percent no greater than this value, either larger or smaller.
+The representation of the Products data base generally uses a humongous array to represent
+product identities. By varying the sizes of this humongous array, we increase the probability that humongous
+allocations may experience fragmentation challenges. When the Products data base randomly increases, we generate
+random new Product descriptions.  When it shrinks, we delete random products.
+
 ### *-dInitializationDelay=50ms*
 
 It is important to complete all initialization of all global data structures before beginning to execute the experimental workload threads.  If

@@ -91,7 +91,7 @@ public class SimpleRunner extends TaskBase {
                 this.writeOn(report);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.log(Level.SEVERE, "Unexpected exception", ex);
             System.exit(1);
         }
     }

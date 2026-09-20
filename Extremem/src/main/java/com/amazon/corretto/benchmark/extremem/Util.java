@@ -48,7 +48,7 @@ class Util {
   static void fatalException(String msg, Throwable t) {
     System.err.print("Intercepted fatal exception: ");
     System.err.println(msg);
-    t.printStackTrace(System.err);
+    logger.log(Level.SEVERE, msg, t);
     printException(t);
     System.exit(-1);
   }
